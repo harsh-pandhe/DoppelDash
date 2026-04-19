@@ -1,0 +1,104 @@
+DoppelDash
+
+System Requirements & Architecture Specification
+
+Project: Enterprise Administrative Toolsuite (CRM, LMS, RMS)
+
+Tech Stack: MERN (MongoDB, Express.js, React, Node.js)
+UI/UX Design Language: Glassmorphism, Responsive, Minimalist "One-Tap" Interface
+
+1. Executive Summary
+
+This document outlines the technical and functional requirements for a robust, automated internal management system. The suite is divided into three core modules: an Outlook-integrated Stakeholder CRM, a smart Leave Management System (LMS), and an automated Reimbursement System (RMS). The application features a Role-Based Access Control (RBAC) system divided into Employee, Manager, and Boss (Super Admin).
+
+2. Module 1: Advanced Stakeholder CRM
+
+Inspired by systems like SugarCRM and vTiger, but optimized for automated stakeholder and client relationship management.
+
+2.1 Core Features & Integrations
+
+Outlook Integration (Microsoft Graph API): Bi-directional syncing of emails, calendar events, and meetings directly into the CRM timeline.
+
+Business Card Scanner (OCR): Mobile-responsive camera feature. Users can snap a picture of a business card; the system uses OCR (Optical Character Recognition) to scrape Name, Email, Phone, and Company, automatically creating a new profile.
+
+Advanced Profiling & Demographics:
+
+Fields to save Profile Photos.
+
+Deep sorting and filtering based on: Gender, Caste, Religion, Company, and Associated Projects.
+
+Note: Data privacy layers must be implemented for sensitive demographic data.
+
+2.2 AI & Automation Engine
+
+Automated Greetings: Cron-job triggers that automatically send customized emails/messages for birthdays, anniversaries, and major religious/cultural festivals throughout the year based on the demographic data.
+
+One-Click AI Content Generation: Integration with a local LLM (like Gemma 4) or OpenAI API. Users click "Generate Post/Message" on a stakeholder's profile, and the AI drafts context-aware follow-ups, LinkedIn posts, or greeting cards.
+
+3. Module 2: Smart Leave Management System (LMS)
+
+A streamlined, conditional workflow for employee time-off tracking.
+
+3.1 Balance & Allocation Tracking
+
+Real-time dashboard showing the employee's monthly and annual leave quotas (Casual, Medical, Earned).
+
+Logic checks prevent applying for leaves if the balance is zero.
+
+3.2 Conditional Workflows (e.g., Medical Leave)
+
+Standard Leave: Employee selects dates -> Submits -> Goes to Manager.
+
+Extended Medical Leave Logic: * Trigger: If LeaveType == Medical AND Duration > 2 Days.
+
+Action: The UI dynamically renders a mandatory file upload zone.
+
+Requirement: Employee must upload multi-image medical records/prescriptions to successfully submit the application.
+
+3.3 Approval Pipeline
+
+Employee: Submits request.
+
+Manager: Receives notification, reviews dates (and medical documents if applicable), clicks "Approve" or "Reject".
+
+Boss (Super Admin): Receives a passive notification ("Leave Approved for [Name]") for oversight, but does not need to take action.
+
+4. Module 3: Reimbursement & Expense Tracker (RMS)
+
+A visual, pipeline-based system for tracking company expenses and travel requests.
+
+4.1 Travel & Expense Submission
+
+Creation: Employee opens a "New Travel/Expense Request".
+
+Inputs: Reason for travel, Dates, Total Amount.
+
+Attachments: Mandatory multi-image upload for bills, receipts, and invoices.
+
+4.2 The 3-Tier Billing Pipeline
+
+Manager Review: Manager views the request and the attached images in a side-by-side modal. If valid, they click "Approve for Billing".
+
+Boss (Finance/Super Admin) Action: The request moves to the Boss's queue as "Pending Payout".
+
+Closure: The Boss processes the physical/bank payment, marks the record as "Paid," attaches the final transaction proof (if necessary), and the matter is marked as Closed.
+
+5. UI/UX & Design Philosophy
+
+Glassmorphism Aesthetic: Use Tailwind CSS with backdrop-blur-md, bg-white/10, and soft shadows to create a premium, "glassy" interface over dark or colorful gradient backgrounds.
+
+Responsive Mobile-First: Because the Card Scanner and Receipt Uploads require camera access, the application must behave like a native mobile app (PWA) on phones.
+
+Zero-Clutter Dashboards: * Managers see a Kanban-style board for Pending Leaves and Pending Bills.
+
+Employees see big, accessible buttons: Scan Card, Request Leave, Upload Bill.
+
+6. Technical Architecture (MERN)
+
+Database (MongoDB): Unstructured flexibility is perfect for dynamic CRM profiles and varied receipt metadata.
+
+Backend (Node.js/Express): Handles the API routes, Microsoft Graph API OAuth tokens (for Outlook), and Cron Jobs (for automated greetings).
+
+Frontend (React.js): Utilizes Framer Motion for smooth glassy animations, and Shadcn UI (or similar) for accessible forms and tables.
+
+File Storage: AWS S3 or Cloudinary for storing Profile Photos, Medical Records, and Expense Receipts securely.
