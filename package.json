@@ -1,0 +1,14 @@
+{
+  "name": "doppeldash",
+  "version": "1.0.0",
+  "description": "Enterprise Administrative Toolsuite (CRM, LMS, RMS) — Doppelmayr India",
+  "scripts": {
+    "dev":        "concurrently -n web,server -c cyan,magenta \"npm run dev --prefix web\" \"npm run dev --prefix server\"",
+    "dev:web":    "npm run dev --prefix web",
+    "dev:server": "npm run dev --prefix server",
+    "build":      "npm run build --prefix web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

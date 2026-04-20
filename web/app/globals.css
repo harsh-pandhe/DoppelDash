@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #F5F7FA;
+    color: #1A1F36;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 1rem;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #E4E8EF transparent;
+  }
+}
+
+/* ─── Clerk component overrides ─────────────────────────────────────────── */
+
+/* Strip all card shells — our own card wrapper provides the visual container */
+.cl-rootBox,
+.cl-cardBox,
+.cl-card,
+.cl-signIn-root,
+.cl-signUp-root,
+.cl-main,
+.cl-content,
+[data-clerk-component] {
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  width: 100% !important;
+}
+
+/* Header */
+.cl-headerTitle {
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  letter-spacing: -0.02em !important;
+}
+.cl-headerSubtitle {
+  font-size: 0.875rem !important;
+  color: #8A93A6 !important;
+}
+
+/* Form field inputs */
+.cl-formFieldInput {
+  border-radius: 0.5rem !important;
+  border: 1px solid #E4E8EF !important;
+  height: 2.75rem !important;
+  font-size: 0.875rem !important;
+  padding: 0 0.875rem !important;
+  color: #111827 !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+  background: #ffffff !important;
+}
+.cl-formFieldInput:focus {
+  border-color: #0057A8 !important;
+  box-shadow: 0 0 0 3px rgba(0, 87, 168, 0.12) !important;
+  outline: none !important;
+}
+.cl-formFieldLabel {
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+}
+
+/* Primary action button — Doppelmayr blue */
+.cl-formButtonPrimary {
+  background-color: #0057A8 !important;
+  border-radius: 0.5rem !important;
+  height: 2.75rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+  transition: background-color 0.15s !important;
+}
+.cl-formButtonPrimary:hover {
+  background-color: #004d97 !important;
+}
+.cl-formButtonPrimary:active {
+  background-color: #003B73 !important;
+}
+
+/* Social buttons */
+.cl-socialButtonsBlockButton {
+  border: 1px solid #E4E8EF !important;
+  border-radius: 0.5rem !important;
+  height: 2.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  background: #ffffff !important;
+  transition: background-color 0.15s, border-color 0.15s !important;
+}
+.cl-socialButtonsBlockButton:hover {
+  background: #F5F7FA !important;
+  border-color: #0057A8 !important;
+}
+
+/* Divider */
+.cl-dividerLine { background: #E4E8EF !important; }
+.cl-dividerText  { color: #8A93A6 !important; font-size: 0.75rem !important; }
+
+/* Footer link */
+.cl-footerActionLink {
+  color: #0057A8 !important;
+  font-weight: 600 !important;
+}
+.cl-footerActionLink:hover { color: #003B73 !important; }
+
+/* Footer text */
+.cl-footerActionText { color: #8A93A6 !important; font-size: 0.875rem !important; }
+
+/* Internal link (forgot password etc.) */
+.cl-formFieldAction {
+  color: #0057A8 !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+}
+
+/* Alert / error messages */
+.cl-formFieldErrorText { font-size: 0.75rem !important; }
+.cl-alert { border-radius: 0.5rem !important; }
+
+/* OTP / verification inputs */
+.cl-otpCodeFieldInput {
+  border-radius: 0.5rem !important;
+  border: 1px solid #E4E8EF !important;
+  font-size: 1.25rem !important;
+}
+
+/* Hide Clerk "Secured by Clerk" / "Development mode" footer entirely */
+.cl-footer,
+.cl-internal-footer,
+.cl-footerPages,
+.cl-footerAction,
+[data-localization-key="footerPageLink__help"] {
+  display: none !important;
+}
