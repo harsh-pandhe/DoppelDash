@@ -4,31 +4,97 @@
 
 @layer base {
   * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #F5F7FA;
     color: #1A1F36;
+    background-color: #eef2ff;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
+  /* ── Glassmorphism card ── */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.04),
+      0 4px 16px rgba(0, 87, 168, 0.07);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .glass-card:hover {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      0 12px 32px rgba(0, 87, 168, 0.12);
+    border-color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+  }
+
+  /* ── Stat card – subtle lift on hover ── */
+  .stat-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* ── Legacy .glass (sidebar items) ── */
   .glass {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     border-radius: 1rem;
   }
+
+  /* ── App content background ── */
+  .app-bg {
+    background-color: #eef2ff;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 15% 5%,  rgba(0, 87, 168, 0.10) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 50% at 85% 85%,  rgba(99, 102, 241, 0.09) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 40% at 55% 40%,  rgba(232, 87, 26, 0.05) 0%, transparent 55%);
+  }
+
+  /* ── Custom scrollbar ── */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #E4E8EF transparent;
+    scrollbar-color: rgba(199, 210, 254, 0.7) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar          { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track    { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb    { background: rgba(199,210,254,0.7); border-radius: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.35); }
+
+  /* ── Focus ring ── */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500;
   }
 }
 
-/* ─── Clerk component overrides ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Clerk component overrides
+═══════════════════════════════════════════════════════════ */
 
-/* Strip all card shells — our own card wrapper provides the visual container */
 .cl-rootBox,
 .cl-cardBox,
 .cl-card,
@@ -46,7 +112,6 @@
   width: 100% !important;
 }
 
-/* Header */
 .cl-headerTitle {
   font-size: 1.5rem !important;
   font-weight: 800 !important;
@@ -57,8 +122,6 @@
   font-size: 0.875rem !important;
   color: #8A93A6 !important;
 }
-
-/* Form field inputs */
 .cl-formFieldInput {
   border-radius: 0.5rem !important;
   border: 1px solid #E4E8EF !important;
@@ -66,8 +129,8 @@
   font-size: 0.875rem !important;
   padding: 0 0.875rem !important;
   color: #111827 !important;
-  transition: border-color 0.15s, box-shadow 0.15s !important;
   background: #ffffff !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
 }
 .cl-formFieldInput:focus {
   border-color: #0057A8 !important;
@@ -79,8 +142,6 @@
   font-weight: 500 !important;
   color: #374151 !important;
 }
-
-/* Primary action button — Doppelmayr blue */
 .cl-formButtonPrimary {
   background-color: #0057A8 !important;
   border-radius: 0.5rem !important;
@@ -88,17 +149,10 @@
   font-size: 0.875rem !important;
   font-weight: 600 !important;
   letter-spacing: 0 !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
   transition: background-color 0.15s !important;
 }
-.cl-formButtonPrimary:hover {
-  background-color: #004d97 !important;
-}
-.cl-formButtonPrimary:active {
-  background-color: #003B73 !important;
-}
-
-/* Social buttons */
+.cl-formButtonPrimary:hover  { background-color: #004d97 !important; }
+.cl-formButtonPrimary:active { background-color: #003B73 !important; }
 .cl-socialButtonsBlockButton {
   border: 1px solid #E4E8EF !important;
   border-radius: 0.5rem !important;
@@ -112,40 +166,19 @@
   background: #F5F7FA !important;
   border-color: #0057A8 !important;
 }
-
-/* Divider */
 .cl-dividerLine { background: #E4E8EF !important; }
 .cl-dividerText  { color: #8A93A6 !important; font-size: 0.75rem !important; }
-
-/* Footer link */
-.cl-footerActionLink {
-  color: #0057A8 !important;
-  font-weight: 600 !important;
-}
+.cl-footerActionLink       { color: #0057A8 !important; font-weight: 600 !important; }
 .cl-footerActionLink:hover { color: #003B73 !important; }
-
-/* Footer text */
 .cl-footerActionText { color: #8A93A6 !important; font-size: 0.875rem !important; }
-
-/* Internal link (forgot password etc.) */
-.cl-formFieldAction {
-  color: #0057A8 !important;
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
-}
-
-/* Alert / error messages */
+.cl-formFieldAction  { color: #0057A8 !important; font-size: 0.75rem !important; font-weight: 500 !important; }
 .cl-formFieldErrorText { font-size: 0.75rem !important; }
 .cl-alert { border-radius: 0.5rem !important; }
-
-/* OTP / verification inputs */
 .cl-otpCodeFieldInput {
   border-radius: 0.5rem !important;
   border: 1px solid #E4E8EF !important;
   font-size: 1.25rem !important;
 }
-
-/* Hide Clerk "Secured by Clerk" / "Development mode" footer entirely */
 .cl-footer,
 .cl-internal-footer,
 .cl-footerPages,

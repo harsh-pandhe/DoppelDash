@@ -3,8 +3,11 @@ import { NextResponse } from 'next/server'
 
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/'])
 
+// Clerk UserProfile embeds sub-routes under /settings — let them through auth check
+const isSettingsSubRoute = createRouteMatcher(['/settings/(.*)'])
+
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  if (!isPublicRoute(request) && !isSettingsSubRoute(request)) {
     const { userId } = await auth()
     if (!userId) {
       const signInUrl = new URL('/sign-in', request.url)

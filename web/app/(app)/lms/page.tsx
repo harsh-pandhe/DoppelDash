@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, CalendarClock, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight, List, Calendar, Filter } from 'lucide-react'
+import { Plus, CalendarClock, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight, List, Calendar, Filter, History } from 'lucide-react'
+import { ListSkeleton } from '@/components/ui/skeleton'
+import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@clerk/nextjs'
@@ -14,6 +16,7 @@ interface Leave {
   _id: string; userId: string; userName: string; type: string
   startDate: string; endDate: string; days: number; reason: string
   status: 'pending' | 'approved' | 'rejected'; managerNote?: string
+  medicalDocs?: string[]; createdAt?: string
 }
 
 const STATUS_MAP = {
@@ -165,14 +168,17 @@ export default function LMSPage() {
 
   const fetchLeaves = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams()
-    if (filter !== 'all') params.set('status', filter)
-    if (dateFrom) params.set('from', dateFrom)
-    if (dateTo)   params.set('to',   dateTo)
-    const res = await fetch(`/api/lms${params.toString() ? '?' + params : ''}`)
-    const data = await res.json()
-    setLeaves(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const params = new URLSearchParams()
+      if (filter !== 'all') params.set('status', filter)
+      if (dateFrom) params.set('from', dateFrom)
+      if (dateTo)   params.set('to',   dateTo)
+      const res = await fetch(`/api/lms${params.toString() ? '?' + params : ''}`)
+      if (!res.ok) { setLeaves([]); return }
+      const data = await res.json()
+      setLeaves(Array.isArray(data) ? data : [])
+    } catch { setLeaves([]) }
+    finally { setLoading(false) }
   }, [filter, dateFrom, dateTo])
 
   useEffect(() => { fetchLeaves() }, [fetchLeaves])
@@ -196,7 +202,7 @@ export default function LMSPage() {
         <div className="flex items-center gap-3 flex-wrap justify-between">
           <div className="flex gap-2 flex-wrap">
             {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
-              <button key={s} onClick={() => setFilter(s)}
+              <button type="button" key={s} onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all
                   ${filter === s ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
                 {s}
@@ -213,7 +219,7 @@ export default function LMSPage() {
             {/* View toggle */}
             <div className="flex items-center bg-white border border-surface-border rounded-lg p-0.5">
               {([['list', List], ['calendar', Calendar]] as const).map(([v, Icon]) => (
-                <button key={v} onClick={() => setView(v)}
+                <button type="button" key={v} onClick={() => setView(v)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all
                     ${view === v ? 'bg-brand-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                   <Icon className="w-3.5 h-3.5" />{v.charAt(0).toUpperCase() + v.slice(1)}
@@ -270,9 +276,7 @@ export default function LMSPage() {
         {/* List view */}
         {view === 'list' && (
           loading ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-surface-border animate-pulse" />)}
-            </div>
+            <ListSkeleton rows={4} />
           ) : leaves.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-center">
               <CalendarClock className="w-12 h-12 text-brand-200 mb-3" />
@@ -286,7 +290,8 @@ export default function LMSPage() {
                 const s = STATUS_MAP[leave.status]
                 const SIcon = s.icon
                 return (
-                  <Card key={leave._id} className="hover:shadow-sm transition-shadow">
+                  <Link key={leave._id} href={`/lms/${leave._id}`} className="block">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4 flex items-start gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -302,16 +307,32 @@ export default function LMSPage() {
                         <p className="text-xs text-surface-muted mt-0.5">
                           {new Date(leave.startDate).toLocaleDateString('en-IN')} — {new Date(leave.endDate).toLocaleDateString('en-IN')} · <strong>{leave.days}</strong> day{leave.days > 1 ? 's' : ''}
                         </p>
+                        {leave.createdAt && (
+                          <p className="text-[11px] text-surface-muted mt-0.5 flex items-center gap-1">
+                            <History className="w-3 h-3" /> Submitted {timeAgo(leave.createdAt)}
+                          </p>
+                        )}
                         {leave.managerNote && <p className="text-xs text-surface-muted italic mt-1">Note: {leave.managerNote}</p>}
+                        {leave.medicalDocs && leave.medicalDocs.length > 0 && (
+                          <div className="flex gap-1.5 mt-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                            {leave.medicalDocs.map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noreferrer"
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors">
+                                Doc {i + 1}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {isManager && leave.status === 'pending' && (
-                        <div className="flex gap-2 flex-shrink-0">
+                        <div className="flex gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                           <RejectDialog onConfirm={n => handleAction(leave._id, 'rejected', n)} />
                           <Button type="button" size="sm" onClick={() => handleAction(leave._id, 'approved')}>Approve</Button>
                         </div>
                       )}
                     </CardContent>
                   </Card>
+                  </Link>
                 )
               })}
             </div>

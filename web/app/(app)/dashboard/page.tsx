@@ -47,19 +47,14 @@ async function getData(userId: string, role: string) {
   }
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  pending:         'bg-yellow-100 text-yellow-700',
-  approved:        'bg-green-100  text-green-700',
-  rejected:        'bg-red-100    text-red-700',
-  pending_manager: 'bg-yellow-100 text-yellow-700',
-  pending_boss:    'bg-blue-100   text-blue-700',
-  paid:            'bg-green-100  text-green-700',
-}
+import { statusBadge, statusLabel } from '@/lib/statusColors'
+
+const STAGGER = ['animate-fade-up-1', 'animate-fade-up-2', 'animate-fade-up-3', 'animate-fade-up-4']
 
 export default async function DashboardPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
-  const user = await currentUser()
+  const user = await currentUser().catch(() => null)
   const role = (user?.unsafeMetadata?.role as string) || 'employee'
   const d = await getData(userId, role)
   const isManagerOrBoss = role === 'manager' || role === 'boss'
@@ -73,17 +68,17 @@ export default async function DashboardPage() {
   return (
     <>
       <Header title="Dashboard" />
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 p-6 space-y-6 animate-fade-in">
 
         {/* Greeting */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900">
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
               Good {greeting()}, {user?.firstName || 'there'} 👋
             </h2>
-            <p className="text-sm text-surface-muted mt-0.5">Here&apos;s your snapshot for today.</p>
+            <p className="text-sm text-surface-muted mt-0.5">Here&apos;s your workspace snapshot for today.</p>
           </div>
-          <Badge variant={role === 'boss' ? 'warning' : role === 'manager' ? 'default' : 'secondary'} className="capitalize text-xs px-3 py-1">
+          <Badge variant={role === 'boss' ? 'warning' : role === 'manager' ? 'default' : 'secondary'} className="capitalize text-xs px-3 py-1 font-bold tracking-wide">
             {role}
           </Badge>
         </div>
@@ -106,15 +101,15 @@ export default async function DashboardPage() {
 
         {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {statCards.map(({ title, value, icon: Icon, color, bg, href }) => (
-            <Link key={title} href={href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          {statCards.map(({ title, value, icon: Icon, color, bg, href }, i) => (
+            <Link key={title} href={href} className={STAGGER[i]}>
+              <Card className="stat-card cursor-pointer h-full">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
                     <Icon className={`w-6 h-6 ${color}`} />
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-gray-900">{value}</p>
+                    <p className="text-2xl font-extrabold text-gray-900 tabular-nums">{value}</p>
                     <p className="text-sm text-surface-muted">{title}</p>
                   </div>
                 </CardContent>
@@ -124,25 +119,29 @@ export default async function DashboardPage() {
         </div>
 
         {/* Personal stats bar */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
-              <TrendingUp className="w-5 h-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-gray-900">{d.approvedDays} <span className="text-sm font-normal text-surface-muted">days</span></p>
-              <p className="text-xs text-surface-muted">Leave taken this year</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-surface-border p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-              <Receipt className="w-5 h-5 text-orange-500" />
-            </div>
-            <div>
-              <p className="text-lg font-extrabold text-gray-900">₹{d.paidTotal.toLocaleString('en-IN')} </p>
-              <p className="text-xs text-surface-muted">Reimbursed this year</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-4 animate-fade-up-4">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-lg font-extrabold text-gray-900 tabular-nums">{d.approvedDays} <span className="text-sm font-normal text-surface-muted">days</span></p>
+                <p className="text-xs text-surface-muted">Leave taken this year</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                <Receipt className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-lg font-extrabold text-gray-900 tabular-nums">₹{d.paidTotal.toLocaleString('en-IN')}</p>
+                <p className="text-xs text-surface-muted">Reimbursed this year</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Manager pending queue */}
@@ -200,8 +199,8 @@ export default async function DashboardPage() {
                     <p className="text-xs text-surface-muted">{String(l.days || '')} days · {new Date(String(l.startDate)).toLocaleDateString('en-IN')}</p>
                     {isManagerOrBoss && <p className="text-xs text-surface-muted font-medium">{String(l.userName || '')}</p>}
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ml-3 flex-shrink-0 ${STATUS_COLORS[String(l.status)] || 'bg-gray-100 text-gray-700'}`}>
-                    {String(l.status).replace('_', ' ')}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-3 flex-shrink-0 ${statusBadge(String(l.status))}`}>
+                    {statusLabel(String(l.status))}
                   </span>
                 </div>
               ))}
@@ -226,8 +225,8 @@ export default async function DashboardPage() {
                     <p className="text-xs text-surface-muted">₹{Number(e.amount || 0).toLocaleString('en-IN')} · {new Date(String(e.startDate)).toLocaleDateString('en-IN')}</p>
                     {isManagerOrBoss && <p className="text-xs text-surface-muted font-medium">{String(e.userName || '')}</p>}
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ml-3 flex-shrink-0 ${STATUS_COLORS[String(e.status)] || 'bg-gray-100 text-gray-700'}`}>
-                    {String(e.status).replace('_', ' ')}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-3 flex-shrink-0 ${statusBadge(String(e.status))}`}>
+                    {statusLabel(String(e.status))}
                   </span>
                 </div>
               ))}

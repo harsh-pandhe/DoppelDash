@@ -6,7 +6,7 @@ import Announcement from '@/models/Announcement'
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = await currentUser()
+  const user = await currentUser().catch(() => null)
   const role = (user?.unsafeMetadata?.role as string) || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = await currentUser()
+  const user = await currentUser().catch(() => null)
   const role = (user?.unsafeMetadata?.role as string) || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

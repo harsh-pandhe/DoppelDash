@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, Download, Filter } from 'lucide-react'
+import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, Download, Filter, Loader2, History } from 'lucide-react'
+import { ListSkeleton } from '@/components/ui/skeleton'
+import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@clerk/nextjs'
@@ -9,10 +11,12 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import FileUploader from '@/components/ui/file-uploader'
 
 interface Expense {
   _id: string; userId: string; userName: string; title: string; reason: string
   amount: number; startDate: string; status: string; managerNote?: string; bossNote?: string
+  receipts?: string[]; createdAt?: string
 }
 
 const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'default' | 'success' | 'destructive' | 'secondary'; icon: React.ElementType; pipeline: number }> = {
@@ -20,6 +24,50 @@ const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'default'
   pending_boss:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2 },
   paid:            { label: 'Paid',            variant: 'success',    icon: CheckCircle2, pipeline: 3 },
   rejected:        { label: 'Rejected',        variant: 'destructive',icon: XCircle,      pipeline: 0 },
+}
+
+function PaymentProofDialog({ onConfirm }: { onConfirm: (proofUrl: string) => void }) {
+  const [open,    setOpen]    = useState(false)
+  const [proof,   setProof]   = useState<string[]>([])
+  const [saving,  setSaving]  = useState(false)
+
+  const confirm = async () => {
+    setSaving(true)
+    onConfirm(proof[0] || '')
+    setProof([])
+    setOpen(false)
+    setSaving(false)
+  }
+
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700">Mark Paid</Button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Confirm Payment</Dialog.Title>
+          <Dialog.Description className="text-sm text-surface-muted mb-4">Upload the bank transfer screenshot or reference number to close the audit trail.</Dialog.Description>
+          <FileUploader
+            label="Payment Proof"
+            hint="Bank transfer screenshot or reference · Optional"
+            maxFiles={1}
+            onChange={setProof}
+          />
+          <div className="flex gap-3 mt-5 justify-end">
+            <Dialog.Close asChild>
+              <Button type="button" variant="outline" size="sm">Cancel</Button>
+            </Dialog.Close>
+            <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700 gap-2" onClick={confirm} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Confirm Paid
+            </Button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
 }
 
 function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
@@ -83,22 +131,25 @@ export default function RMSPage() {
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
-    const params = new URLSearchParams()
-    if (filter !== 'all') params.set('status', filter)
-    if (dateFrom) params.set('from', dateFrom)
-    if (dateTo)   params.set('to',   dateTo)
-    const res  = await fetch(`/api/rms${params.toString() ? '?' + params : ''}`)
-    const data = await res.json()
-    setExpenses(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const params = new URLSearchParams()
+      if (filter !== 'all') params.set('status', filter)
+      if (dateFrom) params.set('from', dateFrom)
+      if (dateTo)   params.set('to',   dateTo)
+      const res = await fetch(`/api/rms${params.toString() ? '?' + params : ''}`)
+      if (!res.ok) { setExpenses([]); return }
+      const data = await res.json()
+      setExpenses(Array.isArray(data) ? data : [])
+    } catch { setExpenses([]) }
+    finally { setLoading(false) }
   }, [filter, dateFrom, dateTo])
 
   useEffect(() => { fetchExpenses() }, [fetchExpenses])
 
-  const handleAction = async (id: string, status: string, note?: string) => {
+  const handleAction = async (id: string, status: string, note?: string, paymentProof?: string) => {
     const body: Record<string, string> = { status }
     if (note) body[isManager && !isBoss ? 'managerNote' : 'bossNote'] = note
-    if (status === 'paid') body.paidBy = user?.id || ''
+    if (status === 'paid') { body.paidBy = user?.id || ''; if (paymentProof) body.paymentProof = paymentProof }
     await fetch(`/api/rms/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -189,7 +240,7 @@ export default function RMSPage() {
 
         {/* List */}
         {loading ? (
-          <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-surface-border animate-pulse" />)}</div>
+          <ListSkeleton rows={4} />
         ) : expenses.length === 0 ? (
           <div className="flex flex-col items-center py-20 text-center">
             <Receipt className="w-12 h-12 text-brand-200 mb-3" />
@@ -203,7 +254,8 @@ export default function RMSPage() {
               const s = STATUS_MAP[exp.status] || STATUS_MAP.rejected
               const SIcon = s.icon
               return (
-                <Card key={exp._id} className="hover:shadow-sm transition-shadow">
+                <Link key={exp._id} href={`/rms/${exp._id}`} className="block">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
@@ -221,11 +273,26 @@ export default function RMSPage() {
                         <div className="flex items-center gap-4 mt-1.5 flex-wrap">
                           <p className="text-sm font-extrabold text-gray-900">₹{exp.amount.toLocaleString('en-IN')}</p>
                           <p className="text-xs text-surface-muted">{new Date(exp.startDate).toLocaleDateString('en-IN')}</p>
+                          {exp.createdAt && (
+                            <p className="text-[11px] text-surface-muted flex items-center gap-1">
+                              <History className="w-3 h-3" /> {timeAgo(exp.createdAt)}
+                            </p>
+                          )}
                         </div>
                         {(exp.managerNote || exp.bossNote) && (
                           <p className="text-xs text-surface-muted italic mt-1">
                             Note: {exp.managerNote || exp.bossNote}
                           </p>
+                        )}
+                        {exp.receipts && exp.receipts.length > 0 && (
+                          <div className="flex gap-1.5 mt-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                            {exp.receipts.map((url, i) => (
+                              <a key={i} href={url} target="_blank" rel="noreferrer"
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-colors">
+                                Receipt {i + 1}
+                              </a>
+                            ))}
+                          </div>
                         )}
 
                         {/* Pipeline dots */}
@@ -244,7 +311,7 @@ export default function RMSPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex flex-col gap-2 flex-shrink-0">
+                      <div className="flex flex-col gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                         {isManager && !isBoss && exp.status === 'pending_manager' && (
                           <>
                             <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_boss')}>Approve</Button>
@@ -253,7 +320,7 @@ export default function RMSPage() {
                         )}
                         {isBoss && exp.status === 'pending_boss' && (
                           <>
-                            <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAction(exp._id, 'paid')}>Mark Paid</Button>
+                            <PaymentProofDialog onConfirm={proof => handleAction(exp._id, 'paid', undefined, proof)} />
                             <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                           </>
                         )}
@@ -261,6 +328,7 @@ export default function RMSPage() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               )
             })}
           </div>

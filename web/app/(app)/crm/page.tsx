@@ -68,18 +68,27 @@ function exportCSV(contacts: Contact[]) {
 
 export default function CRMPage() {
   const toast = useToast()
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [query,    setQuery]    = useState('')
-  const [tagFilter,setTagFilter]= useState('')
-  const [loading,  setLoading]  = useState(true)
+  const [contacts,      setContacts]      = useState<Contact[]>([])
+  const [query,         setQuery]         = useState('')
+  const [debouncedQuery,setDebouncedQuery]= useState('')
+  const [tagFilter,     setTagFilter]     = useState('')
+  const [loading,       setLoading]       = useState(true)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
 
   const fetchContacts = useCallback(async () => {
     setLoading(true)
-    const res  = await fetch(`/api/crm?q=${encodeURIComponent(query)}`)
-    const data = await res.json()
-    setContacts(Array.isArray(data) ? data : [])
-    setLoading(false)
-  }, [query])
+    try {
+      const res = await fetch(`/api/crm?q=${encodeURIComponent(debouncedQuery)}`)
+      if (!res.ok) { setContacts([]); return }
+      const data = await res.json()
+      setContacts(Array.isArray(data) ? data : [])
+    } catch { setContacts([]) }
+    finally { setLoading(false) }
+  }, [debouncedQuery])
 
   useEffect(() => { fetchContacts() }, [fetchContacts])
 
@@ -173,9 +182,11 @@ export default function CRMPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center flex-shrink-0">
-                      <span className="text-brand-700 font-bold text-sm">{c.name[0]?.toUpperCase()}</span>
+                      <span className="text-brand-700 font-bold text-xs">
+                        {c.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)}
+                      </span>
                     </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1">
                       <Link href={`/crm/${c._id}`}>
                         <button type="button" aria-label="Edit contact"
                           className="p-1.5 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600 transition-colors">
