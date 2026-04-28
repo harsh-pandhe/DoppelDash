@@ -12,9 +12,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const body   = await req.json()
   const client = await clerkClient()
 
-  if (body.role !== undefined) {
+  if (body.permissions !== undefined) {
+    const target = await client.users.getUser(params.userId)
+    const existing = target.unsafeMetadata || {}
     await client.users.updateUserMetadata(params.userId, {
-      unsafeMetadata: { role: body.role },
+      unsafeMetadata: { ...existing, permissions: body.permissions },
+    })
+    writeAudit({
+      action: 'user.permissions_changed', performedBy: actorId,
+      performedByName: actor?.fullName || 'Boss', targetId: params.userId,
+      targetType: 'user', metadata: { permissions: body.permissions },
+    })
+  }
+
+  if (body.role !== undefined) {
+    const target = await client.users.getUser(params.userId)
+    const existing = target.unsafeMetadata || {}
+    await client.users.updateUserMetadata(params.userId, {
+      unsafeMetadata: { ...existing, role: body.role },
     })
     writeAudit({
       action:          'user.role_changed',

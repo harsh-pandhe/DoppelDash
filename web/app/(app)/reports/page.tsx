@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Download, TrendingUp, Receipt, Cake, Users } from 'lucide-react'
+import { Download, TrendingUp, Receipt, Cake, Users, FileSpreadsheet, FileText } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,11 +36,72 @@ function exportExpenseCSV(data: ExpenseSummaryRow[]) {
   a.download = `expense-report-${Date.now()}.csv`; a.click()
 }
 
+async function exportLeaveXLSX(data: LeaveSummaryRow[]) {
+  const { utils, writeFile } = await import('xlsx')
+  const ws = utils.aoa_to_sheet([
+    ['Employee', 'Total Requests', 'Total Days', 'Approved'],
+    ...data.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved]),
+  ])
+  const wb = utils.book_new()
+  utils.book_append_sheet(wb, ws, 'Leave Report')
+  writeFile(wb, `leave-report-${Date.now()}.xlsx`)
+}
+
+async function exportExpenseXLSX(data: ExpenseSummaryRow[]) {
+  const { utils, writeFile } = await import('xlsx')
+  const ws = utils.aoa_to_sheet([
+    ['Employee', 'Total Requests', 'Total Amount (₹)', 'Paid (₹)'],
+    ...data.map(r => [r._id.userName, r.totalRequests, r.totalAmount, r.paid]),
+  ])
+  const wb = utils.book_new()
+  utils.book_append_sheet(wb, ws, 'Expense Report')
+  writeFile(wb, `expense-report-${Date.now()}.xlsx`)
+}
+
+async function exportFullPDF(reportData: ReportData, dateLabel: string) {
+  const { default: jsPDF } = await import('jspdf')
+  const { default: autoTable } = await import('jspdf-autotable')
+  const doc = new jsPDF()
+
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('DoppelDash — HR Report', 14, 20)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Doppelmayr India Pvt Ltd  |  ${dateLabel}  |  Generated ${new Date().toLocaleDateString('en-IN')}`, 14, 27)
+
+  let y = 36
+
+  // Leave summary
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold')
+  doc.text('Leave Summary by Employee', 14, y); y += 4
+  autoTable(doc, {
+    startY: y,
+    head: [['Employee', 'Requests', 'Days Taken', 'Approved']],
+    body: reportData.leaveSummary.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved]),
+    styles: { fontSize: 9 }, headStyles: { fillColor: [0, 87, 168] },
+  })
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
+
+  // Expense summary
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold')
+  doc.text('Expense Summary by Employee', 14, y); y += 4
+  autoTable(doc, {
+    startY: y,
+    head: [['Employee', 'Requests', 'Total (₹)', 'Paid (₹)']],
+    body: reportData.expenseSummary.map(r => [r._id.userName, r.totalRequests, `Rs.${r.totalAmount.toLocaleString('en-IN')}`, `Rs.${r.paid.toLocaleString('en-IN')}`]),
+    styles: { fontSize: 9 }, headStyles: { fillColor: [234, 88, 12] },
+  })
+
+  doc.save(`doppeldash-report-${Date.now()}.pdf`)
+}
+
 export default function ReportsPage() {
   const [data,    setData]    = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [from, setFrom] = useState('')
   const [to,   setTo]   = useState('')
+  const dateLabel = from || to ? `${from || '…'} to ${to || '…'}` : 'All time'
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -106,9 +167,14 @@ export default function ReportsPage() {
                   <TrendingUp className="w-4 h-4 text-purple-500" /> Leave Summary by Employee
                 </CardTitle>
                 {data.leaveSummary.length > 0 && (
-                  <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => exportLeaveCSV(data.leaveSummary)}>
-                    <Download className="w-3.5 h-3.5" /> CSV
-                  </Button>
+                  <div className="flex gap-1.5">
+                    <Button type="button" variant="outline" size="sm" className="gap-1 text-green-700 border-green-200 hover:bg-green-50" onClick={() => exportLeaveXLSX(data.leaveSummary)}>
+                      <FileSpreadsheet className="w-3.5 h-3.5" /> XLSX
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => exportLeaveCSV(data.leaveSummary)}>
+                      <Download className="w-3.5 h-3.5" /> CSV
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
               <CardContent className="pt-0 overflow-x-auto">
@@ -143,9 +209,17 @@ export default function ReportsPage() {
                   <Receipt className="w-4 h-4 text-orange-500" /> Expense Summary by Employee
                 </CardTitle>
                 {data.expenseSummary.length > 0 && (
-                  <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => exportExpenseCSV(data.expenseSummary)}>
-                    <Download className="w-3.5 h-3.5" /> CSV
-                  </Button>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <Button type="button" variant="outline" size="sm" className="gap-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => exportFullPDF(data, dateLabel)}>
+                      <FileText className="w-3.5 h-3.5" /> Full PDF
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="gap-1 text-green-700 border-green-200 hover:bg-green-50" onClick={() => exportExpenseXLSX(data.expenseSummary)}>
+                      <FileSpreadsheet className="w-3.5 h-3.5" /> XLSX
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => exportExpenseCSV(data.expenseSummary)}>
+                      <Download className="w-3.5 h-3.5" /> CSV
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
               <CardContent className="pt-0 overflow-x-auto">

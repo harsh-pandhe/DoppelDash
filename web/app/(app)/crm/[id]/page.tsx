@@ -4,8 +4,9 @@ import { useRouter, useParams } from 'next/navigation'
 import {
   ArrowLeft, Loader2, Save, Trash2, Mail, Phone,
   Building2, Tag, FileText, Calendar, User, Plus,
-  MessageSquare, Sparkles, Copy, Check, Camera,
+  MessageSquare, Sparkles, Copy, Check, Camera, QrCode, Share2,
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import Header from '@/components/layout/Header'
@@ -191,6 +192,59 @@ function GenerateMessageDialog({ contactId }: { contactId: string }) {
   )
 }
 
+function ShareQRDialog({ contactId, contactName }: { contactId: string; contactName: string }) {
+  const [open,    setOpen]    = useState(false)
+  const [copied,  setCopied]  = useState(false)
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/contact/${contactId}`
+    : `/contact/${contactId}`
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5">
+          <Share2 className="w-3.5 h-3.5" /> Share
+        </Button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Share Contact Card</Dialog.Title>
+          <Dialog.Description className="text-sm text-surface-muted mb-4">
+            Scan QR or copy link to share {contactName}&apos;s public contact page.
+          </Dialog.Description>
+          <div className="flex justify-center mb-4 p-4 bg-white rounded-xl border border-surface-border">
+            <QRCodeSVG value={shareUrl} size={160} includeMargin />
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border mb-4">
+            <p className="text-xs text-gray-600 flex-1 truncate">{shareUrl}</p>
+            <button type="button" onClick={copy}
+              className="flex-shrink-0 text-brand-500 hover:text-brand-700 transition-colors">
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Dialog.Close asChild>
+              <Button type="button" variant="outline" size="sm">Close</Button>
+            </Dialog.Close>
+            <a href={shareUrl} target="_blank" rel="noreferrer">
+              <Button type="button" size="sm" className="gap-1.5">
+                <QrCode className="w-3.5 h-3.5" /> Open Page
+              </Button>
+            </a>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
 export default function ContactDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -314,6 +368,7 @@ export default function ContactDetailPage() {
             </div>
             <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
               <GenerateMessageDialog contactId={id} />
+              <ShareQRDialog contactId={id} contactName={contact?.name || ''} />
               <Button type="button" variant="outline" size="sm" onClick={() => setEditing(!editing)}>
                 {editing ? 'Cancel' : 'Edit'}
               </Button>

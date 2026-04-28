@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: doppeldash-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: doppeldash
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: doppeldash-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mongo
+    env_file:
+      - web/.env.local
+    environment:
+      # Override MONGODB_URI to point at the docker mongo service
+      MONGODB_URI: mongodb://mongo:27017/doppeldash
+      NODE_ENV: production
+
+volumes:
+  mongo-data:

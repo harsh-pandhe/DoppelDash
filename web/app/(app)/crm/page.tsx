@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Search, Phone, Mail, Building2, Trash2, Pencil, Download, Tag, Users } from 'lucide-react'
+import { Plus, Search, Phone, Mail, Building2, Trash2, Pencil, Download, Tag, Users, Megaphone } from 'lucide-react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import Header from '@/components/layout/Header'
@@ -117,12 +117,17 @@ export default function CRMPage() {
             <Input placeholder="Search contacts…" value={query}
               onChange={e => setQuery(e.target.value)} className="pl-9" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {contacts.length > 0 && (
               <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => exportCSV(contacts)}>
                 <Download className="w-4 h-4" /> Export
               </Button>
             )}
+            <Link href="/crm/campaigns">
+              <Button type="button" variant="outline" size="sm" className="gap-2 text-purple-600 border-purple-200 hover:bg-purple-50">
+                <Megaphone className="w-4 h-4" /> Campaign
+              </Button>
+            </Link>
             <Link href="/crm/new">
               <Button className="gap-2"><Plus className="w-4 h-4" /> Add Contact</Button>
             </Link>

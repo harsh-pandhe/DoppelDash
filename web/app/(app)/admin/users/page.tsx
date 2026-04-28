@@ -1,15 +1,17 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Shield, User, Briefcase, Check, Loader2, Ban, UserCheck, Save, Search } from 'lucide-react'
+import { Shield, User, Briefcase, Check, Loader2, Ban, UserCheck, Save, Search, Database, Lock } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
+import { ALL_PERMISSIONS, type Permission } from '@/lib/permissions'
 
 interface UserRow {
   id: string; name: string; email: string; role: string; banned: boolean
   lastActive: number | null; balance: { casual: number; medical: number; earned: number }
+  permissions?: Permission[]
 }
 
 const ROLES = ['employee', 'manager', 'boss'] as const
@@ -23,9 +25,28 @@ function UserCard({ u, onUpdate }: { u: UserRow; onUpdate: () => void }) {
   const toast  = useToast()
   const [roleUpdating, setRoleUpdating] = useState(false)
   const [banUpdating,  setBanUpdating]  = useState(false)
-  const [editBal, setEditBal] = useState(false)
-  const [bal, setBal] = useState(u.balance)
-  const [savingBal, setSavingBal] = useState(false)
+  const [editBal,  setEditBal]  = useState(false)
+  const [bal,      setBal]      = useState(u.balance)
+  const [savingBal,setSavingBal]= useState(false)
+  const [showPerms,setShowPerms]= useState(false)
+  const [savingPerms,setSavingPerms] = useState(false)
+  const [perms, setPerms] = useState<Permission[]>(u.permissions || [])
+
+  const togglePerm = (perm: Permission) => {
+    setPerms(prev => prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm])
+  }
+
+  const savePerms = async () => {
+    setSavingPerms(true)
+    await fetch(`/api/admin/users/${u.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissions: perms }),
+    })
+    toast('Permissions saved', 'success')
+    setSavingPerms(false)
+    setShowPerms(false)
+    onUpdate()
+  }
 
   const changeRole = async (role: string) => {
     if (role === u.role) return
@@ -133,15 +154,53 @@ function UserCard({ u, onUpdate }: { u: UserRow; onUpdate: () => void }) {
           </div>
 
           {/* Actions */}
-          <Button type="button" size="sm" variant="outline"
-            className={u.banned ? 'text-green-600 border-green-200' : 'text-red-600 border-red-200 hover:bg-red-50'}
-            onClick={toggleBan} disabled={banUpdating}>
-            {banUpdating
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : u.banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />
-            }
-          </Button>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button type="button" size="sm" variant="outline" title="Manage permissions"
+              className={showPerms ? 'bg-purple-50 border-purple-300 text-purple-600' : 'text-purple-600 border-purple-200 hover:bg-purple-50'}
+              onClick={() => setShowPerms(p => !p)}>
+              <Lock className="w-3.5 h-3.5" />
+            </Button>
+            <Button type="button" size="sm" variant="outline"
+              className={u.banned ? 'text-green-600 border-green-200' : 'text-red-600 border-red-200 hover:bg-red-50'}
+              onClick={toggleBan} disabled={banUpdating}>
+              {banUpdating
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : u.banned ? <UserCheck className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />
+              }
+            </Button>
+          </div>
         </div>
+        {/* End flex row */}
+
+        {/* Permissions panel */}
+        {showPerms && (
+          <div className="mt-3 pt-3 border-t border-surface-border space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-surface-muted flex items-center gap-1">
+              <Lock className="w-3 h-3" /> Extra Permissions (employee only — ignored for manager/boss)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {ALL_PERMISSIONS.map(p => (
+                <label key={p.key} className="flex items-start gap-2 cursor-pointer p-2 rounded-lg hover:bg-surface transition-colors">
+                  <input type="checkbox" className="mt-0.5 accent-brand-500"
+                    checked={perms.includes(p.key)}
+                    onChange={() => togglePerm(p.key)} />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900">{p.label}</p>
+                    <p className="text-[10px] text-surface-muted">{p.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" className="gap-1.5" onClick={savePerms} disabled={savingPerms}>
+                {savingPerms ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                Save Permissions
+              </Button>
+              <button type="button" className="text-xs text-surface-muted hover:text-red-500"
+                onClick={() => { setPerms(u.permissions || []); setShowPerms(false) }}>Cancel</button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -151,6 +210,20 @@ export default function AdminUsersPage() {
   const [users,   setUsers]   = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
+  const [seeding, setSeeding] = useState(false)
+  const toast = useToast()
+
+  const runSeed = async () => {
+    if (!confirm('Wipe and reseed all dev data for your account?')) return
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/dev/seed', { method: 'POST' })
+      const d   = await res.json()
+      if (res.ok) toast(`Seeded: ${d.seeded?.contacts}c / ${d.seeded?.leaves}l / ${d.seeded?.expenses}e`, 'success')
+      else toast(d.error || 'Seed failed', 'error')
+    } catch { toast('Seed failed', 'error') }
+    setSeeding(false)
+  }
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -175,13 +248,22 @@ export default function AdminUsersPage() {
       <main className="flex-1 p-6 space-y-5 max-w-3xl">
         <div className="flex items-center gap-3 flex-wrap justify-between">
           <p className="text-sm text-surface-muted">Manage roles, leave balances, and account status for all employees.</p>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-muted pointer-events-none" />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or email…"
-              className="pl-9 h-9 pr-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 min-w-[220px]"
-            />
+          <div className="flex items-center gap-2">
+            {process.env.NODE_ENV !== 'production' && (
+              <Button type="button" variant="outline" size="sm" className="gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
+                onClick={runSeed} disabled={seeding}>
+                {seeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Database className="w-3.5 h-3.5" />}
+                Reseed Dev Data
+              </Button>
+            )}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-muted pointer-events-none" />
+              <input
+                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search by name or email…"
+                className="pl-9 h-9 pr-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 min-w-[220px]"
+              />
+            </div>
           </div>
         </div>
 

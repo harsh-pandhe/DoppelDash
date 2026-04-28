@@ -2,13 +2,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { UserProfile } from '@clerk/nextjs'
-import { Shield, User, Briefcase, ChevronDown, Check, Loader2, Mail, CheckCircle2, AlertCircle, RefreshCw, Inbox, Send, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Shield, User, Briefcase, ChevronDown, Check, Loader2, Mail, CheckCircle2, AlertCircle, RefreshCw, Inbox, Send, Trash2, Eye, EyeOff, Building2, Globe, Phone } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import FileUploader from '@/components/ui/file-uploader'
 
 const ROLES = [
   { value: 'employee', label: 'Employee',  desc: 'Standard access — submit leaves & expenses',              icon: User,      color: 'text-gray-500'  },
@@ -384,6 +385,102 @@ function OutlookConnect() {
   )
 }
 
+function OrgProfileCard() {
+  const { user } = useUser()
+  const toast  = useToast()
+  const role   = (user?.unsafeMetadata?.role as string) || 'employee'
+  const isBoss = role === 'boss'
+
+  const [form,    setForm]    = useState({ name: '', address: '', website: '', phone: '', email: '', logo: '' })
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
+  const [logo,    setLogo]    = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/org/settings').then(r => r.json()).then(d => {
+      setForm({ name: d.name || '', address: d.address || '', website: d.website || '', phone: d.phone || '', email: d.email || '', logo: d.logo || '' })
+      if (d.logo) setLogo([d.logo])
+    }).finally(() => setLoading(false))
+  }, [])
+
+  const save = async () => {
+    setSaving(true)
+    const payload = { ...form, logo: logo[0] || form.logo }
+    const res = await fetch('/api/org/settings', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (res.ok) toast('Org profile saved', 'success')
+    else toast('Save failed', 'error')
+    setSaving(false)
+  }
+
+  if (loading) return <div className="h-24 rounded-xl bg-surface-border animate-pulse" />
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-brand-500" /> Organisation Profile
+        </CardTitle>
+        <p className="text-xs text-surface-muted">Shown on reports and public contact pages.</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!isBoss && (
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Only boss can edit org profile.
+          </p>
+        )}
+
+        {/* Logo */}
+        <div className="flex items-center gap-4">
+          {(logo[0] || form.logo) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo[0] || form.logo} alt="Logo" className="w-16 h-16 rounded-xl object-contain border border-surface-border bg-white" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-brand-100 flex items-center justify-center">
+              <Building2 className="w-7 h-7 text-brand-500" />
+            </div>
+          )}
+          {isBoss && (
+            <FileUploader label="Logo" hint="PNG or SVG · Max 1 file" maxFiles={1}
+              onChange={urls => setLogo(urls)} disabled={saving} />
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label className="text-xs flex items-center gap-1"><Building2 className="w-3 h-3" /> Organisation Name</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={!isBoss} />
+          </div>
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label className="text-xs">Address</Label>
+            <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} disabled={!isBoss} placeholder="123, Industrial Area, Pune" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1"><Globe className="w-3 h-3" /> Website</Label>
+            <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} disabled={!isBoss} placeholder="www.doppelmayr.in" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</Label>
+            <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} disabled={!isBoss} placeholder="+91 20 xxxx xxxx" />
+          </div>
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Contact Email</Label>
+            <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!isBoss} placeholder="info@doppelmayr.in" />
+          </div>
+        </div>
+
+        {isBoss && (
+          <Button type="button" className="gap-2" onClick={save} disabled={saving}>
+            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save Profile</>}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function SettingsPage() {
   const { user } = useUser()
 
@@ -435,6 +532,9 @@ export default function SettingsPage() {
             <OutlookConnect />
           </CardContent>
         </Card>
+
+        {/* Org Profile */}
+        <OrgProfileCard />
 
         {/* Clerk UserProfile for password/2FA/etc */}
         <Card>

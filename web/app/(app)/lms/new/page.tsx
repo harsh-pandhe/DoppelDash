@@ -12,11 +12,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import FileUploader from '@/components/ui/file-uploader'
 
 const LEAVE_MAX: Record<string, number> = { casual: 12, medical: 6, earned: 15 }
+const LEAVE_DESC: Record<string, string> = {
+  casual:  'For personal errands, family events, or short personal time off.',
+  medical: 'For illness or medical procedures. Attach a prescription or certificate if available.',
+  earned:  'Accumulated paid leave. Plan in advance and get prior approval.',
+}
 
 export default function NewLeavePage() {
   const router = useRouter()
   const [form, setForm] = useState({ type: 'casual', startDate: '', endDate: '', reason: '' })
-  const [medicalDocs, setMedicalDocs] = useState<string[]>([])
+  const [docs, setDocs] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [used, setUsed] = useState<Record<string, number>>({ casual: 0, medical: 0, earned: 0 })
@@ -41,19 +46,20 @@ export default function NewLeavePage() {
     ? Math.max(1, Math.ceil((new Date(form.endDate).getTime() - new Date(form.startDate).getTime()) / 86400000) + 1)
     : 0
 
-  const needsMedicalDocs = form.type === 'medical' && days > 2
+  const isMedical      = form.type === 'medical'
+  const medicalRequired = isMedical && days > 2
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.startDate || !form.endDate || !form.reason.trim()) { setError('All fields are required.'); return }
     if (new Date(form.endDate) < new Date(form.startDate)) { setError('End date must be after start date.'); return }
-    if (needsMedicalDocs && medicalDocs.length === 0) { setError('Medical documents are required for medical leave > 2 days.'); return }
+    if (medicalRequired && docs.length === 0) { setError('Medical documents are required for medical leave > 2 days.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/lms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, days, medicalDocs }),
+        body: JSON.stringify({ ...form, days, medicalDocs: docs }),
       })
       if (!res.ok) throw new Error()
       router.push('/lms')
@@ -63,6 +69,9 @@ export default function NewLeavePage() {
     }
   }
 
+  const balance = Math.max(0, (LEAVE_MAX[form.type] ?? 0) - (used[form.type] ?? 0))
+  const balanceLow = balance <= 2
+
   return (
     <>
       <Header title="Request Leave" />
@@ -71,25 +80,38 @@ export default function NewLeavePage() {
           <ArrowLeft className="w-4 h-4" /> Back to Leave Management
         </Link>
         <Card>
-          <CardHeader><CardTitle>New Leave Request</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>New Leave Request</CardTitle>
+            <p className="text-sm text-surface-muted">Fill in the details below. Supporting documents can be attached for any leave type.</p>
+          </CardHeader>
           <CardContent>
             {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Leave type */}
               <div className="space-y-1.5">
                 <Label htmlFor="type">Leave Type</Label>
-                <select id="type" name="type" aria-label="Leave type" value={form.type} onChange={handleChange} className="flex h-10 w-full rounded-lg border border-surface-border bg-white px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                <select id="type" name="type" aria-label="Leave type" value={form.type} onChange={handleChange}
+                  className="flex h-10 w-full rounded-lg border border-surface-border bg-white px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
                   <option value="casual">Casual Leave</option>
                   <option value="medical">Medical Leave</option>
                   <option value="earned">Earned Leave</option>
                 </select>
+                <p className="text-xs text-surface-muted">{LEAVE_DESC[form.type]}</p>
                 {LEAVE_MAX[form.type] !== undefined && (
-                  <p className="text-xs text-surface-muted mt-1">
-                    Balance: <strong className={LEAVE_MAX[form.type] - used[form.type] <= 2 ? 'text-red-600' : 'text-emerald-600'}>
-                      {Math.max(0, LEAVE_MAX[form.type] - used[form.type])}
-                    </strong> / {LEAVE_MAX[form.type]} days remaining
+                  <p className="text-xs">
+                    Balance:{' '}
+                    <strong className={balanceLow ? 'text-red-600' : 'text-emerald-600'}>
+                      {balance}
+                    </strong>
+                    {' '}/ {LEAVE_MAX[form.type]} days remaining
+                    {balanceLow && balance > 0 && <span className="text-red-500 ml-1">— running low</span>}
+                    {balance === 0 && <span className="text-red-600 ml-1 font-semibold">— balance exhausted</span>}
                   </p>
                 )}
               </div>
+
+              {/* Dates */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="startDate">Start Date</Label>
@@ -101,10 +123,12 @@ export default function NewLeavePage() {
                 </div>
               </div>
               {days > 0 && (
-                <p className="text-sm text-brand-600 font-semibold -mt-1">
+                <p className="text-sm font-semibold text-brand-600 -mt-2">
                   Duration: <strong>{days}</strong> day{days > 1 ? 's' : ''}
                 </p>
               )}
+
+              {/* Reason */}
               <div className="space-y-1.5">
                 <Label htmlFor="reason">Reason</Label>
                 <textarea
@@ -115,18 +139,27 @@ export default function NewLeavePage() {
                 />
               </div>
 
-              {needsMedicalDocs && (
-                <FileUploader
-                  label="Medical Documents Required"
-                  hint="Prescription or hospital certificate · JPG, PNG, PDF · Max 5 files"
-                  required
-                  variant="danger"
-                  onChange={setMedicalDocs}
-                  disabled={loading}
-                />
-              )}
+              {/* Documents — medical required if >2 days, optional otherwise */}
+              <FileUploader
+                label={
+                  medicalRequired
+                    ? 'Medical Documents (Required)'
+                    : isMedical
+                      ? 'Medical Documents (Optional — recommended)'
+                      : 'Supporting Documents (Optional)'
+                }
+                hint={
+                  medicalRequired
+                    ? 'Prescription or hospital certificate · JPG, PNG, PDF · Max 5 files'
+                    : 'Attach any relevant documents · JPG, PNG, PDF · Max 5 files'
+                }
+                required={medicalRequired}
+                variant={medicalRequired ? 'danger' : 'default'}
+                onChange={setDocs}
+                disabled={loading}
+              />
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-1">
                 <Button type="submit" disabled={loading} className="gap-2">
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <><Save className="w-4 h-4" /> Submit Request</>}
                 </Button>

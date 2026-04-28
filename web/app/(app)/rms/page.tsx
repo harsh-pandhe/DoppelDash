@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, Download, Filter, Loader2, History } from 'lucide-react'
+import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, Download, Filter, Loader2, History, LayoutList, Table2 } from 'lucide-react'
 import { ListSkeleton } from '@/components/ui/skeleton'
 import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
@@ -128,6 +128,7 @@ export default function RMSPage() {
   const [dateFrom,     setDateFrom]     = useState('')
   const [dateTo,       setDateTo]       = useState('')
   const [showFilters,  setShowFilters]  = useState(false)
+  const [viewMode,     setViewMode]     = useState<'card' | 'table'>('card')
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
@@ -201,7 +202,20 @@ export default function RMSPage() {
               </button>
             ))}
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {/* View toggle */}
+            <div className="flex rounded-lg border border-surface-border overflow-hidden">
+              <button type="button" onClick={() => setViewMode('card')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all
+                  ${viewMode === 'card' ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                <LayoutList className="w-3.5 h-3.5" /> Cards
+              </button>
+              <button type="button" onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all
+                  ${viewMode === 'table' ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                <Table2 className="w-3.5 h-3.5" /> Table
+              </button>
+            </div>
             <button type="button" onClick={() => setShowFilters(f => !f)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all
                 ${(dateFrom || dateTo) ? 'bg-brand-500 text-white border-brand-500' : 'bg-white border-surface-border text-gray-600 hover:border-brand-400'}`}>
@@ -248,7 +262,101 @@ export default function RMSPage() {
             <p className="text-sm text-surface-muted mb-4">Log your first travel or expense request.</p>
             <Link href="/rms/new"><Button type="button" size="sm">Log Expense</Button></Link>
           </div>
+        ) : viewMode === 'table' ? (
+          /* ── Table view ─────────────────────────────────────────── */
+          <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-surface-border bg-surface text-left">
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Title</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide text-right">Amount</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Date</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Status</th>
+                    {isManager && <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Employee</th>}
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Receipts</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-surface-muted uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                  {expenses.map(exp => {
+                    const s = STATUS_MAP[exp.status] || STATUS_MAP.rejected
+                    const SIcon = s.icon
+                    return (
+                      <tr key={exp._id} className="hover:bg-surface transition-colors group">
+                        <td className="px-4 py-3">
+                          <Link href={`/rms/${exp._id}`} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors">
+                            {exp.title}
+                          </Link>
+                          <p className="text-xs text-surface-muted truncate max-w-[220px]">{exp.reason}</p>
+                        </td>
+                        <td className="px-4 py-3 text-right font-extrabold text-gray-900 whitespace-nowrap">
+                          ₹{exp.amount.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-surface-muted whitespace-nowrap">
+                          {new Date(exp.startDate).toLocaleDateString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={s.variant} className="gap-1 text-xs whitespace-nowrap">
+                            <SIcon className="w-3 h-3" />{s.label}
+                          </Badge>
+                        </td>
+                        {isManager && (
+                          <td className="px-4 py-3 text-xs text-surface-muted">{exp.userName}</td>
+                        )}
+                        <td className="px-4 py-3">
+                          {exp.receipts && exp.receipts.length > 0 ? (
+                            <div className="flex gap-1 flex-wrap">
+                              {exp.receipts.map((url, i) => (
+                                <a key={i} href={url} target="_blank" rel="noreferrer"
+                                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100 transition-colors">
+                                  Receipt {i + 1}
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-surface-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1.5">
+                            {isManager && !isBoss && exp.status === 'pending_manager' && (
+                              <>
+                                <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_boss')}>Approve</Button>
+                                <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
+                              </>
+                            )}
+                            {isBoss && exp.status === 'pending_boss' && (
+                              <>
+                                <PaymentProofDialog onConfirm={proof => handleAction(exp._id, 'paid', undefined, proof)} />
+                                <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
+                              </>
+                            )}
+                            {(!isManager || (exp.status !== 'pending_manager' && exp.status !== 'pending_boss')) && (
+                              <Link href={`/rms/${exp._id}`}>
+                                <Button type="button" size="sm" variant="outline">View</Button>
+                              </Link>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t border-surface-border bg-surface">
+                    <td className="px-4 py-3 text-xs font-semibold text-surface-muted">{expenses.length} records</td>
+                    <td className="px-4 py-3 text-right font-extrabold text-gray-900 text-sm">
+                      ₹{expenses.reduce((s, e) => s + e.amount, 0).toLocaleString('en-IN')}
+                    </td>
+                    <td colSpan={isManager ? 5 : 4} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         ) : (
+          /* ── Card view ──────────────────────────────────────────── */
           <div className="space-y-3">
             {expenses.map(exp => {
               const s = STATUS_MAP[exp.status] || STATUS_MAP.rejected

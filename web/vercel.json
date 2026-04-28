@@ -1,0 +1,17 @@
+{
+  "framework": "nextjs",
+  "regions": ["bom1"],
+  "functions": {
+    "app/api/crm/ocr/route.ts":      { "maxDuration": 180 },
+    "app/api/rms/ocr/route.ts":      { "maxDuration": 180 },
+    "app/api/crm/generate/route.ts": { "maxDuration": 120 },
+    "app/api/sync/email/route.ts":   { "maxDuration": 60  },
+    "app/api/cron/**":               { "maxDuration": 60  }
+  },
+  "crons": [
+    {
+      "path":     "/api/cron/birthday",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}
