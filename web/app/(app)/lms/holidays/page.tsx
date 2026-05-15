@@ -185,7 +185,7 @@ export default function HolidaysPage() {
                             {canEdit && (
                               <button type="button" title="Remove holiday" aria-label="Remove holiday"
                                 onClick={() => deleteHoliday(h._id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 text-surface-muted hover:text-red-500 transition-all flex-shrink-0">
+                                className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1 rounded-lg hover:bg-red-50 text-surface-muted hover:text-red-500 transition-all flex-shrink-0">
                                 <Trash2 className="w-3 h-3" />
                               </button>
                             )}

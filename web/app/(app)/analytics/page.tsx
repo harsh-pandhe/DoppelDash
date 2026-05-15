@@ -348,7 +348,7 @@ export default function AnalyticsPage() {
                 return (
                   <div className={`${colSpan} relative group`}>
                     {editMode && (
-                      <div className="absolute -top-2 -right-2 z-10 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
+                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-10 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
                         <button type="button" aria-label="Move up" disabled={origIdx === 0}
                           onClick={() => moveTile(origIdx, -1)}
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">

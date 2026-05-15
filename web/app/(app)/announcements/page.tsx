@@ -304,7 +304,7 @@ function AnnouncementCard({ item, canPost, onPin, onDelete }: {
 
           {/* Actions */}
           {canPost && (
-            <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <BroadcastButton id={item._id} />
               <button type="button" aria-label={item.pinned ? 'Unpin' : 'Pin'}
                 onClick={() => onPin(item._id, item.pinned)}

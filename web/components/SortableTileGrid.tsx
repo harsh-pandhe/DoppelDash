@@ -104,7 +104,7 @@ function SortableWrapper({ id, children }: { id: string; children: React.ReactNo
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
-        className="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-white border border-surface-border shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-surface-muted hover:text-brand-600 hover:border-brand-400 transition-colors">
+        className="absolute top-1 left-1 sm:-top-2 sm:-left-2 z-10 w-6 h-6 rounded-full bg-white border border-surface-border shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-surface-muted hover:text-brand-600 hover:border-brand-400 transition-colors">
         <GripVertical className="w-3.5 h-3.5" />
       </button>
       {children}

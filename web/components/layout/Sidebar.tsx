@@ -56,7 +56,7 @@ const ROLE_COLOR: Record<string, string> = {
 export default function Sidebar() {
   const pathname = usePathname()
   const { user }  = useUser()
-  const role      = (user?.unsafeMetadata?.role as string) || 'employee'
+  const role      = user?.role || 'employee'
   const [open, setOpen] = useState(false)
   // Insights + Admin collapsed by default for managers/employees, expanded for boss
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => ({

@@ -150,7 +150,7 @@ export default async function ManagerDashboard({ firstName, isBoss }: Props) {
           <ApprovalsQueue items={queue} isBoss={isBoss} />
 
           {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               { kind: 'leave',   count: pendingLeaves.length,   icon: CalendarClock, href: '/lms' },
               { kind: 'expense', count: pendingExpenses.length, icon: Receipt,       href: '/rms' },

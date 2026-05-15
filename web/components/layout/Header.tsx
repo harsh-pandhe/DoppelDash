@@ -94,7 +94,7 @@ function GlobalSearch() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-[360px] glass-card rounded-2xl z-50 shadow-xl overflow-hidden animate-slide-down">
+        <div className="absolute left-0 top-full mt-2 w-[calc(100vw-1.5rem)] max-w-[360px] glass-card rounded-2xl z-50 shadow-xl overflow-hidden animate-slide-down">
           <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/40">
             <Search className="w-4 h-4 text-surface-muted flex-shrink-0" />
             <input
@@ -223,22 +223,22 @@ export default function Header({ title }: { title?: string }) {
   const toggleSidebar = () => window.dispatchEvent(new CustomEvent('toggle-sidebar'))
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-5 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <button
           type="button"
           aria-label="Open menu"
           onClick={toggleSidebar}
-          className="md:hidden p-2 rounded-xl hover:bg-surface text-gray-500 transition-colors"
+          className="md:hidden p-2 rounded-xl hover:bg-surface text-gray-500 transition-colors flex-shrink-0"
         >
           <Menu className="w-5 h-5" />
         </button>
         {title && (
-          <h1 className="text-base font-bold text-gray-900 tracking-tight">{title}</h1>
+          <h1 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight truncate">{title}</h1>
         )}
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-1 sm:gap-2 ml-auto flex-shrink-0">
         <GlobalSearch />
         {/* Notification bell */}
         <div className="relative" ref={panelRef}>
@@ -257,7 +257,7 @@ export default function Header({ title }: { title?: string }) {
             </button>
 
             {panelOpen && (
-              <div className="absolute right-0 top-full mt-2 w-[360px] glass-card rounded-2xl z-50 overflow-hidden animate-slide-down">
+              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1.5rem)] max-w-[360px] glass-card rounded-2xl z-50 overflow-hidden animate-slide-down">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/40 gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900">Notifications</p>

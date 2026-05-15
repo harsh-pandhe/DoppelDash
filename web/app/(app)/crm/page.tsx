@@ -371,7 +371,7 @@ export default function CRMPage() {
                     </span>
                   )}
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <ColorLabelPopover contactId={c._id} current={c.colorLabel}
                     onSaved={l => updateLocal(c._id, { colorLabel: l ?? undefined })} />
                   <Link href={`/crm/${c._id}`}>
@@ -439,7 +439,7 @@ export default function CRMPage() {
               <div>
                 {c.phone && <p className="text-xs text-gray-600">{c.phone}</p>}
               </div>
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <ColorLabelPopover contactId={c._id} current={c.colorLabel} onSaved={l => updateLocal(c._id, { colorLabel: l ?? undefined })} />
                 <VisibilitySelect contactId={c._id} current={c.visibility} onSaved={v => updateLocal(c._id, { visibility: v as Contact['visibility'] })} />
                 <Link href={`/crm/${c._id}`}><button type="button" aria-label="Edit" className="p-1.5 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600"><Pencil className="w-3.5 h-3.5"/></button></Link>
@@ -509,7 +509,7 @@ export default function CRMPage() {
                     <VisibilitySelect contactId={c._id} current={c.visibility} onSaved={v => updateLocal(c._id, { visibility: v as Contact['visibility'] })} />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                       <ColorLabelPopover contactId={c._id} current={c.colorLabel} onSaved={l => updateLocal(c._id, { colorLabel: l ?? undefined })} />
                       <Link href={`/crm/${c._id}`}><button type="button" aria-label="Edit" className="p-1 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600"><Pencil className="w-3.5 h-3.5"/></button></Link>
                       <DeleteDialog name={c.name} onConfirm={() => deleteContact(c._id, c.name)} />
