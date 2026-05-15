@@ -1,358 +1,477 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
-import Contact from '@/models/Contact'
+import User from '@/models/User'
+import Employee from '@/models/Employee'
+import LeaveBalance from '@/models/LeaveBalance'
 import Leave from '@/models/Leave'
 import Expense from '@/models/Expense'
+import TravelRequest from '@/models/TravelRequest'
+import Contact from '@/models/Contact'
 import Announcement from '@/models/Announcement'
-import { encrypt } from '@/lib/encrypt'
-import { getUser } from '@/lib/auth'
+import AuditLog from '@/models/AuditLog'
+import PublicHoliday from '@/models/PublicHoliday'
+import OrgSettings from '@/models/OrgSettings'
+import UserEmailConfig from '@/models/UserEmailConfig'
+import OutlookToken from '@/models/OutlookToken'
+import SyncState from '@/models/SyncState'
+import { encrypt, encryptBankDetails } from '@/lib/encrypt'
 
-// DEV ONLY — remove or gate behind env check before production
-export async function POST() {
+/**
+ * DEV-ONLY full reset + seed.
+ * Wipes everything, then creates a realistic org: 1 boss, 2 managers, 6 employees,
+ * with leave balances, leaves, expenses, travel, CRM contacts, announcements, holidays.
+ *
+ * Run:
+ *   POST /api/dev/seed?secret=<DEV_SEED_SECRET>     (header `x-seed-secret` also accepted)
+ *
+ * Default password for every seeded account: `Pass1234!`
+ * Boss email: harsh.pandhe@doppelmayr.com
+ */
+
+const DEFAULT_PASSWORD = 'Pass1234!'
+
+const today = new Date()
+const yr    = today.getFullYear()
+const D     = (offsetDays: number) => {
+  const d = new Date(today); d.setDate(d.getDate() + offsetDays); d.setHours(9, 0, 0, 0); return d
+}
+const dob = (y: number, m: number, d: number) => new Date(y, m - 1, d)
+
+export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Disabled in production' }, { status: 403 })
   }
-  const { userId } = await getUser()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const required = process.env.DEV_SEED_SECRET
+  if (required) {
+    const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+    if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   await connectDB()
 
-  // ── Wipe existing seed data for this user ─────────────────────────
+  /* ─── 1) Wipe everything ──────────────────────────────────────────── */
   await Promise.all([
-    Contact.deleteMany({ createdBy: userId }),
-    Leave.deleteMany({ userId }),
-    Expense.deleteMany({ userId }),
+    User.deleteMany({}),
+    Employee.deleteMany({}),
+    LeaveBalance.deleteMany({}),
+    Leave.deleteMany({}),
+    Expense.deleteMany({}),
+    TravelRequest.deleteMany({}),
+    Contact.deleteMany({}),
     Announcement.deleteMany({}),
+    AuditLog.deleteMany({}),
+    PublicHoliday.deleteMany({}),
+    OrgSettings.deleteMany({}),
+    UserEmailConfig.deleteMany({}),
+    OutlookToken.deleteMany({}),
+    SyncState.deleteMany({}),
   ])
 
-  // ── Contacts ──────────────────────────────────────────────────────
-  const contacts = await Contact.insertMany([
-    {
-      createdBy: userId,
-      name: 'Praphulla Sharma',
-      email: 'praphulla.sharma@doppelmayr.in',
-      phone: '+91 98765 43210',
-      company: 'Doppelmayr India Pvt Ltd',
-      designation: 'Director, Operations',
-      website: 'www.doppelmayr.com',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Brahmin'),
-      tags: ['key-account', 'director'],
-      notes: 'Met at Rope Access India 2024. Very interested in urban ropeway projects.',
-      timeline: [
-        { type: 'meeting', title: 'Initial meeting at RAI 2024', date: new Date('2024-11-15'), source: 'manual' },
-        { type: 'call',    title: 'Follow-up call re: Mumbai ropeway RFP', date: new Date('2024-12-03'), source: 'manual' },
-        { type: 'email',   title: 'Sent proposal for Phase 2 expansion', date: new Date('2025-01-20'), source: 'manual' },
-      ],
-      createdAt: new Date('2025-11-10'),
-    },
-    {
-      createdBy: userId,
-      name: 'Kavita Nair',
-      email: 'kavita.nair@siemens.com',
-      phone: '+91 99001 12345',
-      company: 'Siemens Mobility India',
-      designation: 'Senior Project Manager',
-      religion: encrypt('Hindu'),
-      tags: ['partner', 'mobility'],
-      notes: 'Key contact for joint ventures on metro integration.',
-      timeline: [
-        { type: 'call', title: 'Intro call via Rohan referral', date: new Date('2025-02-10'), source: 'manual' },
-      ],
-      createdAt: new Date('2025-12-05'),
-    },
-    {
-      createdBy: userId,
-      name: 'Mohammed Farooq',
-      email: 'farooq@infra-builders.co.in',
-      phone: '+91 97654 32109',
-      company: 'Infra Builders & Associates',
-      designation: 'Chief Engineer',
-      religion: encrypt('Muslim'),
-      tags: ['civil', 'contractor'],
-      birthday: new Date('1978-08-14'),
-      timeline: [],
-      createdAt: new Date('2025-12-20'),
-    },
-    {
-      createdBy: userId,
-      name: 'Suresh Reddy',
-      email: 'sreddy@andhraportal.gov.in',
-      phone: '+91 94400 55566',
-      company: 'Andhra Pradesh Infrastructure Corp',
-      designation: 'Deputy Director',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Reddy'),
-      tags: ['government', 'ap'],
-      timeline: [
-        { type: 'meeting', title: 'Presentation at AP Infra Summit', date: new Date('2025-03-05'), source: 'manual' },
-        { type: 'note',    title: 'Interested in ropeway connectivity to hill temples', body: 'Tirupati-Tirumala corridor discussed specifically. High priority.', date: new Date('2025-03-06'), source: 'manual' },
-      ],
-      createdAt: new Date('2026-01-08'),
-    },
-    {
-      createdBy: userId,
-      name: 'Priya Mehta',
-      email: 'priya.mehta@l-t.com',
-      phone: '+91 98200 77788',
-      company: 'Larsen & Toubro',
-      designation: 'VP, Infrastructure Projects',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Patel'),
-      tags: ['tier-1', 'epc'],
-      birthday: new Date('1980-12-01'),
-      timeline: [
-        { type: 'email', title: 'Sent DGS product catalogue', date: new Date('2025-01-08'), source: 'manual' },
-        { type: 'call',  title: 'Q1 pipeline discussion', date: new Date('2025-04-02'), source: 'manual' },
-      ],
-      createdAt: new Date('2026-01-22'),
-    },
-    {
-      createdBy: userId,
-      name: 'David Fernandes',
-      email: 'd.fernandes@garuda-infra.com',
-      phone: '+91 91234 56789',
-      company: 'Garuda Infrastructure',
-      designation: 'Managing Director',
-      religion: encrypt('Christian'),
-      tags: ['md', 'decision-maker'],
-      anniversary: new Date('2003-02-14'),
-      timeline: [],
-      createdAt: new Date('2026-02-03'),
-    },
-    {
-      createdBy: userId,
-      name: 'Rajat Bose',
-      email: 'rajat.bose@wb-transit.gov.in',
-      phone: '+91 93300 44422',
-      company: 'West Bengal Transit Corp',
-      designation: 'Chief Project Officer',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Kayastha'),
-      tags: ['government', 'wb'],
-      timeline: [
-        { type: 'meeting', title: 'Kolkata ropeway feasibility discussion', date: new Date('2025-04-10'), source: 'manual' },
-      ],
-      createdAt: new Date('2026-02-18'),
-    },
-    {
-      createdBy: userId,
-      name: 'Amita Joshi',
-      email: 'amita@joshi-consulting.in',
-      phone: '+91 88001 23456',
-      company: 'Joshi Consulting Group',
-      designation: 'Lead Consultant',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Brahmin'),
-      tags: ['consultant', 'neutral'],
-      timeline: [],
-      createdAt: new Date('2026-03-12'),
-    },
-    {
-      createdBy: userId,
-      name: 'Nikhil Shenoy',
-      email: 'nikhil.shenoy@konkan-dev.in',
-      phone: '+91 96500 11223',
-      company: 'Konkan Development Corp',
-      designation: 'Project Director',
-      religion: encrypt('Hindu'),
-      tags: ['coastal', 'development'],
-      timeline: [
-        { type: 'meeting', title: 'Coastal ropeway feasibility call', date: new Date('2026-03-28'), source: 'manual' },
-      ],
-      createdAt: new Date('2026-03-25'),
-    },
-    {
-      createdBy: userId,
-      name: 'Sunita Agarwal',
-      email: 's.agarwal@railmadad.in',
-      phone: '+91 87890 34567',
-      company: 'Rail Madad Infrastructure',
-      designation: 'General Manager',
-      religion: encrypt('Hindu'),
-      caste: encrypt('Agarwal'),
-      tags: ['rail', 'partner'],
-      timeline: [
-        { type: 'email', title: 'Sent station-ropeway integration proposal', date: new Date('2026-04-05'), source: 'manual' },
-      ],
-      createdAt: new Date('2026-04-02'),
-    },
-  ])
+  /* ─── 2) Users ────────────────────────────────────────────────────── */
+  const hash = await User.hashPassword(DEFAULT_PASSWORD)
 
-  // ── Leaves — spread across Nov 2025–Apr 2026 ─────────────────────
-  const leaveData = [
+  // 1 boss
+  const boss = await User.create({
+    email:              'harsh.pandhe@doppelmayr.com',
+    passwordHash:       hash,
+    role:               'boss',
+    firstName:          'Harsh',
+    lastName:           'Pandhe',
+    mustChangePassword: false,
+    isActive:           true,
+    lastLoginAt:        D(-1),
+    loginCount:         42,
+  })
+
+  // 2 managers
+  const managerA = await User.create({
+    email: 'priya.iyer@doppelmayr.com', passwordHash: hash, role: 'manager',
+    firstName: 'Priya', lastName: 'Iyer',
+    createdByUserId: boss._id.toString(),
+    mustChangePassword: false, isActive: true,
+    lastLoginAt: D(-1), loginCount: 27,
+  })
+  const managerB = await User.create({
+    email: 'rohan.kapoor@doppelmayr.com', passwordHash: hash, role: 'manager',
+    firstName: 'Rohan', lastName: 'Kapoor',
+    createdByUserId: boss._id.toString(),
+    mustChangePassword: false, isActive: true,
+    lastLoginAt: D(-2), loginCount: 19,
+  })
+
+  // 6 employees
+  const empSeeds = [
+    { f: 'Aarav',   l: 'Sharma',   email: 'aarav.sharma@doppelmayr.com',   dept: 'Engineering',  desig: 'Senior Engineer',   mgr: managerA, dob: dob(1991, 4, 17), join: dob(2021, 6, 15), city: 'Mumbai',     state: 'Maharashtra' },
+    { f: 'Diya',    l: 'Menon',    email: 'diya.menon@doppelmayr.com',     dept: 'Engineering',  desig: 'Project Engineer',  mgr: managerA, dob: dob(1994, 11, 8), join: dob(2022, 1, 10), city: 'Navi Mumbai',state: 'Maharashtra' },
+    { f: 'Vikram',  l: 'Singh',    email: 'vikram.singh@doppelmayr.com',   dept: 'Operations',   desig: 'Operations Lead',   mgr: managerB, dob: dob(1988, 7, 22), join: dob(2019, 9, 1),  city: 'Pune',       state: 'Maharashtra' },
+    { f: 'Sneha',   l: 'Reddy',    email: 'sneha.reddy@doppelmayr.com',    dept: 'Operations',   desig: 'Field Engineer',    mgr: managerB, dob: dob(1996, 3, 3),  join: dob(2023, 2, 20), city: 'Hyderabad',  state: 'Telangana' },
+    { f: 'Karan',   l: 'Verma',    email: 'karan.verma@doppelmayr.com',    dept: 'Sales',        desig: 'Account Manager',   mgr: managerA, dob: dob(1992, 9, 30), join: dob(2020, 11, 5), city: 'Delhi',      state: 'Delhi' },
+    { f: 'Anjali',  l: 'Bose',     email: 'anjali.bose@doppelmayr.com',    dept: 'Sales',        desig: 'Sales Executive',   mgr: managerA, dob: dob(1997, 12, 14),join: dob(2024, 3, 1),  city: 'Kolkata',    state: 'West Bengal' },
+  ]
+  const employees = await Promise.all(empSeeds.map(async (e, i) => {
+    return User.create({
+      email: e.email, passwordHash: hash, role: 'employee',
+      firstName: e.f, lastName: e.l,
+      createdByUserId: e.mgr._id.toString(),
+      mustChangePassword: false, isActive: true,
+      lastLoginAt: D(-(i + 1)), loginCount: 5 + i,
+    })
+  }))
+
+  /* ─── 3) Employee profiles ────────────────────────────────────────── */
+  const PRIV_LEVELS = [
+    { food: { tier: 'standard',  dailyLimit: 800 },  taxi: { tier: 'ac',          perKmLimit: 18 }, flight: { tier: 'economy',  enabled: true  }, hotel: { tier: 'standard', perNightLimit: 4500 }, travelAdvance: 25000 },
+    { food: { tier: 'basic',     dailyLimit: 500 },  taxi: { tier: 'standard',    perKmLimit: 14 }, flight: { tier: 'none',     enabled: false }, hotel: { tier: 'budget',   perNightLimit: 2500 }, travelAdvance: 10000 },
+    { food: { tier: 'premium',   dailyLimit: 1200 }, taxi: { tier: 'ac_premium',  perKmLimit: 22 }, flight: { tier: 'business', enabled: true  }, hotel: { tier: 'premium',  perNightLimit: 8000 }, travelAdvance: 50000 },
+    { food: { tier: 'basic',     dailyLimit: 500 },  taxi: { tier: 'ac',          perKmLimit: 16 }, flight: { tier: 'economy',  enabled: true  }, hotel: { tier: 'standard', perNightLimit: 4000 }, travelAdvance: 20000 },
+    { food: { tier: 'standard',  dailyLimit: 800 },  taxi: { tier: 'ac',          perKmLimit: 18 }, flight: { tier: 'economy',  enabled: true  }, hotel: { tier: 'standard', perNightLimit: 4500 }, travelAdvance: 30000 },
+    { food: { tier: 'basic',     dailyLimit: 500 },  taxi: { tier: 'standard',    perKmLimit: 14 }, flight: { tier: 'none',     enabled: false }, hotel: { tier: 'budget',   perNightLimit: 2500 }, travelAdvance: 8000  },
+  ]
+
+  // Boss
+  await Employee.create({
+    clerkUserId: boss._id.toString(), employeeId: 'EMP-001',
+    createdByUserId: boss._id.toString(),
+    firstName: 'Harsh', lastName: 'Pandhe', email: boss.email,
+    phone: '+91 90000 00001', gender: 'male',
+    dateOfBirth: dob(1990, 2, 28), workAnniversary: dob(2018, 4, 1),
+    department: 'Leadership', designation: 'Managing Director', employeeType: 'full_time',
+    joiningDate: dob(2018, 4, 1),
+    onboardingComplete: true, onboardingStep: 4,
+    address: '1 Marina Drive', city: 'Mumbai', state: 'Maharashtra',
+    privileges: { food: { tier: 'premium', dailyLimit: 2000 }, taxi: { tier: 'ac_premium', perKmLimit: 25 }, flight: { tier: 'business', enabled: true }, hotel: { tier: 'premium', perNightLimit: 12000 }, travelAdvance: 100000 },
+    emergencyContacts: [{ name: 'Anita Pandhe', phone: '+91 98000 00001', relationship: 'Spouse' }],
+    medicalDetails: { bloodGroup: 'O+', allergies: [], medications: [], conditions: [] },
+    bankDetails: encryptBankDetails({ bankName: 'HDFC Bank', accountNumber: '50100123456789', ifscCode: 'HDFC0000123', accountHolderName: 'Harsh Pandhe', accountType: 'savings' }) as Record<string, unknown>,
+    lastLoginAt: D(-1), loginCount: 42,
+  })
+
+  // Managers
+  await Employee.create({
+    clerkUserId: managerA._id.toString(), employeeId: 'EMP-002',
+    createdByUserId: boss._id.toString(),
+    firstName: 'Priya', lastName: 'Iyer', email: managerA.email,
+    phone: '+91 90000 00002', gender: 'female',
+    dateOfBirth: dob(1986, 6, 11), workAnniversary: dob(2019, 8, 5),
+    department: 'Engineering', designation: 'Engineering Manager', employeeType: 'full_time',
+    joiningDate: dob(2019, 8, 5), reportingManagerId: boss._id.toString(),
+    onboardingComplete: true, onboardingStep: 4,
+    address: '12B Linking Road', city: 'Mumbai', state: 'Maharashtra',
+    privileges: { food: { tier: 'standard', dailyLimit: 1000 }, taxi: { tier: 'ac_premium', perKmLimit: 22 }, flight: { tier: 'business', enabled: true }, hotel: { tier: 'premium', perNightLimit: 7500 }, travelAdvance: 60000 },
+    emergencyContacts: [{ name: 'Karthik Iyer', phone: '+91 98000 00002', relationship: 'Spouse' }],
+    medicalDetails: { bloodGroup: 'A+', allergies: ['Peanuts'], medications: [], conditions: [] },
+    lastLoginAt: D(-1), loginCount: 27,
+  })
+  await Employee.create({
+    clerkUserId: managerB._id.toString(), employeeId: 'EMP-003',
+    createdByUserId: boss._id.toString(),
+    firstName: 'Rohan', lastName: 'Kapoor', email: managerB.email,
+    phone: '+91 90000 00003', gender: 'male',
+    dateOfBirth: dob(1984, 10, 25), workAnniversary: dob(2020, 1, 20),
+    department: 'Operations', designation: 'Operations Manager', employeeType: 'full_time',
+    joiningDate: dob(2020, 1, 20), reportingManagerId: boss._id.toString(),
+    onboardingComplete: true, onboardingStep: 4,
+    address: '7 Aundh Road', city: 'Pune', state: 'Maharashtra',
+    privileges: { food: { tier: 'standard', dailyLimit: 1000 }, taxi: { tier: 'ac', perKmLimit: 20 }, flight: { tier: 'business', enabled: true }, hotel: { tier: 'standard', perNightLimit: 5500 }, travelAdvance: 50000 },
+    emergencyContacts: [{ name: 'Meera Kapoor', phone: '+91 98000 00003', relationship: 'Spouse' }],
+    medicalDetails: { bloodGroup: 'B+', allergies: [], medications: [], conditions: ['Hypertension'] },
+    lastLoginAt: D(-2), loginCount: 19,
+  })
+
+  // Employees
+  await Promise.all(empSeeds.map(async (e, i) => {
+    const u = employees[i]
+    const prvIndex = i % PRIV_LEVELS.length
+    return Employee.create({
+      clerkUserId: u._id.toString(), employeeId: `EMP-${String(i + 4).padStart(3, '0')}`,
+      createdByUserId: e.mgr._id.toString(),
+      firstName: e.f, lastName: e.l, email: e.email,
+      phone: `+91 90000 ${String(10 + i).padStart(5, '0')}`,
+      gender: i % 2 === 0 ? 'male' : 'female',
+      dateOfBirth: e.dob, workAnniversary: e.join,
+      department: e.dept, designation: e.desig, employeeType: 'full_time',
+      joiningDate: e.join, reportingManagerId: e.mgr._id.toString(),
+      onboardingComplete: i !== empSeeds.length - 1,    // last employee = onboarding pending
+      onboardingStep:     i !== empSeeds.length - 1 ? 4 : 1,
+      address: `${10 + i} ${['MG Road','FC Road','Jubilee Hills','CP','Park Street'][i % 5]}`,
+      city: e.city, state: e.state,
+      privileges: PRIV_LEVELS[prvIndex],
+      emergencyContacts: i % 2 === 0
+        ? [{ name: `${e.f}'s Spouse`, phone: `+91 98000 ${String(10 + i).padStart(5, '0')}`, relationship: 'Spouse' }]
+        : [{ name: `${e.f}'s Parent`, phone: `+91 98000 ${String(10 + i).padStart(5, '0')}`, relationship: 'Parent' }],
+      medicalDetails: { bloodGroup: ['A+','B+','O+','AB+','O-','A-'][i], allergies: [], medications: [], conditions: [] },
+      bankDetails: i % 2 === 0 ? encryptBankDetails({
+        bankName: 'ICICI Bank', accountNumber: `00${i}123456789${i}`, ifscCode: `ICIC000123${i}`,
+        accountHolderName: `${e.f} ${e.l}`, accountType: 'savings',
+      }) as Record<string, unknown> : undefined,
+      lastLoginAt: D(-(i + 1)), loginCount: 5 + i,
+    })
+  }))
+
+  /* ─── 4) Leave balances ───────────────────────────────────────────── */
+  const allUsers = [boss, managerA, managerB, ...employees]
+  await Promise.all(allUsers.map(u => LeaveBalance.create({
+    userId: u._id.toString(), year: yr,
+    casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0,
+  })))
+
+  /* ─── 5) Leaves ──────────────────────────────────────────────────── */
+  const leaveSeeds: Array<{ u: typeof boss; type: string; from: number; to: number; reason: string; status: string }> = [
+    // Aarav — approved sick
+    { u: employees[0], type: 'sick',   from: -30, to: -28, reason: 'Viral fever, doctor advised rest.', status: 'approved' },
+    // Aarav — pending casual
+    { u: employees[0], type: 'casual', from: 7,   to: 7,   reason: "Sister's engagement.",              status: 'pending'  },
+    // Diya — approved earned
+    { u: employees[1], type: 'earned', from: -14, to: -10, reason: 'Annual vacation to Goa.',           status: 'approved' },
+    // Vikram — rejected
+    { u: employees[2], type: 'casual', from: -45, to: -45, reason: 'Personal errand.',                  status: 'rejected' },
+    // Sneha — pending sick
+    { u: employees[3], type: 'sick',   from: 1,   to: 2,   reason: 'Migraine, doctor-prescribed rest.', status: 'pending'  },
+    // Karan — approved earned upcoming
+    { u: employees[4], type: 'earned', from: 14,  to: 18,  reason: 'Wedding anniversary trip.',         status: 'approved' },
+    // Anjali — approved casual
+    { u: employees[5], type: 'casual', from: -7,  to: -7,  reason: 'Family function.',                  status: 'approved' },
+    // Priya (manager) — approved earned
+    { u: managerA,     type: 'earned', from: -21, to: -19, reason: 'Family wedding in Chennai.',        status: 'approved' },
+    // Rohan (manager) — pending privilege
+    { u: managerB,     type: 'privilege', from: 21, to: 22, reason: 'Conference attendance.',          status: 'pending'  },
+  ]
+  await Promise.all(leaveSeeds.map(l => Leave.create({
+    userId: l.u._id.toString(), userName: `${l.u.firstName} ${l.u.lastName}`,
+    type: l.type, startDate: D(l.from), endDate: D(l.to),
+    days: Math.max(1, l.to - l.from + 1),
+    reason: l.reason, status: l.status,
+    approvedBy: l.status === 'approved' ? (l.u === managerA || l.u === managerB ? boss._id.toString() : (l.u === employees[0] || l.u === employees[1] || l.u === employees[4] || l.u === employees[5] ? managerA._id.toString() : managerB._id.toString())) : undefined,
+    managerNote: l.status === 'rejected' ? 'Insufficient business justification — please plan ahead.' : undefined,
+    createdAt: D(l.from - 3),
+  })))
+
+  /* ─── 6) Expenses ────────────────────────────────────────────────── */
+  const expSeeds = [
+    { u: employees[0], title: 'Mumbai → BKC site survey',     reason: 'Client site visit, taxi + meals.',                amount: 2450, status: 'paid',            mgr: managerA, days: -40, from: 'Mumbai', to: 'BKC'      },
+    { u: employees[0], title: 'AutoCAD subscription',          reason: 'Annual renewal for design workstation.',         amount: 45000,status: 'pending_boss',    mgr: managerA, days: -7,  from: '',       to: ''         },
+    { u: employees[1], title: 'Pune site inspection',          reason: 'Travel + lodging for 2-day inspection.',         amount: 8600, status: 'paid',            mgr: managerA, days: -20, from: 'Mumbai', to: 'Pune'     },
+    { u: employees[2], title: 'Conference: Ropeway Asia 2026', reason: 'Registration, flight, hotel.',                   amount: 32500,status: 'pending_boss',    mgr: managerB, days: -5,  from: 'Pune',   to: 'Singapore'},
+    { u: employees[2], title: 'Team lunch — Q1 closeout',      reason: 'Department team lunch, 8 people.',               amount: 6400, status: 'paid',            mgr: managerB, days: -50, from: '',       to: ''         },
+    { u: employees[3], title: 'Hyderabad office supplies',     reason: 'Stationery + printer cartridges.',               amount: 3200, status: 'returned',        mgr: managerB, days: -3,  from: '',       to: '',        managerNote: 'Attach itemised bill from vendor.' },
+    { u: employees[4], title: 'Client dinner — Delhi NCR',     reason: 'Dinner with L&T procurement team.',              amount: 9800, status: 'pending_manager', mgr: managerA, days: -2,  from: '',       to: ''         },
+    { u: employees[4], title: 'Delhi metro travel pass',       reason: 'Monthly pass for client meetings.',              amount: 1200, status: 'rejected',        mgr: managerA, days: -10, from: '',       to: '',        managerNote: 'Reimbursed only for project-specific travel.' },
+    { u: employees[5], title: 'Kolkata client visit',          reason: 'WB Transit feasibility meeting travel.',         amount: 14200,status: 'pending_manager', mgr: managerA, days: -1,  from: 'Mumbai', to: 'Kolkata'  },
+    { u: managerA,     title: 'Leadership offsite',            reason: 'Team building offsite in Lonavala.',             amount: 28000,status: 'paid',            mgr: boss,     days: -35, from: 'Mumbai', to: 'Lonavala' },
+  ]
+  await Promise.all(expSeeds.map(e => Expense.create({
+    userId: e.u._id.toString(), userName: `${e.u.firstName} ${e.u.lastName}`,
+    title: e.title, reason: e.reason, amount: e.amount,
+    travelFrom: e.from || undefined, travelTo: e.to || undefined,
+    startDate: D(e.days), endDate: e.from ? D(e.days + 1) : undefined,
+    receipts: [],
+    status: e.status,
+    managerNote: (e as { managerNote?: string }).managerNote,
+    approvedBy: ['pending_boss', 'paid'].includes(e.status) ? e.mgr._id.toString() : undefined,
+    paidBy:     e.status === 'paid' ? boss._id.toString() : undefined,
+    createdAt: D(e.days - 1),
+  })))
+
+  /* ─── 7) Travel requests ─────────────────────────────────────────── */
+  const travelSeeds = [
     {
-      userId, userName: 'Harsh Pandhe',
-      type: 'casual', startDate: new Date('2025-11-08'), endDate: new Date('2025-11-08'), days: 1,
-      reason: 'Diwali extended family gathering.',
-      status: 'approved', approvedBy: 'boss-user-id',
-      createdAt: new Date('2025-11-06'),
+      u: employees[0], purpose: 'BKC ropeway corridor walkthrough', destination: 'Mumbai',
+      depart: 5, ret: 6, est: 7500, adv: 5000, status: 'pending_manager',
     },
     {
-      userId, userName: 'Harsh Pandhe',
-      type: 'medical', startDate: new Date('2025-12-02'), endDate: new Date('2025-12-04'), days: 3,
-      reason: 'Viral fever with doctor-advised rest.',
-      status: 'approved', approvedBy: 'boss-user-id',
-      createdAt: new Date('2025-12-02'),
+      u: employees[2], purpose: 'Ropeway Asia 2026 conference', destination: 'Singapore',
+      depart: 21, ret: 25, est: 145000, adv: 75000, status: 'pending_boss',
+      mgrNote: 'High value — please review carefully.',
     },
     {
-      userId, userName: 'Harsh Pandhe',
-      type: 'casual', startDate: new Date('2026-01-26'), endDate: new Date('2026-01-26'), days: 1,
-      reason: 'Republic Day — personal travel to Delhi.',
-      status: 'rejected', managerNote: 'Republic Day is a national holiday, leave not needed.',
-      createdAt: new Date('2026-01-24'),
+      u: employees[4], purpose: 'L&T procurement quarterly review', destination: 'Delhi',
+      depart: -3, ret: -1, est: 28000, adv: 15000, status: 'approved',
     },
     {
-      userId, userName: 'Harsh Pandhe',
-      type: 'earned', startDate: new Date('2026-02-10'), endDate: new Date('2026-02-14'), days: 5,
-      reason: 'Annual vacation — Goa trip.',
-      status: 'approved', approvedBy: 'boss-user-id',
-      createdAt: new Date('2026-02-05'),
+      u: employees[5], purpose: 'WB Transit Kolkata site visit', destination: 'Kolkata',
+      depart: 12, ret: 14, est: 22000, adv: 10000, status: 'approved',
     },
     {
-      userId, userName: 'Harsh Pandhe',
-      type: 'casual', startDate: new Date('2026-03-10'), endDate: new Date('2026-03-11'), days: 2,
-      reason: "Sister's engagement ceremony.",
-      status: 'approved', approvedBy: 'boss-user-id',
-      createdAt: new Date('2026-03-08'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      type: 'medical', startDate: new Date('2026-04-03'), endDate: new Date('2026-04-05'), days: 3,
-      reason: 'Back pain — physiotherapy sessions.',
-      status: 'pending',
-      createdAt: new Date('2026-04-03'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      type: 'earned', startDate: new Date('2026-05-01'), endDate: new Date('2026-05-03'), days: 3,
-      reason: 'Coorg trip with family.',
-      status: 'pending',
-      createdAt: new Date('2026-04-20'),
+      u: employees[3], purpose: 'Tirupati ropeway kick-off',  destination: 'Tirupati',
+      depart: -20, ret: -18, est: 19500, adv: 8000, status: 'rejected',
+      mgrNote: 'Defer — kick-off rescheduled to Q3.',
     },
   ]
-  await Leave.insertMany(leaveData)
+  await Promise.all(travelSeeds.map(t => TravelRequest.create({
+    userId: t.u._id.toString(), userName: `${t.u.firstName} ${t.u.lastName}`,
+    purpose: t.purpose, destination: t.destination,
+    departureDate: D(t.depart), returnDate: D(t.ret),
+    legs: [],
+    estimatedTotal:   t.est,
+    advanceRequested: t.adv,
+    status: t.status,
+    managerNote: (t as { mgrNote?: string }).mgrNote,
+    approvedBy: t.status === 'approved' ? boss._id.toString() : (t.status === 'pending_boss' ? managerA._id.toString() : undefined),
+    approvedAt: t.status === 'approved' ? D(t.depart - 5) : undefined,
+    rejectedBy: t.status === 'rejected' ? managerB._id.toString() : undefined,
+    rejectedAt: t.status === 'rejected' ? D(t.depart - 2) : undefined,
+  })))
 
-  // ── Expenses — spread across Nov 2025–Apr 2026 ────────────────────
-  const expenseData = [
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'Mumbai Site Visit — Travel & Stay',
-      reason: 'Client meeting at Andheri office + BKC ropeway corridor site survey.',
-      amount: 12450,
-      travelFrom: 'Pune', travelTo: 'Mumbai',
-      startDate: new Date('2025-11-14'), endDate: new Date('2025-11-15'),
-      status: 'paid', approvedBy: 'manager-id', paidBy: 'boss-id',
-      createdAt: new Date('2025-11-14'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'Office Supplies — Q4',
-      reason: 'Stationery, printer cartridges, binding material for Q4 proposal documents.',
-      amount: 3200,
-      startDate: new Date('2025-12-05'),
-      status: 'paid', approvedBy: 'manager-id', paidBy: 'boss-id',
-      createdAt: new Date('2025-12-05'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'AP Infra Summit — Registration + Flight',
-      reason: 'Attended AP Infrastructure Summit 2026 in Vijayawada. Represented company.',
-      amount: 24800,
-      travelFrom: 'Mumbai', travelTo: 'Vijayawada',
-      startDate: new Date('2026-01-22'), endDate: new Date('2026-01-24'),
-      status: 'paid', approvedBy: 'manager-id', paidBy: 'boss-id',
-      createdAt: new Date('2026-01-22'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'Client Dinner — Siemens team',
-      reason: 'Business dinner with Kavita Nair + 3 colleagues at Trident BKC.',
-      amount: 8200,
-      startDate: new Date('2026-02-15'),
-      status: 'paid', approvedBy: 'manager-id', paidBy: 'boss-id',
-      createdAt: new Date('2026-02-15'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'Kolkata Site Inspection',
-      reason: 'Feasibility inspection for WB Transit ropeway proposal. 2-day trip.',
-      amount: 18600,
-      travelFrom: 'Mumbai', travelTo: 'Kolkata',
-      startDate: new Date('2026-03-10'), endDate: new Date('2026-03-12'),
-      status: 'pending_boss', approvedBy: 'manager-id',
-      managerNote: 'Approved. Attach transport receipts.',
-      createdAt: new Date('2026-03-10'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'AutoCAD License Renewal',
-      reason: 'Annual Autodesk AutoCAD renewal for design team workstation.',
-      amount: 45000,
-      startDate: new Date('2026-04-01'),
-      status: 'pending_manager',
-      createdAt: new Date('2026-04-01'),
-    },
-    {
-      userId, userName: 'Harsh Pandhe',
-      title: 'Tirupati Kick-off — Travel',
-      reason: 'Travel for Tirupati-Tirumala ropeway project kick-off meeting.',
-      amount: 9800,
-      travelFrom: 'Mumbai', travelTo: 'Tirupati',
-      startDate: new Date('2026-04-15'), endDate: new Date('2026-04-16'),
-      status: 'pending_manager',
-      createdAt: new Date('2026-04-15'),
-    },
+  /* ─── 8) CRM contacts (under boss + manager A) ────────────────────── */
+  const contactSeeds: Array<{ owner: typeof boss; data: Record<string, unknown> }> = [
+    { owner: boss, data: {
+      name: 'Sanjay Kapoor', email: 'sanjay@jindalsteel.com', phone: '+91 98765 55555',
+      company: 'Jindal Steel & Power', designation: 'GM Mining Logistics',
+      tags: ['private', 'mining'], visibility: 'org',
+      religion: encrypt('Hindu'), birthday: dob(1972, 9, 12),
+      timeline: [
+        { type: 'meeting', title: 'Initial discovery call', date: D(-90), source: 'manual' },
+        { type: 'email',   title: 'Sent commercial proposal', date: D(-45), source: 'manual' },
+      ],
+      colorLabel: { color: '#22c55e', label: 'Hot Lead' },
+    }},
+    { owner: boss, data: {
+      name: 'Suresh Reddy', email: 'suresh.reddy@apsrtc.gov.in', phone: '+91 98765 11111',
+      company: 'Andhra Pradesh State Govt', designation: 'Deputy Director',
+      tags: ['govt', 'tier-1'], visibility: 'org',
+      religion: encrypt('Hindu'), caste: encrypt('Reddy'),
+      timeline: [{ type: 'meeting', title: 'Q1 review at Vijayawada', date: D(-30), source: 'manual' }],
+    }},
+    { owner: boss, data: {
+      name: 'Harsh Bose', email: 'harsh@tatasteel.com', phone: '+91 98765 77777',
+      company: 'Tata Steel', designation: 'Logistics Head',
+      tags: ['private', 'steel'], visibility: 'org',
+      religion: encrypt('Hindu'), birthday: dob(1985, 5, 5),
+      reminderDate: D(3), reminderNote: 'Follow up on Q2 procurement plan',
+    }},
+    { owner: managerA, data: {
+      name: 'Meera Krishnan', email: 'meera@chennai-metro.in', phone: '+91 98765 22222',
+      company: 'Chennai Metro Rail Ltd', designation: 'Project Director',
+      tags: ['govt', 'metro'], visibility: 'team',
+      religion: encrypt('Hindu'),
+    }},
+    { owner: managerA, data: {
+      name: 'Rajesh Iyer', email: 'rajesh.i@bangaloremetro.gov.in', phone: '+91 98765 66666',
+      company: 'BMRCL', designation: 'Chief Engineer',
+      tags: ['govt', 'metro'], visibility: 'team',
+      religion: encrypt('Hindu'), caste: encrypt('Brahmin'),
+    }},
+    { owner: managerA, data: {
+      name: 'Priya Mehta', email: 'priya.mehta@l-t.com', phone: '+91 98765 33333',
+      company: 'Larsen & Toubro', designation: 'VP, Infrastructure',
+      tags: ['tier-1', 'epc'], visibility: 'org',
+      religion: encrypt('Hindu'), birthday: dob(1980, 12, 1),
+    }},
+    { owner: boss, data: {
+      name: 'David Fernandes', email: 'd.fernandes@garuda-infra.com', phone: '+91 91234 56789',
+      company: 'Garuda Infrastructure', designation: 'Managing Director',
+      tags: ['md', 'decision-maker'], visibility: 'boss_only',
+      religion: encrypt('Christian'), anniversary: dob(2003, 2, 14),
+    }},
+    { owner: managerA, data: {
+      name: 'Amita Joshi', email: 'amita@joshi-consulting.in', phone: '+91 88001 23456',
+      company: 'Joshi Consulting Group', designation: 'Lead Consultant',
+      tags: ['consultant'], visibility: 'team',
+      religion: encrypt('Hindu'),
+    }},
   ]
-  await Expense.insertMany(expenseData)
+  await Promise.all(contactSeeds.map(c => Contact.create({
+    createdBy: c.owner._id.toString(), ...c.data,
+  })))
 
-  // ── Announcements ─────────────────────────────────────────────────
+  /* ─── 9) Announcements ────────────────────────────────────────────── */
   await Announcement.insertMany([
     {
-      authorId: userId, authorName: 'Harsh Pandhe',
-      title: 'Office Closed — Maharashtra Day',
-      body: 'The office will remain closed on 1st May 2026 (Thursday) for Maharashtra Day. Work from home if required.',
-      pinned: true, priority: 'important',
-      createdAt: new Date('2026-04-25'),
-    },
-    {
-      authorId: userId, authorName: 'Harsh Pandhe',
-      title: 'New Project Awarded — Tirupati Ropeway',
-      body: 'Excited to announce that DGS has been awarded the Tirupati-Tirumala Urban Ropeway Connectivity project by AP Infrastructure Corp. Kick-off meeting scheduled for 15th April. All team members please attend.',
+      authorId: boss._id.toString(), authorName: 'Harsh Pandhe',
+      title: 'Tirupati Ropeway Project Awarded',
+      body: 'Excited to announce that Doppelmayr India has been awarded the Tirupati-Tirumala urban ropeway connectivity project by AP Infrastructure Corp. Kick-off meeting scheduled later this quarter. All team members please review the project brief on the shared drive.',
       pinned: true, priority: 'urgent',
-      createdAt: new Date('2026-04-10'),
+      createdAt: D(-5),
     },
     {
-      authorId: userId, authorName: 'Harsh Pandhe',
+      authorId: boss._id.toString(), authorName: 'Harsh Pandhe',
       title: 'Updated Leave Policy FY 2026–27',
-      body: 'HR has updated the leave policy for FY 2026–27. Casual leave increased to 12 days. Earned leave carry-forward capped at 30 days. Please review the updated policy document on the shared drive.',
-      pinned: false, priority: 'important',
-      createdAt: new Date('2026-04-01'),
+      body: 'HR has updated the leave policy. Casual leave remains 12 days. Earned leave carry-forward capped at 30 days. Privilege leave bumped to 3 days/year for managers. Full policy on shared drive.',
+      pinned: true, priority: 'important',
+      createdAt: D(-12),
     },
     {
-      authorId: userId, authorName: 'Harsh Pandhe',
-      title: 'Q4 All-Hands Meeting — 30th April',
-      body: 'Mandatory all-hands meeting on 30th April at 3:00 PM in the main conference room. Agenda: Q4 review, FY2027 targets, and Tirupati project update. Attendance compulsory.',
+      authorId: managerA._id.toString(), authorName: 'Priya Iyer',
+      title: 'Engineering Town Hall — Friday 3 PM',
+      body: 'Mandatory engineering town hall this Friday at 3 PM. Q1 review, Q2 priorities, and Tirupati project deep-dive on agenda.',
       pinned: false, priority: 'normal',
-      createdAt: new Date('2026-04-22'),
+      createdAt: D(-2),
     },
     {
-      authorId: userId, authorName: 'Harsh Pandhe',
-      title: 'IT: System Maintenance — Saturday 26th April',
-      body: 'Planned maintenance on Saturday 26th April from 10 PM to 2 AM. DoppelDash and internal systems will be unavailable. Save your work before EOD Saturday.',
+      authorId: boss._id.toString(), authorName: 'Harsh Pandhe',
+      title: 'Office closed — May Day',
+      body: 'Office will remain closed on 1st May (Maharashtra Day / Labour Day). Optional WFH for critical project deliverables.',
       pinned: false, priority: 'normal',
-      createdAt: new Date('2026-04-23'),
+      createdAt: D(-8),
     },
+  ])
+
+  /* ─── 10) Public holidays (current year) ──────────────────────────── */
+  await PublicHoliday.insertMany([
+    { name: 'Republic Day',       date: new Date(yr, 0, 26), type: 'national',   year: yr },
+    { name: 'Holi',               date: new Date(yr, 2, 14), type: 'national',   year: yr },
+    { name: 'Good Friday',        date: new Date(yr, 3, 18), type: 'national',   year: yr },
+    { name: 'Maharashtra Day',    date: new Date(yr, 4, 1),  type: 'regional',   year: yr },
+    { name: 'Eid al-Fitr',        date: new Date(yr, 4, 21), type: 'national',   year: yr },
+    { name: 'Independence Day',   date: new Date(yr, 7, 15), type: 'national',   year: yr },
+    { name: 'Janmashtami',        date: new Date(yr, 7, 25), type: 'restricted', year: yr },
+    { name: 'Gandhi Jayanti',     date: new Date(yr, 9, 2),  type: 'national',   year: yr },
+    { name: 'Dussehra',           date: new Date(yr, 9, 21), type: 'national',   year: yr },
+    { name: 'Diwali',             date: new Date(yr, 10, 9), type: 'national',   year: yr },
+    { name: 'Christmas',          date: new Date(yr, 11, 25),type: 'national',   year: yr },
+  ])
+
+  /* ─── 11) Org settings ────────────────────────────────────────────── */
+  await OrgSettings.create({
+    name:    'Doppelmayr India Pvt Ltd',
+    address: 'Navi Mumbai, Maharashtra, India',
+    website: 'https://www.doppelmayr.com',
+    phone:   '+91 22 0000 0000',
+    email:   'info@doppelmayr.com',
+    updatedBy: boss._id.toString(),
+  })
+
+  /* ─── 12) Seed audit log entries ─────────────────────────────────── */
+  await AuditLog.insertMany([
+    { action: 'user.role_changed', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
+      targetId: managerA._id.toString(), targetType: 'user',
+      metadata: { newRole: 'manager', employeeName: 'Priya Iyer' }, createdAt: D(-60) },
+    { action: 'leave.approved', performedBy: managerA._id.toString(), performedByName: 'Priya Iyer',
+      targetId: 'seed-leave-1', targetType: 'leave',
+      metadata: { employeeName: 'Aarav Sharma', days: 3, status: 'approved' }, createdAt: D(-28) },
+    { action: 'expense.paid', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
+      targetId: 'seed-exp-1', targetType: 'expense',
+      metadata: { employeeName: 'Aarav Sharma', amount: 2450, status: 'paid' }, createdAt: D(-38) },
+    { action: 'travel.approved', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
+      targetId: 'seed-tr-1', targetType: 'travel_request',
+      metadata: { employeeName: 'Karan Verma', destination: 'Delhi', amount: 28000 }, createdAt: D(-5) },
+    { action: 'user.reporting_manager_changed', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
+      targetId: employees[0]._id.toString(), targetType: 'user',
+      metadata: { reportingManagerId: managerA._id.toString(), employeeName: 'Aarav Sharma' }, createdAt: D(-60) },
   ])
 
   return NextResponse.json({
     ok: true,
+    accounts: [
+      { role: 'boss',     email: boss.email,     password: DEFAULT_PASSWORD },
+      { role: 'manager',  email: managerA.email, password: DEFAULT_PASSWORD },
+      { role: 'manager',  email: managerB.email, password: DEFAULT_PASSWORD },
+      ...empSeeds.map((e, i) => ({
+        role: 'employee', email: e.email, password: DEFAULT_PASSWORD,
+        onboardingComplete: i !== empSeeds.length - 1,
+      })),
+    ],
     seeded: {
-      contacts: contacts.length,
-      leaves: leaveData.length,
-      expenses: expenseData.length,
-      announcements: 5,
+      users:        allUsers.length,
+      employees:    allUsers.length,
+      leaveBalances:allUsers.length,
+      leaves:       leaveSeeds.length,
+      expenses:     expSeeds.length,
+      travel:       travelSeeds.length,
+      contacts:     contactSeeds.length,
+      announcements:4,
+      holidays:     11,
+      auditEntries: 5,
     },
-    userId,
   })
 }
