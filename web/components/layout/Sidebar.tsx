@@ -113,7 +113,7 @@ export default function Sidebar() {
                 type="button"
                 onClick={() => isCollapsible && setCollapsedSections(s => ({ ...s, [section.label]: showItems }))}
                 className="flex items-center justify-between w-full text-[9px] font-bold tracking-[0.12em] text-white/35 uppercase px-2 mb-1.5 hover:text-white/60 transition-colors"
-                aria-expanded={showItems ? 'true' : 'false'}
+                aria-expanded={showItems}
               >
                 <span>{section.label}</span>
                 {isCollapsible && (

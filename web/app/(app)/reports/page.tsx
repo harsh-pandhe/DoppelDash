@@ -374,23 +374,25 @@ export default function ReportsPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-min">
+          <>
             <SortableTileGrid
-              items={layout.map((e, idx) => ({ id: `${idx}::${e.id}`, tileId: e.id, size: e.size, origIdx: idx }))}
+              items={layout.map((e, idx) => {
+                const colSpan = e.size === 'sm' ? 'col-span-2 sm:col-span-1' :
+                                e.size === 'md' ? 'col-span-2' :
+                                                  'col-span-2 lg:col-span-4'
+                return { id: `${idx}::${e.id}`, tileId: e.id, size: e.size, origIdx: idx, className: `${colSpan} group` }
+              })}
               editing={editMode}
               onReorder={(next) => setLayout(next.map(n => ({ id: n.tileId, size: n.size })))}
-              className="contents"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-min"
               renderTile={(entry) => {
                 const origIdx = entry.origIdx
                 const real    = layout[origIdx]
                 const def     = tileById(real.id); if (!def) return null
-                const colSpan = real.size === 'sm' ? 'col-span-2 sm:col-span-1' :
-                                real.size === 'md' ? 'col-span-2' :
-                                                     'col-span-2 lg:col-span-4'
                 return (
-                  <div className={`${colSpan} relative group`}>
+                  <>
                     {editMode && (
-                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-10 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
+                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-20 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
                         <button type="button" aria-label="Move up" disabled={origIdx === 0}
                           onClick={() => moveTile(origIdx, -1)}
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -401,7 +403,7 @@ export default function ReportsPage() {
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
                           <ChevronDown className="w-3.5 h-3.5" />
                         </button>
-                        <button type="button" aria-label="Cycle size" title={`Size: ${real.size}`}
+                        <button type="button" aria-label={`Cycle size (currently ${real.size})`} title={`Size: ${real.size} — click to cycle`}
                           onClick={() => cycleSize(origIdx)}
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface transition-colors">
                           <Layers className="w-3.5 h-3.5" />
@@ -414,19 +416,19 @@ export default function ReportsPage() {
                       </div>
                     )}
                     <TileBody def={def} data={data} dateLabel={dateLabel} />
-                  </div>
+                  </>
                 )
               }}
             />
 
             {editMode && (
               <button type="button" onClick={() => setCatalogOpen(true)}
-                className="col-span-2 lg:col-span-1 min-h-[120px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-surface-muted hover:text-brand-600">
+                className="w-full min-h-[80px] mt-4 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-surface-muted hover:text-brand-600">
                 <Plus className="w-5 h-5" />
                 <span className="text-xs font-semibold">Add tile</span>
               </button>
             )}
-          </div>
+          </>
         )}
 
         {/* Catalog */}
