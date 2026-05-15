@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, IndianRupee, Clock, CheckCircle2, XCircle, CreditCard, MapPin, Calendar, FileText, Loader2, AlertCircle, Receipt, X, ZoomIn } from 'lucide-react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -73,7 +73,7 @@ function ReceiptViewer({ urls }: { urls: string[] }) {
           <Dialog.Content className="fixed z-50 inset-0 flex items-center justify-center p-4" aria-describedby={undefined}>
             <Dialog.Title className="sr-only">Receipt viewer</Dialog.Title>
             <div className="relative max-w-3xl w-full">
-              <button type="button" onClick={() => setOpen(false)}
+              <button type="button" aria-label="Close receipt viewer" onClick={() => setOpen(false)}
                 className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors">
                 <X className="w-6 h-6" />
               </button>
@@ -166,13 +166,17 @@ export default function ExpenseDetailPage() {
   const router   = useRouter()
   const { user } = useUser()
   const toast    = useToast()
-  const role     = (user?.unsafeMetadata?.role as string) || 'employee'
+  const role     = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'boss'
   const isBoss    = role === 'boss'
 
   const [expense, setExpense] = useState<Expense | null>(null)
   const [loading, setLoading] = useState(true)
   const [acting,  setActing]  = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+  const isOwner = !!(user && expense && expense.userId === user.id)
+  const [newStatus, setNewStatus] = useState('pending_manager')
+  const [statusNote, setStatusNote] = useState('')
 
   const fetchExpense = useCallback(async () => {
     const res = await fetch(`/api/rms/${id}`)
@@ -182,6 +186,13 @@ export default function ExpenseDetailPage() {
   }, [id, router])
 
   useEffect(() => { fetchExpense() }, [fetchExpense])
+
+  useEffect(() => {
+    if (expense) {
+      setNewStatus(expense.status)
+      setStatusNote('')
+    }
+  }, [expense])
 
   const action = async (status: string, note?: string, paymentProof?: string) => {
     setActing(true)
@@ -203,10 +214,22 @@ export default function ExpenseDetailPage() {
     setActing(false)
   }
 
+  const withdraw = async () => {
+    setActing(true)
+    const res = await fetch(`/api/rms/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      toast('Reimbursement withdrawn', 'info')
+      router.push('/rms')
+    } else {
+      toast('Could not withdraw — refresh and retry', 'error')
+      setActing(false)
+    }
+  }
+
   if (loading) return (
     <>
       <Header title="Expense" />
-      <main className="flex-1 p-6 max-w-2xl">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto bg-surface-2">
         <div className="space-y-4">{[...Array(4)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-surface-border animate-pulse" />)}</div>
       </main>
     </>
@@ -219,7 +242,7 @@ export default function ExpenseDetailPage() {
   return (
     <>
       <Header title="Expense Detail" />
-      <main className="flex-1 p-6 max-w-2xl space-y-5 animate-fade-in">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl space-y-5 animate-fade-in w-full mx-auto bg-surface-2">
         <Link href="/rms" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Reimbursements
         </Link>
@@ -337,6 +360,101 @@ export default function ExpenseDetailPage() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm font-semibold hover:bg-green-100 transition-colors">
                 <FileText className="w-4 h-4" /> View Payment Proof
               </a>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status update */}
+        {(isManager || isBoss) && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-brand-500" /> Change Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <label className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-surface-muted">New status</span>
+                  <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
+                    className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                    {(isBoss ? [
+                      { value: 'pending_boss', label: 'Pending payout' },
+                      { value: 'paid', label: 'Paid' },
+                      { value: 'rejected', label: 'Rejected' },
+                      { value: 'returned', label: 'Returned to employee' },
+                    ] : [
+                      { value: 'pending_manager', label: 'Pending manager' },
+                      { value: 'pending_boss', label: 'Pending payout' },
+                      { value: 'rejected', label: 'Rejected' },
+                      { value: 'returned', label: 'Returned to employee' },
+                    ]).map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex items-center gap-3">
+                  <Button className="gap-2" onClick={() => action(newStatus, statusNote)} disabled={acting || newStatus === expense.status}>
+                    <CheckCircle2 className="w-4 h-4" /> Update status
+                  </Button>
+                  {newStatus === 'paid' && isBoss && (
+                    <span className="text-xs text-surface-muted">Proof optional after update.</span>
+                  )}
+                </div>
+              </div>
+              <label className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-surface-muted">Note</span>
+                <textarea value={statusNote} onChange={e => setStatusNote(e.target.value)} rows={3}
+                  placeholder="Optional note for the employee or finance team…"
+                  className="w-full rounded-xl border border-surface-border px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+              </label>
+              {expense.status === 'paid' && !isBoss && (
+                <p className="text-xs text-surface-muted">Paid expenses can only be changed by finance or a boss account.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Owner withdraw — pending_manager or returned only */}
+        {isOwner && !isManager && (expense.status === 'pending_manager' || expense.status === 'returned') && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-500" /> Withdraw Request
+              </CardTitle>
+              <p className="text-xs text-surface-muted">
+                {expense.status === 'returned'
+                  ? 'This was returned for revision. You can revise it from the list, or withdraw it entirely.'
+                  : 'Cancel this pending request before your manager reviews it.'}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <Button type="button" variant="outline"
+                className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                onClick={() => setWithdrawOpen(true)} disabled={acting}>
+                <XCircle className="w-4 h-4" /> Withdraw request
+              </Button>
+              <Dialog.Root open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                <Dialog.Portal>
+                  <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+                  <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+                    <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Withdraw reimbursement?</Dialog.Title>
+                    <Dialog.Description className="text-sm text-surface-muted mb-5">
+                      This removes <strong className="text-gray-900">{expense.title}</strong> for <strong className="text-gray-900">₹{expense.amount.toLocaleString('en-IN')}</strong>. You can submit a new one anytime.
+                    </Dialog.Description>
+                    <div className="flex gap-3 justify-end">
+                      <Dialog.Close asChild>
+                        <Button type="button" variant="outline" size="sm">Keep request</Button>
+                      </Dialog.Close>
+                      <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 gap-1.5"
+                        onClick={withdraw} disabled={acting}>
+                        {acting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                        Withdraw
+                      </Button>
+                    </div>
+                  </Dialog.Content>
+                </Dialog.Portal>
+              </Dialog.Root>
             </CardContent>
           </Card>
         )}

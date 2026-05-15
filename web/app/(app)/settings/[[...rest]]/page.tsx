@@ -1,9 +1,10 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { UserProfile } from '@clerk/nextjs'
-import { Shield, User, Briefcase, ChevronDown, Check, Loader2, Mail, CheckCircle2, AlertCircle, RefreshCw, Inbox, Send, Trash2, Eye, EyeOff, Building2, Globe, Phone } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useUser } from '@/lib/useUser'
+import { useRouter } from 'next/navigation'
+import { Shield, User, Briefcase, Lock, Loader2, Mail, CheckCircle2, AlertCircle, RefreshCw, Inbox, Send, Trash2, Eye, EyeOff, Building2, Check, LogOut, KeyRound } from 'lucide-react'
 import Header from '@/components/layout/Header'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
@@ -11,172 +12,84 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import FileUploader from '@/components/ui/file-uploader'
 
-const ROLES = [
-  { value: 'employee', label: 'Employee',  desc: 'Standard access — submit leaves & expenses',              icon: User,      color: 'text-gray-500'  },
-  { value: 'manager',  label: 'Manager',   desc: 'Approve/reject leave and expense requests',               icon: Briefcase, color: 'text-brand-500' },
-  { value: 'boss',     label: 'Boss',      desc: 'Final approval — mark expenses as paid, full oversight',  icon: Shield,    color: 'text-accent-500'},
-]
-
-function RoleSwitcher() {
-  const { user } = useUser()
-  const toast    = useToast()
-  const current  = (user?.unsafeMetadata?.role as string) || 'employee'
-  const [open,    setOpen]   = useState(false)
-  const [saving,  setSaving] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const switchRole = async (role: string) => {
-    if (role === current) { setOpen(false); return }
-    setSaving(true)
-    try {
-      await user?.update({ unsafeMetadata: { ...user.unsafeMetadata, role } })
-      toast(`Role changed to ${role}`, 'success')
-      setOpen(false)
-      window.location.reload()
-    } catch {
-      toast('Failed to update role', 'error')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const cur = ROLES.find(r => r.value === current) || ROLES[0]
-  const CurIcon = cur.icon
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-surface-border bg-white hover:border-brand-400 transition-colors group"
-      >
-        <div className={`w-9 h-9 rounded-lg bg-surface flex items-center justify-center flex-shrink-0 ${cur.color}`}>
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CurIcon className="w-4 h-4" />}
-        </div>
-        <div className="flex-1 text-left">
-          <p className="text-sm font-bold text-gray-900 capitalize">{cur.label}</p>
-          <p className="text-xs text-surface-muted">{cur.desc}</p>
-        </div>
-        <ChevronDown className={`w-4 h-4 text-surface-muted transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-surface-border rounded-xl shadow-lg z-20 overflow-hidden">
-          {ROLES.map(role => {
-            const Icon = role.icon
-            const active = role.value === current
-            return (
-              <button
-                key={role.value}
-                type="button"
-                onClick={() => switchRole(role.value)}
-                className="flex items-center gap-3 w-full px-4 py-3 hover:bg-surface transition-colors text-left"
-              >
-                <div className={`w-8 h-8 rounded-lg bg-surface flex items-center justify-center flex-shrink-0 ${role.color}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900 capitalize">{role.label}</p>
-                  <p className="text-xs text-surface-muted">{role.desc}</p>
-                </div>
-                {active && <Check className="w-4 h-4 text-brand-500 flex-shrink-0" />}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
+const ROLE_META: Record<string, { icon: React.ElementType; color: string; label: string; desc: string }> = {
+  employee: { icon: User,      color: 'text-gray-500',  label: 'Employee', desc: 'Standard access' },
+  manager:  { icon: Briefcase, color: 'text-brand-500', label: 'Manager',  desc: 'Approve requests, manage team' },
+  boss:     { icon: Shield,    color: 'text-amber-500', label: 'Boss',     desc: 'Full oversight & admin' },
 }
 
-function EmailSyncCard() {
+function ChangePasswordCard() {
   const toast = useToast()
-  const [status,       setStatus]       = useState<{ configured: boolean; lastSyncedAt: string | null } | null>(null)
-  const [syncing,      setSyncing]      = useState(false)
-  const [syncResult,   setSyncResult]   = useState<{ fetched: number; matched: number } | null>(null)
+  const [cur,  setCur]  = useState('')
+  const [n1,   setN1]   = useState('')
+  const [n2,   setN2]   = useState('')
+  const [show, setShow] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetch('/api/sync/email').then(r => r.json()).then(setStatus).catch(() => {})
-  }, [])
-
-  const syncNow = async () => {
-    setSyncing(true); setSyncResult(null)
-    try {
-      const res  = await fetch('/api/sync/email', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) { toast(data.error || 'Sync failed', 'error'); return }
-      setSyncResult({ fetched: data.fetched, matched: data.matched })
-      setStatus(s => s ? { ...s, lastSyncedAt: data.lastSyncedAt } : s)
-      toast(`Synced — ${data.matched} email(s) matched to contacts`, 'success')
-    } catch {
-      toast('Sync failed', 'error')
-    } finally {
-      setSyncing(false)
-    }
+  const submit = async () => {
+    if (n1 !== n2) { toast('Passwords do not match', 'error'); return }
+    if (n1.length < 8) { toast('At least 8 characters', 'error'); return }
+    setSaving(true)
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ currentPassword: cur, newPassword: n1 }),
+    })
+    if (res.ok) { toast('Password changed', 'success'); setCur(''); setN1(''); setN2('') }
+    else { toast((await res.json()).error || 'Failed', 'error') }
+    setSaving(false)
   }
 
   return (
-    <div className="flex items-start gap-4 p-4 rounded-xl border border-surface-border bg-white">
-      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Inbox className="w-5 h-5 text-indigo-500" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-gray-900">Email → CRM Sync (IMAP)</p>
-        <p className="text-xs text-surface-muted">Matches inbox emails to contacts by sender address, adds timeline entries.</p>
-        {status !== null && (
-          <p className="text-xs mt-1 flex items-center gap-1">
-            {status.configured
-              ? <><CheckCircle2 className="w-3 h-3 text-green-500" /><span className="text-green-600 font-semibold">Configured</span></>
-              : <><AlertCircle  className="w-3 h-3 text-amber-500" /><span className="text-amber-600 font-semibold">Not configured</span> — add IMAP_HOST / IMAP_USER / IMAP_PASS to .env.local</>
-            }
-          </p>
-        )}
-        {status?.lastSyncedAt && (
-          <p className="text-[10px] text-surface-muted mt-0.5">
-            Last synced: {new Date(status.lastSyncedAt).toLocaleString('en-IN')}
-          </p>
-        )}
-        {syncResult && (
-          <p className="text-xs text-brand-600 font-semibold mt-1">
-            ✓ {syncResult.fetched} fetched · {syncResult.matched} matched
-          </p>
-        )}
-      </div>
-      <Button type="button" size="sm" variant="outline" className="gap-1.5 flex-shrink-0"
-        onClick={syncNow} disabled={syncing || !status?.configured}>
-        {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-        {syncing ? 'Syncing…' : 'Sync Now'}
-      </Button>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2"><KeyRound className="w-4 h-4 text-brand-500"/>Change Password</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <div className="space-y-1.5">
+          <Label htmlFor="cur-pwd">Current password</Label>
+          <Input id="cur-pwd" type={show?'text':'password'} value={cur} onChange={e => setCur(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="n1-pwd">New password</Label>
+          <div className="relative">
+            <Input id="n1-pwd" type={show?'text':'password'} value={n1} onChange={e => setN1(e.target.value)} placeholder="Min 8 characters" />
+            <button type="button" title="Toggle" aria-label="Toggle password visibility" onClick={() => setShow(s=>!s)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-gray-700">
+              {show?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}
+            </button>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="n2-pwd">Confirm new password</Label>
+          <Input id="n2-pwd" type={show?'text':'password'} value={n2} onChange={e => setN2(e.target.value)} />
+        </div>
+        <Button className="gap-2" onClick={submit} disabled={saving || !n1 || n1 !== n2}>
+          {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Lock className="w-4 h-4"/>}
+          Update Password
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 
 const SMTP_PRESETS = [
-  { label: 'Outlook / Microsoft 365', host: 'smtp.office365.com', port: 587 },
-  { label: 'Gmail',                   host: 'smtp.gmail.com',      port: 587 },
-  { label: 'Yahoo Mail',              host: 'smtp.mail.yahoo.com', port: 587 },
-  { label: 'Custom',                  host: '',                    port: 587 },
+  { label: 'Gmail',           host: 'smtp.gmail.com',      port: 587, hint: 'Generate App Password at myaccount.google.com → Security → 2FA → App passwords' },
+  { label: 'Outlook / 365',   host: 'smtp.office365.com',  port: 587, hint: 'Use App Password from myaccount.microsoft.com → Security → Advanced security' },
+  { label: 'Yahoo',           host: 'smtp.mail.yahoo.com', port: 587, hint: 'Generate App Password in Yahoo Account Security' },
+  { label: 'Zoho',            host: 'smtp.zoho.com',       port: 587, hint: 'Use Zoho Mail App-Specific Password' },
+  { label: 'Custom',          host: '',                    port: 587, hint: 'Any SMTP server' },
 ]
 
 function MyEmailCard() {
   const toast = useToast()
-  const [config,    setConfig]    = useState<{ emailAddress: string; smtpHost: string; smtpPort: number; isVerified: boolean } | null>(null)
-  const [loading,   setLoading]   = useState(true)
-  const [editing,   setEditing]   = useState(false)
-  const [testing,   setTesting]   = useState(false)
-  const [saving,    setSaving]    = useState(false)
-  const [showPass,  setShowPass]  = useState(false)
-
-  const [form, setForm] = useState({ emailAddress: '', smtpHost: '', smtpPort: 587, appPassword: '' })
+  const [config,   setConfig]   = useState<{ emailAddress: string; smtpHost: string; smtpPort: number; isVerified: boolean } | null>(null)
+  const [loading,  setLoading]  = useState(true)
+  const [editing,  setEditing]  = useState(false)
+  const [testing,  setTesting]  = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [showPass, setShowPass] = useState(false)
+  const [form,     setForm]     = useState({ emailAddress: '', smtpHost: '', smtpPort: 587, appPassword: '' })
+  const [presetHint, setPresetHint] = useState<string>('')
 
   useEffect(() => {
     fetch('/api/user/email-config')
@@ -186,159 +99,140 @@ function MyEmailCard() {
       .finally(() => setLoading(false))
   }, [])
 
-  const applyPreset = (host: string, port: number) => setForm(f => ({ ...f, smtpHost: host, smtpPort: port }))
+  const applyPreset = (p: typeof SMTP_PRESETS[0]) => {
+    setForm(f => ({ ...f, smtpHost: p.host, smtpPort: p.port }))
+    setPresetHint(p.hint)
+  }
 
   const save = async () => {
-    if (!form.emailAddress || !form.smtpHost || !form.appPassword) {
-      toast('Fill all fields', 'error'); return
-    }
+    if (!form.emailAddress || !form.smtpHost || !form.appPassword) { toast('Fill all fields', 'error'); return }
     setSaving(true)
-    try {
-      const res = await fetch('/api/user/email-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) { toast((await res.json()).error || 'Save failed', 'error'); return }
-      toast('Email config saved', 'success')
-      setConfig({ ...form, isVerified: false })
+    const res = await fetch('/api/user/email-config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(form) })
+    if (res.ok) {
+      toast('Saved — click Test to verify', 'success')
+      setConfig({ emailAddress: form.emailAddress, smtpHost: form.smtpHost, smtpPort: form.smtpPort, isVerified: false })
       setEditing(false)
-    } catch {
-      toast('Save failed', 'error')
-    } finally {
-      setSaving(false)
-    }
+    } else toast((await res.json()).error || 'Save failed', 'error')
+    setSaving(false)
   }
 
   const testConnection = async () => {
     setTesting(true)
-    try {
-      const res = await fetch('/api/user/email-config/test', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) { toast(data.error || 'Test failed', 'error'); return }
+    const res = await fetch('/api/user/email-config/test', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) {
       toast('Connected! Test email sent to yourself', 'success')
       setConfig(c => c ? { ...c, isVerified: true } : c)
-    } catch {
-      toast('Test failed', 'error')
-    } finally {
-      setTesting(false)
-    }
+    } else toast(data.error || 'Connection test failed', 'error')
+    setTesting(false)
   }
 
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const remove = async () => {
     await fetch('/api/user/email-config', { method: 'DELETE' })
     setConfig(null)
     setForm({ emailAddress: '', smtpHost: '', smtpPort: 587, appPassword: '' })
     setEditing(true)
-    toast('Email config removed', 'info')
+    setConfirmRemove(false)
+    toast('Email disconnected', 'info')
   }
 
-  if (loading) return (
-    <div className="flex items-center gap-3 p-4 rounded-xl border border-surface-border bg-white">
-      <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
-      <span className="text-sm text-surface-muted">Loading email config…</span>
-    </div>
-  )
+  if (loading) return <div className="h-20 rounded-xl bg-surface-border animate-pulse" />
 
   return (
     <div className="rounded-xl border border-surface-border bg-white overflow-hidden">
-      {/* Header row */}
-      <div className="flex items-center gap-4 p-4">
-        <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-start gap-4 p-4">
+        <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
           <Send className="w-5 h-5 text-brand-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900">My Email (Outgoing)</p>
-          <p className="text-xs text-surface-muted">Link your Outlook or Gmail to send CRM campaigns from your account.</p>
+          <p className="text-sm font-bold text-gray-900">Connect Your Email</p>
+          <p className="text-xs text-surface-muted">Send CRM messages, OTPs, and announcements from your own email account via SMTP.</p>
           {config && (
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-xs mt-1 flex items-center gap-1.5">
               {config.isVerified
-                ? <><CheckCircle2 className="w-3 h-3 text-green-500" /><span className="text-xs text-green-600 font-semibold">{config.emailAddress} — Verified</span></>
-                : <><AlertCircle  className="w-3 h-3 text-amber-500" /><span className="text-xs text-amber-600 font-semibold">{config.emailAddress} — Not tested</span></>
+                ? <><CheckCircle2 className="w-3 h-3 text-green-500"/><span className="text-green-600 font-semibold">{config.emailAddress}</span><span className="text-surface-muted">— verified</span></>
+                : <><AlertCircle className="w-3 h-3 text-amber-500"/><span className="text-amber-600 font-semibold">{config.emailAddress}</span><span className="text-surface-muted">— not tested</span></>
               }
-            </div>
+            </p>
           )}
         </div>
         <div className="flex gap-2 flex-shrink-0">
           {config && !config.isVerified && (
             <Button size="sm" variant="outline" className="gap-1.5" onClick={testConnection} disabled={testing}>
-              {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              {testing ? 'Testing…' : 'Test'}
+              {testing ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <CheckCircle2 className="w-3.5 h-3.5"/>}Test
             </Button>
           )}
           {config && (
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setForm({ emailAddress: config.emailAddress, smtpHost: config.smtpHost, smtpPort: config.smtpPort, appPassword: '' }); setEditing(e => !e) }}>
+            <Button size="sm" variant="outline" onClick={() => { setForm({ emailAddress: config.emailAddress, smtpHost: config.smtpHost, smtpPort: config.smtpPort, appPassword: '' }); setEditing(e => !e) }}>
               {editing ? 'Cancel' : 'Edit'}
             </Button>
           )}
-          {config && (
-            <Button size="sm" variant="outline" className="gap-1.5 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300" onClick={remove}>
-              <Trash2 className="w-3.5 h-3.5" />
+          {config && !confirmRemove && (
+            <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setConfirmRemove(true)} aria-label="Disconnect">
+              <Trash2 className="w-3.5 h-3.5"/>
             </Button>
+          )}
+          {config && confirmRemove && (
+            <div className="flex gap-1.5">
+              <Button size="sm" className="bg-red-600 hover:bg-red-700 gap-1 h-7 text-[11px]" onClick={remove}>
+                <Trash2 className="w-3 h-3" /> Disconnect
+              </Button>
+              <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setConfirmRemove(false)}>Cancel</Button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Edit form */}
       {editing && (
         <div className="border-t border-surface-border px-4 pb-4 pt-3 space-y-3 bg-surface/30">
-          {/* Presets */}
           <div>
-            <p className="text-xs font-semibold text-surface-muted mb-1.5">Quick setup</p>
-            <div className="flex flex-wrap gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-1.5">Quick Setup</p>
+            <div className="flex flex-wrap gap-1.5">
               {SMTP_PRESETS.map(p => (
-                <button
-                  key={p.label}
-                  type="button"
-                  onClick={() => applyPreset(p.host, p.port)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
-                    form.smtpHost === p.host
+                <button key={p.label} type="button" onClick={() => applyPreset(p)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+                    form.smtpHost === p.host && p.host !== ''
                       ? 'bg-brand-500 text-white border-brand-500'
                       : 'bg-white text-gray-700 border-surface-border hover:border-brand-400'
-                  }`}
-                >
+                  }`}>
                   {p.label}
                 </button>
               ))}
             </div>
+            {presetHint && <p className="text-[10px] text-brand-600 mt-1.5">💡 {presetHint}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2 space-y-1">
-              <Label htmlFor="emailAddress" className="text-xs">Email address</Label>
-              <Input id="emailAddress" type="email" placeholder="harsh@doppelmayr.in"
+              <Label htmlFor="me-email">Email address</Label>
+              <Input id="me-email" type="email" placeholder="you@gmail.com"
                 value={form.emailAddress} onChange={e => setForm(f => ({ ...f, emailAddress: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="smtpHost" className="text-xs">SMTP host</Label>
-              <Input id="smtpHost" placeholder="smtp.office365.com"
-                value={form.smtpHost} onChange={e => setForm(f => ({ ...f, smtpHost: e.target.value }))} />
+              <Label htmlFor="me-host">SMTP host</Label>
+              <Input id="me-host" placeholder="smtp.gmail.com" value={form.smtpHost} onChange={e => setForm(f => ({ ...f, smtpHost: e.target.value }))} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="smtpPort" className="text-xs">Port</Label>
-              <Input id="smtpPort" type="number" placeholder="587"
-                value={form.smtpPort} onChange={e => setForm(f => ({ ...f, smtpPort: Number(e.target.value) }))} />
+              <Label htmlFor="me-port">Port</Label>
+              <Input id="me-port" type="number" value={form.smtpPort} onChange={e => setForm(f => ({ ...f, smtpPort: Number(e.target.value) }))} />
             </div>
             <div className="col-span-2 space-y-1">
-              <Label htmlFor="appPassword" className="text-xs">App password</Label>
+              <Label htmlFor="me-pass">App password</Label>
               <div className="relative">
-                <Input id="appPassword" type={showPass ? 'text' : 'password'}
-                  placeholder="Generate in Outlook/Gmail account security settings"
+                <Input id="me-pass" type={showPass ? 'text' : 'password'} placeholder="App-specific password (not your login password)"
                   value={form.appPassword} onChange={e => setForm(f => ({ ...f, appPassword: e.target.value }))} />
-                <button type="button" onClick={() => setShowPass(s => !s)}
+                <button type="button" title="Toggle" aria-label="Toggle visibility" onClick={() => setShowPass(p => !p)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-gray-700">
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                 </button>
               </div>
-              <p className="text-[10px] text-surface-muted">
-                Outlook: myaccount.microsoft.com → Security → App passwords &nbsp;|&nbsp;
-                Gmail: myaccount.google.com → Security → App passwords
-              </p>
+              <p className="text-[10px] text-surface-muted">Encrypted at rest. Never shared.</p>
             </div>
           </div>
 
-          <Button type="button" className="w-full gap-2" onClick={save} disabled={saving}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save Email Config</>}
+          <Button className="w-full gap-2" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}Save Email Config
           </Button>
         </div>
       )}
@@ -346,72 +240,63 @@ function MyEmailCard() {
   )
 }
 
-function OutlookConnect() {
-  const [status, setStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown')
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('outlook') === 'connected') setStatus('connected')
-    else if (params.get('outlook') === 'error') setStatus('disconnected')
-    else setStatus('unknown')
-  }, [])
-
+function EmailSyncCard() {
+  const toast = useToast()
+  const [status, setStatus] = useState<{ configured: boolean; lastSyncedAt: string | null } | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  useEffect(() => { fetch('/api/sync/email').then(r => r.json()).then(setStatus).catch(()=>{}) }, [])
+  const syncNow = async () => {
+    setSyncing(true)
+    const res  = await fetch('/api/sync/email', { method: 'POST' })
+    const data = await res.json()
+    if (res.ok) toast(`Synced — ${data.matched || 0} matched`, 'success')
+    else toast(data.error || 'Sync failed', 'error')
+    setSyncing(false)
+  }
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-white">
-      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-        <Mail className="w-5 h-5 text-blue-500" />
+    <div className="flex items-start gap-4 p-4 rounded-xl border border-surface-border bg-white">
+      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Inbox className="w-5 h-5 text-indigo-500" />
       </div>
-      <div className="flex-1">
-        <p className="text-sm font-bold text-gray-900">Microsoft Outlook</p>
-        <p className="text-xs text-surface-muted">Auto-sync emails to CRM contact timelines</p>
-        {status === 'connected' && (
-          <p className="text-xs text-green-600 font-semibold flex items-center gap-1 mt-0.5">
-            <CheckCircle2 className="w-3 h-3" /> Connected
-          </p>
-        )}
-        {status === 'disconnected' && (
-          <p className="text-xs text-red-600 font-semibold flex items-center gap-1 mt-0.5">
-            <AlertCircle className="w-3 h-3" /> Connection failed — try again
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-gray-900">Email → CRM Sync (IMAP)</p>
+        <p className="text-xs text-surface-muted">Match inbox emails to contacts by sender address.</p>
+        {status !== null && (
+          <p className="text-xs mt-1 flex items-center gap-1">
+            {status.configured
+              ? <><CheckCircle2 className="w-3 h-3 text-green-500"/><span className="text-green-600 font-semibold">Configured</span></>
+              : <><AlertCircle className="w-3 h-3 text-amber-500"/><span className="text-amber-600 font-semibold">Not configured</span></>
+            }
           </p>
         )}
       </div>
-      <a href="/api/auth/outlook">
-        <Button type="button" size="sm" variant="outline" className="gap-1.5">
-          <Mail className="w-3.5 h-3.5" />
-          {status === 'connected' ? 'Reconnect' : 'Connect'}
-        </Button>
-      </a>
+      <Button type="button" size="sm" variant="outline" className="gap-1.5"
+        onClick={syncNow} disabled={syncing || !status?.configured}>
+        {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <RefreshCw className="w-3.5 h-3.5"/>}
+        Sync
+      </Button>
     </div>
   )
 }
 
-function OrgProfileCard() {
-  const { user } = useUser()
-  const toast  = useToast()
-  const role   = (user?.unsafeMetadata?.role as string) || 'employee'
-  const isBoss = role === 'boss'
-
-  const [form,    setForm]    = useState({ name: '', address: '', website: '', phone: '', email: '', logo: '' })
+function OrgProfileCard({ isBoss }: { isBoss: boolean }) {
+  const toast = useToast()
+  const [form, setForm] = useState({ name:'', address:'', website:'', phone:'', email:'', logo:'' })
   const [loading, setLoading] = useState(true)
-  const [saving,  setSaving]  = useState(false)
-  const [logo,    setLogo]    = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+  const [logo, setLogo] = useState<string[]>([])
 
   useEffect(() => {
     fetch('/api/org/settings').then(r => r.json()).then(d => {
-      setForm({ name: d.name || '', address: d.address || '', website: d.website || '', phone: d.phone || '', email: d.email || '', logo: d.logo || '' })
+      setForm({ name:d.name||'', address:d.address||'', website:d.website||'', phone:d.phone||'', email:d.email||'', logo:d.logo||'' })
       if (d.logo) setLogo([d.logo])
     }).finally(() => setLoading(false))
   }, [])
 
   const save = async () => {
     setSaving(true)
-    const payload = { ...form, logo: logo[0] || form.logo }
-    const res = await fetch('/api/org/settings', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-    if (res.ok) toast('Org profile saved', 'success')
-    else toast('Save failed', 'error')
+    const res = await fetch('/api/org/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ...form, logo: logo[0] || form.logo }) })
+    if (res.ok) toast('Saved', 'success'); else toast('Failed', 'error')
     setSaving(false)
   }
 
@@ -421,59 +306,41 @@ function OrgProfileCard() {
     <Card>
       <CardHeader>
         <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-brand-500" /> Organisation Profile
+          <Building2 className="w-4 h-4 text-brand-500"/>Organisation Profile
         </CardTitle>
-        <p className="text-xs text-surface-muted">Shown on reports and public contact pages.</p>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {!isBoss && (
-          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Only boss can edit org profile.
-          </p>
-        )}
-
-        {/* Logo */}
-        <div className="flex items-center gap-4">
-          {(logo[0] || form.logo) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logo[0] || form.logo} alt="Logo" className="w-16 h-16 rounded-xl object-contain border border-surface-border bg-white" />
-          ) : (
-            <div className="w-16 h-16 rounded-xl bg-brand-100 flex items-center justify-center">
-              <Building2 className="w-7 h-7 text-brand-500" />
-            </div>
-          )}
-          {isBoss && (
-            <FileUploader label="Logo" hint="PNG or SVG · Max 1 file" maxFiles={1}
-              onChange={urls => setLogo(urls)} disabled={saving} />
-          )}
-        </div>
-
+      <CardContent className="space-y-3 pt-0">
+        {!isBoss && <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Only boss can edit.</p>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-xs flex items-center gap-1"><Building2 className="w-3 h-3" /> Organisation Name</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} disabled={!isBoss} />
+            <Label>Name</Label>
+            <Input value={form.name} onChange={e => setForm(f=>({...f,name:e.target.value}))} disabled={!isBoss} />
           </div>
           <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-xs">Address</Label>
-            <Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} disabled={!isBoss} placeholder="123, Industrial Area, Pune" />
+            <Label>Address</Label>
+            <Input value={form.address} onChange={e => setForm(f=>({...f,address:e.target.value}))} disabled={!isBoss} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs flex items-center gap-1"><Globe className="w-3 h-3" /> Website</Label>
-            <Input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} disabled={!isBoss} placeholder="www.doppelmayr.in" />
+            <Label>Website</Label>
+            <Input value={form.website} onChange={e => setForm(f=>({...f,website:e.target.value}))} disabled={!isBoss} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</Label>
-            <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} disabled={!isBoss} placeholder="+91 20 xxxx xxxx" />
+            <Label>Phone</Label>
+            <Input value={form.phone} onChange={e => setForm(f=>({...f,phone:e.target.value}))} disabled={!isBoss} />
           </div>
           <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Contact Email</Label>
-            <Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!isBoss} placeholder="info@doppelmayr.in" />
+            <Label>Email</Label>
+            <Input type="email" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))} disabled={!isBoss} />
           </div>
+          {isBoss && (
+            <div className="sm:col-span-2">
+              <FileUploader label="Logo" hint="PNG or SVG · Max 1" maxFiles={1} onChange={setLogo} disabled={saving} />
+            </div>
+          )}
         </div>
-
         {isBoss && (
-          <Button type="button" className="gap-2" onClick={save} disabled={saving}>
-            {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Check className="w-4 h-4" /> Save Profile</>}
+          <Button className="gap-2" onClick={save} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}Save
           </Button>
         )}
       </CardContent>
@@ -483,77 +350,67 @@ function OrgProfileCard() {
 
 export default function SettingsPage() {
   const { user } = useUser()
+  const router   = useRouter()
+  const role     = user?.role || 'employee'
+  const meta     = ROLE_META[role] || ROLE_META.employee
+  const RoleIcon = meta.icon
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.replace('/sign-in')
+  }
 
   return (
     <>
       <Header title="Settings" />
-      <main className="flex-1 p-6 space-y-6 max-w-3xl">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 space-y-5 max-w-4xl w-full mx-auto bg-surface-2">
 
-        {/* Role switcher */}
-        <Card className="relative z-20">
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-gray-700">Your Role</CardTitle>
-            <p className="text-xs text-surface-muted mt-0.5">Controls what you can see and do in DoppelDash.</p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <RoleSwitcher />
-          </CardContent>
-        </Card>
-
-        {/* Account info */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold text-gray-700">Account Info</CardTitle>
+            <CardTitle className="text-sm font-bold text-gray-700">Account</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
-            {[
-              { label: 'Full name',  value: user?.fullName || '—' },
-              { label: 'Email',      value: user?.primaryEmailAddress?.emailAddress || '—' },
-              { label: 'User ID',    value: user?.id || '—' },
-              { label: 'Member since', value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-surface-border last:border-0">
-                <span className="text-xs font-semibold text-surface-muted uppercase tracking-wide">{label}</span>
-                <span className="text-sm font-medium text-gray-900 truncate max-w-xs text-right">{value}</span>
+            <div className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-white">
+              <div className={`w-12 h-12 rounded-xl bg-surface flex items-center justify-center ${meta.color}`}>
+                <RoleIcon className="w-5 h-5"/>
               </div>
-            ))}
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm text-gray-900">{user?.fullName || '—'}</p>
+                <p className="text-xs text-surface-muted">{user?.email || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5">{meta.label} · {meta.desc}</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link href="/profile" className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border border-surface-border text-xs font-semibold text-gray-700 hover:border-brand-400 hover:text-brand-600 transition-colors">
+                  <User className="w-3.5 h-3.5" /> Edit profile
+                </Link>
+                <Button variant="outline" size="sm" className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50" onClick={logout}>
+                  <LogOut className="w-3.5 h-3.5"/>Sign out
+                </Button>
+              </div>
+            </div>
+            <p className="text-[10px] text-surface-muted">Role can only be changed by the boss in User Management.</p>
           </CardContent>
         </Card>
 
-        {/* Outlook integration */}
+        <ChangePasswordCard />
+
+        <OrgProfileCard isBoss={role === 'boss'} />
+
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-bold text-gray-700">Integrations</CardTitle>
-            <p className="text-xs text-surface-muted mt-0.5">Connect external services to enhance your CRM.</p>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
             <MyEmailCard />
             <EmailSyncCard />
-            <OutlookConnect />
-          </CardContent>
-        </Card>
-
-        {/* Org Profile */}
-        <OrgProfileCard />
-
-        {/* Clerk UserProfile for password/2FA/etc */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-bold text-gray-700">Security & Profile</CardTitle>
-            <p className="text-xs text-surface-muted mt-0.5">Manage password, two-factor auth, and connected accounts.</p>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <UserProfile
-              appearance={{
-                elements: {
-                  rootBox:  'w-full',
-                  cardBox:  'shadow-none border-0 bg-transparent p-0 w-full',
-                  card:     'shadow-none border-0 bg-transparent p-0 m-0',
-                  navbar:   'hidden',
-                  pageScrollBox: 'p-0',
-                },
-              }}
-            />
+            <a href="/api/auth/outlook" className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-white hover:border-brand-300 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><Mail className="w-5 h-5 text-blue-500"/></div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Microsoft Outlook</p>
+                <p className="text-xs text-surface-muted">Auto-sync emails to CRM contact timelines</p>
+              </div>
+              <Button type="button" size="sm" variant="outline" className="gap-1.5"><Mail className="w-3.5 h-3.5"/>Connect</Button>
+            </a>
           </CardContent>
         </Card>
 

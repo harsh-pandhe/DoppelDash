@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
+import RichTextEditor from '@/components/ui/rich-text-editor'
 
 interface PreviewContact { _id: string; name: string; email: string; company?: string }
 
@@ -84,7 +85,8 @@ Output only the email body text, no subject line, no greeting like "Dear", start
   }
 
   const sendCampaign = async () => {
-    if (!subject.trim() || !body.trim()) { toast('Subject and body required', 'error'); return }
+    const bodyText = body.replace(/<[^>]*>/g, '').trim()
+    if (!subject.trim() || !bodyText) { toast('Subject and body required', 'error'); return }
     if (preview.length === 0) { toast('No contacts to send to', 'error'); return }
     setSending(true); setResult(null)
     try {
@@ -104,7 +106,7 @@ Output only the email body text, no subject line, no greeting like "Dear", start
   return (
     <>
       <Header title="Email Campaign" />
-      <main className="flex-1 p-6 max-w-4xl space-y-5 animate-fade-in">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-6xl space-y-5 w-full mx-auto">
         <Link href="/crm" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to CRM
         </Link>
@@ -112,7 +114,7 @@ Output only the email body text, no subject line, no greeting like "Dear", start
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Left — compose */}
           <div className="space-y-4">
-            <Card>
+            <Card className="rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Compose Campaign</CardTitle>
                 <p className="text-xs text-surface-muted">Send a bulk email to contacts by tag. Use {'{{name}}'} and {'{{company}}'} for personalization.</p>
@@ -156,9 +158,12 @@ Output only the email body text, no subject line, no greeting like "Dear", start
                       AI Draft
                     </Button>
                   </div>
-                  <textarea id="body" rows={8} value={body} onChange={e => setBody(e.target.value)}
-                    placeholder="Dear {{name}},&#10;&#10;Hope this message finds you well...&#10;&#10;Use {{name}} and {{company}} for personalization."
-                    className="flex w-full rounded-lg border border-surface-border bg-white px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none" />
+                  <RichTextEditor
+                    value={body}
+                    onChange={setBody}
+                    placeholder="Dear {{name}}, Hope this message finds you well… Use {{name}} and {{company}} for personalization."
+                    minHeight={180}
+                  />
                   <p className="text-[10px] text-surface-muted">Placeholders: {'{{name}}'}, {'{{company}}'}</p>
                 </div>
 
@@ -173,7 +178,7 @@ Output only the email body text, no subject line, no greeting like "Dear", start
                 )}
 
                 <Button type="button" className="w-full gap-2" onClick={sendCampaign}
-                  disabled={sending || preview.length === 0 || !subject || !body}>
+                  disabled={sending || preview.length === 0 || !subject || !body.replace(/<[^>]*>/g, '').trim()}>
                   {sending ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</> : <><Send className="w-4 h-4" />Send to {preview.length} Contact{preview.length !== 1 ? 's' : ''}</>}
                 </Button>
               </CardContent>
@@ -182,7 +187,7 @@ Output only the email body text, no subject line, no greeting like "Dear", start
 
           {/* Right — preview */}
           <div className="space-y-4">
-            <Card>
+            <Card className="rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Eye className="w-4 h-4 text-brand-500" /> Recipients Preview
@@ -222,18 +227,19 @@ Output only the email body text, no subject line, no greeting like "Dear", start
 
             {/* Preview of email with personalization */}
             {body && preview.length > 0 && (
-              <Card>
+              <Card className="rounded-2xl">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-bold text-gray-700">Email Preview (first recipient)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-xl bg-surface border border-surface-border p-4 text-sm text-gray-700 whitespace-pre-wrap">
+                  <div className="rounded-xl bg-surface border border-surface-border p-4 text-sm text-gray-700">
                     <p className="text-xs font-bold text-surface-muted mb-2 uppercase tracking-wide">Subject: {subject || '(no subject)'}</p>
                     <hr className="border-surface-border mb-3" />
-                    {body
-                      .replace(/\{\{name\}\}/gi, preview[0]?.name || '{{name}}')
-                      .replace(/\{\{company\}\}/gi, preview[0]?.company || '{{company}}')
-                    }
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html:
+                      body
+                        .replace(/\{\{name\}\}/gi, preview[0]?.name || '{{name}}')
+                        .replace(/\{\{company\}\}/gi, preview[0]?.company || '{{company}}')
+                    }} />
                   </div>
                 </CardContent>
               </Card>

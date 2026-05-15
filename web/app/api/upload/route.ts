@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
+import { getUser } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const formData = await req.formData()

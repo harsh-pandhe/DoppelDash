@@ -1,19 +1,18 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import Leave from '@/models/Leave'
 import Expense from '@/models/Expense'
 import Announcement from '@/models/Announcement'
 import { encrypt } from '@/lib/encrypt'
+import { getUser } from '@/lib/auth'
 
 // DEV ONLY — remove or gate behind env check before production
 export async function POST() {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Disabled in production' }, { status: 403 })
   }
-
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()

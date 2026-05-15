@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { rateLimit } from '@/lib/ratelimit'
+import { getUser } from '@/lib/auth'
 
 const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b'
@@ -42,7 +42,7 @@ async function extractWithGemma(base64Image: string): Promise<Record<string, str
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!rateLimit(`rms-ocr:${userId}`, 20, 60_000)) {

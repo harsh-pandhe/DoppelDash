@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import OrgSettings from '@/models/OrgSettings'
+import { getUser } from '@/lib/auth'
 
 export async function GET() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
@@ -16,11 +16,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const user = await currentUser().catch(() => null)
-  const role = (user?.unsafeMetadata?.role as string) || 'employee'
+  const role = user?.role || 'employee'
   if (role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
@@ -29,7 +27,7 @@ export async function POST(req: NextRequest) {
   const settings = await OrgSettings.findOneAndUpdate(
     {},
     { ...body, updatedBy: userId },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   ).lean()
 
   return NextResponse.json(settings)

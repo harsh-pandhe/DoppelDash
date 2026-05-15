@@ -34,7 +34,6 @@ export function decrypt(encoded: string): string {
 }
 
 const SENSITIVE = ['gender', 'caste', 'religion'] as const
-type Sensitive = typeof SENSITIVE[number]
 
 export function encryptContact(body: Record<string, unknown>): Record<string, unknown> {
   const out = { ...body }
@@ -50,6 +49,38 @@ export function decryptContact(doc: unknown): Record<string, unknown> {
   const out = { ...(doc as Record<string, unknown>) }
   for (const key of SENSITIVE as readonly string[]) {
     if (typeof out[key] === 'string') {
+      out[key] = decrypt(out[key] as string)
+    }
+  }
+  return out
+}
+
+const BANK_FIELDS = ['accountNumber', 'ifscCode', 'accountHolderName'] as const
+
+interface BankDetailsLike {
+  bankName?: string
+  accountNumber?: string
+  ifscCode?: string
+  accountHolderName?: string
+  accountType?: string
+}
+
+export function encryptBankDetails(bank: BankDetailsLike | null | undefined): BankDetailsLike | null | undefined {
+  if (!bank) return bank
+  const out: BankDetailsLike = { ...bank }
+  for (const key of BANK_FIELDS) {
+    if (typeof out[key] === 'string' && out[key]) {
+      out[key] = encrypt(out[key] as string)
+    }
+  }
+  return out
+}
+
+export function decryptBankDetails(bank: BankDetailsLike | null | undefined): BankDetailsLike | null | undefined {
+  if (!bank) return bank
+  const out: BankDetailsLike = { ...bank }
+  for (const key of BANK_FIELDS) {
+    if (typeof out[key] === 'string' && out[key]) {
       out[key] = decrypt(out[key] as string)
     }
   }

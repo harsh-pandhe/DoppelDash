@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       subscriptionId:     sub?.id,
       subscriptionExpiry: sub?.expirationDateTime ? new Date(sub.expirationDateTime) : undefined,
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   )
 
   return NextResponse.redirect(`${appUrl}/settings?outlook=connected`)

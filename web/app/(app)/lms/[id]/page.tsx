@@ -3,19 +3,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, CalendarClock, CheckCircle2, XCircle, Clock,
-  Calendar, FileText, AlertCircle, User, Paperclip,
+  Calendar, FileText, AlertCircle, User, Paperclip, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 
+type LeaveType = 'casual' | 'sick' | 'medical' | 'earned' | 'lwp' | 'privilege' | 'restricted'
+
 interface Leave {
   _id: string; userId: string; userName: string
-  type: 'casual' | 'medical' | 'earned'
+  type: LeaveType
   startDate: string; endDate: string; days: number
   reason: string; status: 'pending' | 'approved' | 'rejected'
   medicalDocs?: string[]; managerNote?: string; approvedBy?: string
@@ -27,10 +29,14 @@ const STATUS_META = {
   approved: { label: 'Approved',         icon: CheckCircle2, color: 'text-green-700  bg-green-50  border-green-200'  },
   rejected: { label: 'Rejected',         icon: XCircle,      color: 'text-red-700    bg-red-50    border-red-200'    },
 }
-const TYPE_META = {
-  casual:  { label: 'Casual Leave',  color: 'bg-blue-100  text-blue-700  border-blue-200'  },
-  medical: { label: 'Medical Leave', color: 'bg-red-100   text-red-700   border-red-200'   },
-  earned:  { label: 'Earned Leave',  color: 'bg-green-100 text-green-700 border-green-200' },
+const TYPE_META: Record<LeaveType, { label: string; color: string }> = {
+  casual:     { label: 'Casual Leave',     color: 'bg-blue-100   text-blue-700   border-blue-200'   },
+  sick:       { label: 'Sick Leave',       color: 'bg-red-100    text-red-700    border-red-200'    },
+  medical:    { label: 'Sick Leave',       color: 'bg-red-100    text-red-700    border-red-200'    },
+  earned:     { label: 'Earned Leave',     color: 'bg-green-100  text-green-700  border-green-200'  },
+  lwp:        { label: 'Leave Without Pay',color: 'bg-gray-100   text-gray-700   border-gray-200'   },
+  privilege:  { label: 'Privilege Leave',  color: 'bg-purple-100 text-purple-700 border-purple-200' },
+  restricted: { label: 'Restricted Leave', color: 'bg-orange-100 text-orange-700 border-orange-200' },
 }
 
 const PIPELINE = [
@@ -78,12 +84,15 @@ export default function LeaveDetailPage() {
   const router   = useRouter()
   const { user } = useUser()
   const toast    = useToast()
-  const role      = (user?.unsafeMetadata?.role as string) || 'employee'
+  const role      = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'boss'
 
   const [leave,   setLeave]   = useState<Leave | null>(null)
   const [loading, setLoading] = useState(true)
   const [acting,  setActing]  = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
+
+  const isOwner = !!(user && leave && leave.userId === user.id)
 
   const fetchLeave = useCallback(async () => {
     const res = await fetch(`/api/lms/${id}`)
@@ -93,6 +102,18 @@ export default function LeaveDetailPage() {
   }, [id, router])
 
   useEffect(() => { fetchLeave() }, [fetchLeave])
+
+  const withdraw = async () => {
+    setActing(true)
+    const res = await fetch(`/api/lms/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      toast('Leave request withdrawn', 'info')
+      router.push('/lms')
+    } else {
+      toast('Could not withdraw — refresh and retry', 'error')
+      setActing(false)
+    }
+  }
 
   const action = async (status: 'approved' | 'rejected', managerNote?: string) => {
     setActing(true)
@@ -112,7 +133,7 @@ export default function LeaveDetailPage() {
   if (loading) return (
     <>
       <Header title="Leave" />
-      <main className="flex-1 p-6 max-w-4xl">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto bg-surface-2">
         <div className="space-y-4">{[...Array(3)].map((_, i) => <div key={i} className="h-28 rounded-2xl bg-surface-border animate-pulse" />)}</div>
       </main>
     </>
@@ -120,7 +141,8 @@ export default function LeaveDetailPage() {
   if (!leave) return null
 
   const s   = STATUS_META[leave.status]
-  const t   = TYPE_META[leave.type] || TYPE_META.casual
+  const t   = TYPE_META[leave.type as LeaveType] || TYPE_META.casual
+  const isSickType = leave.type === 'sick' || (leave.type as string) === 'medical'
   const StatusIcon = s.icon
 
   const startFmt = new Date(leave.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -133,7 +155,7 @@ export default function LeaveDetailPage() {
   return (
     <>
       <Header title="Leave Detail" />
-      <main className="flex-1 p-6 max-w-4xl space-y-5 animate-fade-in">
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl space-y-5 animate-fade-in w-full mx-auto bg-surface-2">
         <Link href="/lms" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to Leave Management
         </Link>
@@ -244,7 +266,7 @@ export default function LeaveDetailPage() {
                   <Paperclip className="w-4 h-4 text-brand-500" /> Supporting Documents
                 </CardTitle>
                 <p className="text-xs text-surface-muted">
-                  {leave.type === 'medical'
+                  {isSickType
                     ? 'Medical certificate or prescription attached with this request.'
                     : 'Any supporting documents attached by the employee.'}
                 </p>
@@ -264,7 +286,7 @@ export default function LeaveDetailPage() {
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 border border-surface-border">
                     <AlertCircle className="w-4 h-4 text-surface-muted flex-shrink-0" />
                     <p className="text-xs text-surface-muted">
-                      {leave.type === 'medical'
+                      {isSickType
                         ? 'No medical documents uploaded — verify with employee before approving.'
                         : 'No supporting documents attached for this request.'}
                     </p>
@@ -283,7 +305,7 @@ export default function LeaveDetailPage() {
                   <p className="text-xs text-surface-muted">Review the request details and make a decision.</p>
                 </CardHeader>
                 <CardContent>
-                  {leave.type === 'medical' && !hasDocs && (
+                  {isSickType && !hasDocs && (
                     <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200 mb-4">
                       <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                       <p className="text-xs font-semibold text-amber-700">Medical leave without documents — confirm with employee before approving.</p>
@@ -295,6 +317,46 @@ export default function LeaveDetailPage() {
                     </Button>
                     <RejectDialog onConfirm={note => action('rejected', note)} />
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Owner withdraw — only for own pending request */}
+            {isOwner && !isManager && leave.status === 'pending' && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-500" /> Withdraw Request
+                  </CardTitle>
+                  <p className="text-xs text-surface-muted">Cancel this pending request before your manager reviews it.</p>
+                </CardHeader>
+                <CardContent>
+                  <Button type="button" variant="outline"
+                    className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                    onClick={() => setWithdrawOpen(true)} disabled={acting}>
+                    <XCircle className="w-4 h-4" /> Withdraw request
+                  </Button>
+                  <Dialog.Root open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                    <Dialog.Portal>
+                      <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+                      <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+                        <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Withdraw leave request?</Dialog.Title>
+                        <Dialog.Description className="text-sm text-surface-muted mb-5">
+                          This removes your <strong className="text-gray-900">{t.label.toLowerCase()}</strong> request for <strong className="text-gray-900">{leave.days} day{leave.days > 1 ? 's' : ''}</strong>. You can submit a new one anytime.
+                        </Dialog.Description>
+                        <div className="flex gap-3 justify-end">
+                          <Dialog.Close asChild>
+                            <Button type="button" variant="outline" size="sm">Keep request</Button>
+                          </Dialog.Close>
+                          <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 gap-1.5"
+                            onClick={withdraw} disabled={acting}>
+                            {acting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                            Withdraw
+                          </Button>
+                        </div>
+                      </Dialog.Content>
+                    </Dialog.Portal>
+                  </Dialog.Root>
                 </CardContent>
               </Card>
             )}

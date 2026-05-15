@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import SyncState from '@/models/SyncState'
 import { fetchEmailsSince, imapConfigured } from '@/lib/imap'
+import { getUser } from '@/lib/auth'
 
 export async function POST() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!imapConfigured()) {
@@ -18,7 +18,7 @@ export async function POST() {
   const state = await SyncState.findOneAndUpdate(
     { type: 'email' },
     { $setOnInsert: { type: 'email' } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   )
 
   let emails
@@ -76,7 +76,7 @@ export async function POST() {
 }
 
 export async function GET() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()

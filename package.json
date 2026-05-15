@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "description": "Enterprise Administrative Toolsuite (CRM, LMS, RMS) — Doppelmayr India",
   "scripts": {
-    "dev":        "concurrently -n web,server -c cyan,magenta \"npm run dev --prefix web\" \"npm run dev --prefix server\"",
-    "dev:web":    "npm run dev --prefix web",
+    "dev": "concurrently -n web,server -c cyan,magenta \"npm run dev --prefix web\" \"npm run dev --prefix server\"",
+    "dev:web": "npm run dev --prefix web",
     "dev:server": "npm run dev --prefix server",
-    "build":      "npm run build --prefix web"
+    "build": "npm run build --prefix web"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^8.0.0",
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.7"
   }
 }

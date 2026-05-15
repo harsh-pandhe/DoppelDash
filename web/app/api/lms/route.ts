@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import { emailLeaveSubmitted } from '@/lib/email'
+import { getUser } from '@/lib/auth'
+import { notifyTargetsFor } from '@/lib/notify-targets'
 
 export async function GET(req: NextRequest) {
+  const { userId, user } = await getUser()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const role = user?.role || 'employee'
   try {
-    const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const user = await currentUser().catch(() => null)
-    const role = (user?.unsafeMetadata?.role as string) || 'employee'
     await connectDB()
     const { searchParams } = new URL(req.url)
     const filter: Record<string, unknown> = role === 'employee' ? { userId } : {}
@@ -31,9 +31,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = await currentUser().catch(() => null)
   await connectDB()
   const body  = await req.json()
   const leave = await Leave.create({
@@ -43,27 +42,19 @@ export async function POST(req: NextRequest) {
     status: 'pending',
   })
 
-  // Notify managers/boss (fire-and-forget)
+  // Notify reporting manager (+ boss); fallback to all managers if no chain set
   ;(async () => {
     try {
-      const client  = await clerkClient()
-      const { data: users } = await client.users.getUserList({ limit: 100 })
-      const managers = users.filter(u => {
-        const r = u.unsafeMetadata?.role as string
-        return r === 'manager' || r === 'boss'
-      })
+      const recipients = await notifyTargetsFor(userId)
       const employeeName = user?.fullName || user?.firstName || 'An employee'
-      for (const mgr of managers) {
-        const email = mgr.primaryEmailAddress?.emailAddress
-        if (email) {
-          emailLeaveSubmitted({
-            managerEmail: email,
-            employeeName,
-            leaveType: body.type,
-            days: body.days,
-            reason: body.reason || '',
-          })
-        }
+      for (const email of recipients) {
+        emailLeaveSubmitted({
+          managerEmail: email,
+          employeeName,
+          leaveType: body.type,
+          days: body.days,
+          reason: body.reason || '',
+        })
       }
     } catch { /* best-effort */ }
   })()

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser, clerkClient } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
 import { emailUrgentAnnouncement } from '@/lib/email'
+import { getUser, listUsers } from '@/lib/auth'
 
 export async function GET() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const items = await Announcement.find().sort({ pinned: -1, createdAt: -1 }).limit(50).lean()
@@ -13,10 +13,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = await currentUser().catch(() => null)
-  const role = (user?.unsafeMetadata?.role as string) || 'employee'
+  const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
@@ -27,17 +26,19 @@ export async function POST(req: NextRequest) {
     authorName: user?.fullName || user?.firstName || 'Unknown',
   })
 
-  // Send email to everyone for urgent announcements (fire-and-forget)
+  // Fire-and-forget urgent broadcast
   if (body.priority === 'urgent') {
     ;(async () => {
       try {
-        const client = await clerkClient()
-        const { data: users } = await client.users.getUserList({ limit: 200 })
-        const emails = users
-          .map(u => u.primaryEmailAddress?.emailAddress)
-          .filter((e): e is string => Boolean(e))
+        const users  = await listUsers({ limit: 500 })
+        const emails = users.map(u => u.email).filter((e): e is string => Boolean(e))
         if (emails.length) {
-          emailUrgentAnnouncement({ emails, title: body.title, body: body.body })
+          emailUrgentAnnouncement({
+            emails,
+            title:      body.title,
+            body:       body.body,
+            senderName: user?.fullName || user?.firstName || 'Management',
+          })
         }
       } catch { /* best-effort */ }
     })()

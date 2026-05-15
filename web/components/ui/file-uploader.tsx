@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Upload, X, FileText, Loader2 } from 'lucide-react'
 import { uploadToCloudinary } from '@/lib/cloudinary'
 
@@ -10,6 +10,7 @@ interface FileUploaderProps {
   hint?: string
   required?: boolean
   maxFiles?: number
+  value?: string[]
   onChange: (urls: string[]) => void
   onFilePicked?: (files: File[]) => void
   disabled?: boolean
@@ -43,13 +44,28 @@ async function compressImage(file: File): Promise<File> {
 }
 
 export default function FileUploader({
-  label, hint, required, maxFiles = 5, onChange, onFilePicked, disabled, variant = 'default',
+  label, hint, required, maxFiles = 5, value, onChange, onFilePicked, disabled, variant = 'default',
 }: FileUploaderProps) {
   const inputRef                      = useRef<HTMLInputElement>(null)
   const [files,     setFiles]         = useState<UploadedFile[]>([])
   const [uploading, setUploading]     = useState(false)
   const [dragOver,  setDragOver]      = useState(false)
   const [error,     setError]         = useState('')
+
+  useEffect(() => {
+    if (!value) {
+      if (files.length > 0) setFiles([])
+      return
+    }
+    const next = value.map(url => ({
+      name: decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'Receipt'),
+      url,
+      isImage: /\.(jpe?g|png|gif|webp)$/i.test(url),
+    }))
+    if (next.length !== files.length || next.some((file, index) => file.url !== files[index]?.url)) {
+      setFiles(next)
+    }
+  }, [value, files])
 
   const borderColor = variant === 'danger'
     ? 'border-red-300 bg-red-50'

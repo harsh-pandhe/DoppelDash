@@ -1,5 +1,5 @@
+import { listUsers } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
-import { clerkClient } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sendBirthdayEmail } from '@/lib/email'
@@ -33,14 +33,10 @@ export async function GET(req: NextRequest) {
   // Get all manager/boss emails to notify
   let managerEmails: string[] = []
   try {
-    const client  = await clerkClient()
-    const { data: users } = await client.users.getUserList({ limit: 100 })
+    const users = await listUsers({ limit: 500 })
     managerEmails = users
-      .filter(u => {
-        const r = u.unsafeMetadata?.role as string
-        return r === 'manager' || r === 'boss'
-      })
-      .map(u => u.primaryEmailAddress?.emailAddress)
+      .filter(u => u.role === 'manager' || u.role === 'boss')
+      .map(u => u.email)
       .filter((e): e is string => Boolean(e))
   } catch { /* best-effort */ }
 

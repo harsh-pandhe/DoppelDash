@@ -1,27 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
-
-async function sendEmail(to: string, subject: string, html: string) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return false
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL || 'DoppelDash <no-reply@doppeldash.in>',
-        to: [to], subject, html,
-      }),
-    })
-    return res.ok
-  } catch { return false }
-}
+import { getUser } from '@/lib/auth'
+import { getUserTransporter } from '@/lib/userEmail'
+import { sendMail } from '@/lib/mailer'
 
 // GET — preview contacts that would receive the campaign
 export async function GET(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
@@ -36,12 +22,11 @@ export async function GET(req: NextRequest) {
 
 // POST — send the campaign
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const user = await currentUser().catch(() => null)
-  const role = (user?.unsafeMetadata?.role as string) || 'employee'
-  const perms = (user?.unsafeMetadata?.permissions as string[]) || []
+  const role = user?.role || 'employee'
+  const perms = user?.permissions || []
   const canPost = role === 'manager' || role === 'boss' || perms.includes('post_announcements')
   if (!canPost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -54,7 +39,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Subject and body required' }, { status: 400 })
   }
 
-  // Fetch target contacts
   let query: Record<string, unknown> = { createdBy: userId, email: { $exists: true, $ne: '' } }
   if (body.contactIds?.length) query = { ...query, _id: { $in: body.contactIds } }
   else if (body.tag)           query = { ...query, tags: body.tag }
@@ -64,7 +48,10 @@ export async function POST(req: NextRequest) {
 
   if (body.previewOnly) return NextResponse.json({ contacts, count: contacts.length })
 
-  // Send emails — replace {{name}}, {{company}} placeholders
+  // Prefer sender's connected SMTP (e.g. Outlook OAuth); fall back to platform SMTP relay.
+  const userSmtp = await getUserTransporter(userId)
+  const channel  = userSmtp ? 'user_smtp' : 'smtp'
+
   let sent = 0; let failed = 0
   await Promise.allSettled(
     contacts.map(async c => {
@@ -80,10 +67,17 @@ export async function POST(req: NextRequest) {
           <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash — Doppelmayr India</p>
         </div>`
 
-      const ok = await sendEmail(c.email!, body.subject, html)
-      if (ok) sent++; else failed++
+      try {
+        if (userSmtp) {
+          await userSmtp.transporter.sendMail({ from: userSmtp.from, to: c.email!, subject: body.subject, html })
+          sent++
+        } else {
+          const ok = await sendMail({ to: c.email!, subject: body.subject, html })
+          if (ok) sent++; else failed++
+        }
+      } catch { failed++ }
     })
   )
 
-  return NextResponse.json({ sent, failed, total: contacts.length })
+  return NextResponse.json({ sent, failed, total: contacts.length, channel })
 }

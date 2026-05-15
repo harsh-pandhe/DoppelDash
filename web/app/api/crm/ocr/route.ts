@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { rateLimit } from '@/lib/ratelimit'
-
-const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b'
+import { geminiVision } from '@/lib/gemini'
+import { getUser } from '@/lib/auth'
 
 const OCR_PROMPT = `You are a business card OCR assistant. Look at this business card image carefully.
-Extract all contact information and return ONLY a valid JSON object — no explanation, no markdown.
+Extract all contact information and return ONLY a valid JSON object — no explanation, no markdown, no code fences.
 Use null for any field you cannot find.
 
 Required format:
@@ -23,57 +21,35 @@ Required format:
   "linkedin": "linkedin profile URL if present"
 }`
 
-async function extractWithGemma(base64Image: string, mimeType: string) {
+async function extractWithGemini(base64Image: string, mimeType: string) {
+  const text = await geminiVision(OCR_PROMPT, base64Image, mimeType)
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('No JSON in Gemini response')
+  return JSON.parse(jsonMatch[0]) as Record<string, string | null>
+}
+
+async function extractWithOllama(base64Image: string) {
+  const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434'
+  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b'
   const res = await fetch(`${OLLAMA_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
-      stream: false,
-      messages: [{
-        role: 'user',
-        content: OCR_PROMPT,
-        images: [base64Image],
-      }],
+      model: OLLAMA_MODEL, stream: false,
+      messages: [{ role: 'user', content: OCR_PROMPT, images: [base64Image] }],
     }),
     signal: AbortSignal.timeout(120_000),
   })
-
   if (!res.ok) throw new Error(`Ollama ${res.status}`)
   const data = await res.json()
   const text: string = data?.message?.content || ''
-
-  // Extract JSON from response (model may wrap in ```json ... ```)
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('No JSON in response')
   return JSON.parse(jsonMatch[0]) as Record<string, string | null>
 }
 
-function fallbackParse(text: string): Record<string, string | null> {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-  const emailMatch = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/i)
-  const phoneMatch = text.match(/(?:\+91[\s\-]?)?(?:\(?\d{3,5}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}/g)
-  const urlMatch   = text.match(/(?:https?:\/\/)?(?:www\.)?[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}(?:\/\S*)?/i)
-  const ignored    = new Set(['phone','mobile','email','tel','fax','www','http','https','address','pvt','ltd','inc'])
-  const candidates = lines.filter(l =>
-    l.length > 3 && l.length < 50 &&
-    !l.includes('@') && !/\d{4,}/.test(l) &&
-    l.split(' ').every(w => !ignored.has(w.toLowerCase()))
-  )
-  return {
-    name: candidates[0] || null,
-    email: emailMatch?.[0] || null,
-    phone: phoneMatch?.[0]?.replace(/\s/g, '') || null,
-    company: candidates[1] || null,
-    designation: null,
-    address: null,
-    website: urlMatch?.[0] || null,
-    linkedin: null,
-  }
-}
-
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!rateLimit(`ocr:${userId}`, 10, 60_000)) {
@@ -110,15 +86,20 @@ export async function POST(req: NextRequest) {
   }
 
   let parsed: Record<string, string | null>
-  let source: 'gemma' | 'fallback' = 'gemma'
+  let source: 'gemini' | 'ollama' | 'fallback' = 'gemini'
 
   try {
-    parsed = await extractWithGemma(base64Image, mimeType)
-  } catch (err) {
-    console.error('[OCR] Gemma vision failed, using fallback:', err)
-    source = 'fallback'
-    // Fallback: empty result so user fills manually
-    parsed = { name: null, email: null, phone: null, company: null, designation: null, address: null, website: null, linkedin: null }
+    parsed = await extractWithGemini(base64Image, mimeType)
+  } catch (geminiErr) {
+    console.error('[OCR] Gemini failed, trying Ollama:', geminiErr)
+    source = 'ollama'
+    try {
+      parsed = await extractWithOllama(base64Image)
+    } catch (ollamaErr) {
+      console.error('[OCR] Ollama also failed:', ollamaErr)
+      source = 'fallback'
+      parsed = { name: null, email: null, phone: null, company: null, designation: null, address: null, website: null, linkedin: null }
+    }
   }
 
   // Deduplication check

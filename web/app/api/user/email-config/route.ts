@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import UserEmailConfig from '@/models/UserEmailConfig'
-import { encrypt, decrypt } from '@/lib/encrypt'
+import { encrypt } from '@/lib/encrypt'
+import { getUser } from '@/lib/auth'
 
 export async function GET() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { emailAddress?: string; smtpHost?: string; smtpPort?: number; appPassword?: string }
@@ -39,14 +39,14 @@ export async function POST(req: NextRequest) {
   await UserEmailConfig.findOneAndUpdate(
     { userId },
     { userId, emailAddress, smtpHost, smtpPort, appPassword: encrypted, isVerified: false },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   )
 
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()

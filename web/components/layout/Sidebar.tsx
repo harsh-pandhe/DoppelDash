@@ -1,12 +1,12 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useUser } from '@clerk/nextjs'
+import { useUser } from '@/lib/useUser'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, CalendarClock, Receipt,
-  Settings, ChevronRight, X, Megaphone, ScanLine,
-  BarChart2, Shield, ClipboardList,
+  Settings, ChevronRight, ChevronDown, X, Megaphone, ScanLine,
+  BarChart2, Shield, ClipboardList, TrendingUp, Plane,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,16 +21,21 @@ const SECTIONS = [
   {
     label: 'People',
     items: [
-      { href: '/crm',      label: 'Contacts',        icon: Users,         roles: ['employee','manager','boss'] },
+      { href: '/crm',            label: 'Contacts',   icon: Users,      roles: ['employee','manager','boss'] },
+      { href: '/crm/directory',  label: 'Directory',  icon: Users,      roles: ['employee','manager','boss'] },
       { href: '/crm/scan', label: 'Scan Card',        icon: ScanLine,      roles: ['employee','manager','boss'] },
       { href: '/lms',      label: 'Leave',            icon: CalendarClock, roles: ['employee','manager','boss'] },
+      { href: '/lms/team',     label: 'Team Calendar',  icon: CalendarClock, roles: ['manager','boss'] },
+      { href: '/lms/holidays', label: 'Holidays',       icon: CalendarClock, roles: ['employee','manager','boss'] },
       { href: '/rms',      label: 'Reimbursements',   icon: Receipt,       roles: ['employee','manager','boss'] },
+      { href: '/travel',   label: 'Travel Requests',  icon: Plane,         roles: ['employee','manager','boss'] },
     ],
   },
   {
     label: 'Insights',
     items: [
-      { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['manager','boss'] },
+      { href: '/analytics', label: 'Analytics', icon: TrendingUp, roles: ['manager','boss'] },
+      { href: '/reports',   label: 'Reports',   icon: BarChart2,  roles: ['manager','boss'] },
     ],
   },
   {
@@ -53,6 +58,11 @@ export default function Sidebar() {
   const { user }  = useUser()
   const role      = (user?.unsafeMetadata?.role as string) || 'employee'
   const [open, setOpen] = useState(false)
+  // Insights + Admin collapsed by default for managers/employees, expanded for boss
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => ({
+    Insights: role !== 'boss',
+    Admin:    role !== 'boss',
+  }))
 
   useEffect(() => {
     const handler = () => setOpen(o => !o)
@@ -86,39 +96,56 @@ export default function Sidebar() {
       </div>
 
       {/* Nav sections */}
-      <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin space-y-4">
+      <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin space-y-3">
         {SECTIONS.map(section => {
           const visible = section.items.filter(i => i.roles.includes(role))
           if (visible.length === 0) return null
+          // Workspace + People always open. Insights/Admin collapsible.
+          const isCollapsible = section.label !== 'Workspace' && section.label !== 'People'
+          const isOpen = !isCollapsible || (collapsedSections[section.label] ?? false) === false
+          const hasActive = visible.some(i => pathname === i.href || (i.href !== '/dashboard' && pathname.startsWith(i.href)))
+          // Force-open if a child is active
+          const showItems = isOpen || hasActive
+
           return (
             <div key={section.label}>
-              <p className="text-[9px] font-bold tracking-[0.12em] text-white/35 uppercase px-2 mb-1.5">
-                {section.label}
-              </p>
-              <div className="space-y-0.5">
-                {visible.map(({ href, label, icon: Icon }) => {
-                  const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group',
-                        active
-                          ? 'bg-white/18 text-white shadow-sm shadow-black/10'
-                          : 'text-white/60 hover:bg-white/10 hover:text-white'
-                      )}
-                    >
-                      <Icon className={cn(
-                        'w-4 h-4 flex-shrink-0 transition-colors',
-                        active ? 'text-white' : 'text-white/45 group-hover:text-white/75'
-                      )} />
-                      <span className="flex-1 truncate">{label}</span>
-                      {active && <ChevronRight className="w-3 h-3 text-white/40 flex-shrink-0" />}
-                    </Link>
-                  )
-                })}
-              </div>
+              <button
+                type="button"
+                onClick={() => isCollapsible && setCollapsedSections(s => ({ ...s, [section.label]: showItems }))}
+                className="flex items-center justify-between w-full text-[9px] font-bold tracking-[0.12em] text-white/35 uppercase px-2 mb-1.5 hover:text-white/60 transition-colors"
+                aria-expanded={showItems ? 'true' : 'false'}
+              >
+                <span>{section.label}</span>
+                {isCollapsible && (
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showItems ? '' : '-rotate-90'}`} />
+                )}
+              </button>
+              {showItems && (
+                <div className="space-y-0.5">
+                  {visible.map(({ href, label, icon: Icon }) => {
+                    const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group',
+                          active
+                            ? 'bg-white/18 text-white shadow-sm shadow-black/10'
+                            : 'text-white/60 hover:bg-white/10 hover:text-white'
+                        )}
+                      >
+                        <Icon className={cn(
+                          'w-4 h-4 flex-shrink-0 transition-colors',
+                          active ? 'text-white' : 'text-white/45 group-hover:text-white/75'
+                        )} />
+                        <span className="flex-1 truncate">{label}</span>
+                        {active && <ChevronRight className="w-3 h-3 text-white/40 flex-shrink-0" />}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )
         })}

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import UserEmailConfig from '@/models/UserEmailConfig'
 import { decrypt } from '@/lib/encrypt'
 import nodemailer from 'nodemailer'
+import { getUser } from '@/lib/auth'
 
 export async function POST() {
-  const { userId } = await auth()
+  const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
