@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
 
   // userId → department map (single Employee scan, request-scoped)
   const employees = await Employee.find({ isActive: true }, 'clerkUserId department firstName lastName').lean()
-  const deptByUser   = new Map(employees.map(e => [e.clerkUserId, e.department || '']))
   const departments  = Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort()
 
   // Build the owner/user scope
