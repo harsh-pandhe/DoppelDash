@@ -6,7 +6,8 @@ import TravelRequest from '@/models/TravelRequest'
 import Contact from '@/models/Contact'
 import Announcement from '@/models/Announcement'
 import AuditLog from '@/models/AuditLog'
-import { getUser } from '@/lib/auth'
+import Employee from '@/models/Employee'
+import { getUser, listUsers } from '@/lib/auth'
 
 function buildMonths(start: Date, end: Date) {
   const months: { year: number; month: number; label: string }[] = []
@@ -42,8 +43,37 @@ export async function GET(req: NextRequest) {
   rangeEnd.setHours(23, 59, 59, 999)
 
   const months = buildMonths(rangeStart, rangeEnd)
-  const ownerFilter = isManager ? {} : { userId }
-  const baseMatch   = { createdAt: { $gte: rangeStart, $lte: rangeEnd }, ...ownerFilter }
+
+  // Optional filters (managers only — employees are already scoped to themselves)
+  const deptQS     = url.searchParams.get('dept')      || ''
+  const employeeQS = url.searchParams.get('employee')  || ''
+  const statusQS   = url.searchParams.get('status')    || ''
+
+  // userId → department map (single Employee scan, request-scoped)
+  const employees = await Employee.find({ isActive: true }, 'clerkUserId department firstName lastName').lean()
+  const deptByUser   = new Map(employees.map(e => [e.clerkUserId, e.department || '']))
+  const departments  = Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort()
+
+  // Build the owner/user scope
+  const ownerFilter: Record<string, unknown> = isManager ? {} : { userId }
+  if (isManager) {
+    if (employeeQS) {
+      ownerFilter.userId = employeeQS
+    } else if (deptQS) {
+      const ids = employees.filter(e => e.department === deptQS).map(e => e.clerkUserId)
+      ownerFilter.userId = { $in: ids.length ? ids : ['__none__'] }
+    }
+  }
+
+  const baseMatch: Record<string, unknown> = { createdAt: { $gte: rangeStart, $lte: rangeEnd }, ...ownerFilter }
+
+  // Status filter — applied per-collection where the value is valid for that model
+  const LEAVE_STATUSES  = new Set(['pending', 'approved', 'rejected'])
+  const EXP_STATUSES    = new Set(['pending_manager', 'pending_boss', 'paid', 'rejected', 'returned'])
+  const TRAVEL_STATUSES = new Set(['pending_manager', 'pending_boss', 'approved', 'rejected', 'cancelled'])
+  const leaveMatch  = statusQS && LEAVE_STATUSES.has(statusQS)  ? { ...baseMatch, status: statusQS } : baseMatch
+  const expMatch    = statusQS && EXP_STATUSES.has(statusQS)    ? { ...baseMatch, status: statusQS } : baseMatch
+  const travelMatch = statusQS && TRAVEL_STATUSES.has(statusQS) ? { ...baseMatch, status: statusQS } : baseMatch
 
   const day30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
@@ -67,27 +97,27 @@ export async function GET(req: NextRequest) {
     recentAudits,
   ] = await Promise.all([
     Leave.aggregate([
-      { $match: baseMatch },
+      { $match: leaveMatch },
       { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 }, days: { $sum: '$days' } } },
     ]),
     Expense.aggregate([
-      { $match: baseMatch },
+      { $match: expMatch },
       { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 }, total: { $sum: '$amount' } } },
     ]),
     Leave.aggregate([
-      { $match: baseMatch },
+      { $match: leaveMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } },
     ]),
     Expense.aggregate([
-      { $match: baseMatch },
+      { $match: expMatch },
       { $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$amount' } } },
     ]),
     Leave.aggregate([
-      { $match: baseMatch },
+      { $match: leaveMatch },
       { $group: { _id: '$type', count: { $sum: 1 }, days: { $sum: '$days' } } },
     ]),
     TravelRequest.aggregate([
-      { $match: baseMatch },
+      { $match: travelMatch },
       { $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$estimatedTotal' } } },
     ]),
     Expense.aggregate([
@@ -134,8 +164,59 @@ export async function GET(req: NextRequest) {
   const travelApproved  = travelStatus.find((s: { _id: string; count: number }) => s._id === 'approved')?.count || 0
   const announcementCount = await Announcement.countDocuments({})
 
+  // ── Compare period (MoM / YoY) ──────────────────────────────────────────────
+  const compareQS = url.searchParams.get('compare') || 'none'
+  let previous: { totalLeaves: number; approvedLeaves: number; totalExpenses: number; paidExpense: number } | undefined
+  if (compareQS === 'mom' || compareQS === 'yoy') {
+    let prevStart: Date, prevEnd: Date
+    if (compareQS === 'yoy') {
+      prevStart = new Date(rangeStart); prevStart.setFullYear(prevStart.getFullYear() - 1)
+      prevEnd   = new Date(rangeEnd);   prevEnd.setFullYear(prevEnd.getFullYear() - 1)
+    } else {
+      const span = rangeEnd.getTime() - rangeStart.getTime()
+      prevEnd   = new Date(rangeStart.getTime() - 1)
+      prevStart = new Date(prevEnd.getTime() - span)
+    }
+    const prevBase: Record<string, unknown> = { createdAt: { $gte: prevStart, $lte: prevEnd }, ...ownerFilter }
+    const prevLeaveMatch  = statusQS && LEAVE_STATUSES.has(statusQS) ? { ...prevBase, status: statusQS } : prevBase
+    const prevExpMatch    = statusQS && EXP_STATUSES.has(statusQS)   ? { ...prevBase, status: statusQS } : prevBase
+    const [pLeave, pApproved, pExp, pPaid] = await Promise.all([
+      Leave.countDocuments(prevLeaveMatch),
+      Leave.countDocuments({ ...prevBase, status: 'approved' }),
+      Expense.aggregate([{ $match: prevExpMatch }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+      Expense.aggregate([{ $match: { ...prevBase, status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
+    ])
+    previous = {
+      totalLeaves:    pLeave,
+      approvedLeaves: pApproved,
+      totalExpenses:  pExp[0]?.total || 0,
+      paidExpense:    pPaid[0]?.total || 0,
+    }
+  }
+
+  // Filter options for the UI (managers only — employees can't filter beyond self)
+  let filterOptions: { departments: string[]; employees: { userId: string; name: string; department: string }[] } | undefined
+  if (isManager) {
+    const clerkUsers = await listUsers({ limit: 500 }).catch(() => [])
+    const nameById = new Map(clerkUsers.map(u => [u.id, u.fullName || `${u.firstName} ${u.lastName}`.trim()]))
+    filterOptions = {
+      departments,
+      employees: employees
+        .map(e => ({
+          userId: e.clerkUserId,
+          name: nameById.get(e.clerkUserId) || `${e.firstName} ${e.lastName}`.trim(),
+          department: e.department || '',
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }
+  }
+
   return NextResponse.json({
     range: { from: rangeStart.toISOString(), to: rangeEnd.toISOString() },
+    appliedFilters: { dept: deptQS || null, employee: employeeQS || null, status: statusQS || null },
+    compare: compareQS === 'mom' || compareQS === 'yoy' ? compareQS : null,
+    previous,
+    filterOptions,
     kpis: {
       totalLeaves,
       approvedLeaves,

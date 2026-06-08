@@ -22,6 +22,7 @@ export interface ITravelRequest extends Document {
   departureDate: Date
   returnDate: Date
   legs: ITravelLeg[]
+  itineraryDocs: string[]
 
   estimatedTotal: number
   advanceRequested: number
@@ -69,6 +70,7 @@ const TravelRequestSchema = new Schema<ITravelRequest>(
     departureDate: { type: Date, required: true },
     returnDate:    { type: Date, required: true },
     legs:          { type: [TravelLegSchema], default: [] },
+    itineraryDocs: { type: [String], default: [] },
 
     estimatedTotal:    { type: Number, required: true },
     advanceRequested:  { type: Number, default: 0 },

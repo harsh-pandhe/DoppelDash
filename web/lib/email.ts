@@ -258,6 +258,28 @@ export async function emailLeaveStatusChanged(opts: {
   await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
 }
 
+export async function emailOnboardingNudge(opts: {
+  employeeEmail: string; employeeName: string; daysSinceJoining: number; step: number
+}) {
+  const built = buildTransactionalEmail({
+    tone:        'warning',
+    eyebrow:     'Complete your profile',
+    heading:     `Finish setting up your DoppelDash profile`,
+    intro:       `It's been ${opts.daysSinceJoining} day${opts.daysSinceJoining !== 1 ? 's' : ''} since you joined. A few profile details are still missing — completing them unlocks leave, travel, and reimbursement features.`,
+    banner:      { label: `Step ${opts.step} of 4`, tone: 'warning' },
+    rows: [
+      { label: 'Status', value: 'Onboarding incomplete' },
+      { label: 'Time since joining', value: `${opts.daysSinceJoining} days` },
+    ],
+    cta:         { label: 'Complete onboarding', href: `${appUrl()}/onboarding` },
+    subject:     `Reminder: finish your DoppelDash profile`,
+    previewText: `Your profile is ${Math.round((opts.step / 4) * 100)}% complete — finish the rest.`,
+    recipientName: opts.employeeName,
+    footerHint:  'You receive this because your profile setup is still pending.',
+  })
+  await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
+}
+
 /* ─── Expense emails ─────────────────────────────────────────────────────── */
 
 function inr(n: number): string {

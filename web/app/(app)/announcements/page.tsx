@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Megaphone, Pin, PinOff, Trash2, Plus, AlertTriangle, Info, Loader2, Mail } from 'lucide-react'
+import { Megaphone, Pin, PinOff, Trash2, Plus, AlertTriangle, Info, Loader2, Mail, Pencil, Clock } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
@@ -14,6 +14,15 @@ import { useAutoRefresh } from '@/lib/useAutoRefresh'
 interface Announcement {
   _id: string; authorName: string; title: string; body: string
   pinned: boolean; priority: 'normal' | 'important' | 'urgent'; createdAt: string
+  scheduledFor?: string | null
+}
+
+// datetime-local needs "YYYY-MM-DDTHH:mm" in local time
+function toLocalInput(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const off = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - off).toISOString().slice(0, 16)
 }
 
 const PRIORITY_META = {
@@ -22,41 +31,68 @@ const PRIORITY_META = {
   urgent:    { bar: 'from-red-500 to-rose-600',       badge: 'bg-red-50 text-red-700 border-red-200',          icon: AlertTriangle, label: 'Urgent',    dot: 'bg-red-500'    },
 }
 
-function PostDialog({ onPost }: { onPost: () => void }) {
-  const [open,   setOpen]   = useState(false)
-  const [form,   setForm]   = useState({ title: '', body: '', priority: 'normal', pinned: false })
+function AnnouncementDialog({ onSaved, edit, open, onOpenChange }: {
+  onSaved: () => void
+  edit?: Announcement
+  open?: boolean
+  onOpenChange?: (o: boolean) => void
+}) {
+  const isEdit = !!edit
+  const [internalOpen, setInternalOpen] = useState(false)
+  const openState = open ?? internalOpen
+  const setOpen   = onOpenChange ?? setInternalOpen
+  const [form,   setForm]   = useState({
+    title: edit?.title || '', body: edit?.body || '',
+    priority: edit?.priority || 'normal', pinned: edit?.pinned || false,
+    scheduledFor: toLocalInput(edit?.scheduledFor),
+  })
   const [saving, setSaving] = useState(false)
   const toast = useToast()
+
+  // Reset form whenever the edit target / open state changes
+  useEffect(() => {
+    if (openState) setForm({
+      title: edit?.title || '', body: edit?.body || '',
+      priority: edit?.priority || 'normal', pinned: edit?.pinned || false,
+      scheduledFor: toLocalInput(edit?.scheduledFor),
+    })
+  }, [openState, edit])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const bodyText = form.body.replace(/<[^>]*>/g, '').trim()
     if (!form.title.trim() || !bodyText) return
     setSaving(true)
+    const payload = {
+      ...form,
+      scheduledFor: form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
+    }
     try {
-      const res = await fetch('/api/announcements', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+      const res = await fetch(isEdit ? `/api/announcements/${edit!._id}` : '/api/announcements', {
+        method: isEdit ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error()
-      toast('Announcement posted')
-      setForm({ title: '', body: '', priority: 'normal', pinned: false })
-      setOpen(false); onPost()
-    } catch { toast('Failed to post announcement', 'error') }
+      toast(isEdit ? 'Announcement updated' : 'Announcement posted')
+      if (!isEdit) setForm({ title: '', body: '', priority: 'normal', pinned: false, scheduledFor: '' })
+      setOpen(false); onSaved()
+    } catch { toast(`Failed to ${isEdit ? 'update' : 'post'} announcement`, 'error') }
     finally { setSaving(false) }
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
-        <Button data-post-announcement className="gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2]">
-          <Plus className="w-4 h-4" /> Post Announcement
-        </Button>
-      </Dialog.Trigger>
+    <Dialog.Root open={openState} onOpenChange={setOpen}>
+      {!isEdit && (
+        <Dialog.Trigger asChild>
+          <Button data-post-announcement className="gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2]">
+            <Plus className="w-4 h-4" /> Post Announcement
+          </Button>
+        </Dialog.Trigger>
+      )}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
         <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-4">New Announcement</Dialog.Title>
+          <Dialog.Title className="text-base font-bold text-gray-900 mb-4">{isEdit ? 'Edit Announcement' : 'New Announcement'}</Dialog.Title>
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Title *</label>
@@ -75,7 +111,7 @@ function PostDialog({ onPost }: { onPost: () => void }) {
                 <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Priority</label>
                 <select
                   aria-label="Priority"
-                  value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
+                  value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Announcement['priority'] }))}
                   className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500">
                   <option value="normal">Normal</option>
                   <option value="important">Important</option>
@@ -90,12 +126,23 @@ function PostDialog({ onPost }: { onPost: () => void }) {
                 </label>
               </div>
             </div>
+            <div className="space-y-1.5">
+              <label htmlFor="ann-schedule" className="text-xs font-bold text-surface-muted uppercase tracking-widest flex items-center gap-1.5">
+                <Clock className="w-3 h-3" /> Schedule publish <span className="font-medium normal-case tracking-normal text-surface-muted/70">(optional)</span>
+              </label>
+              <input id="ann-schedule" type="datetime-local"
+                value={form.scheduledFor} min={toLocalInput(new Date().toISOString())}
+                onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value }))}
+                className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+              <p className="text-[11px] text-surface-muted">Leave empty to publish immediately. Scheduled posts stay hidden from others until then.</p>
+            </div>
             <div className="flex gap-3 justify-end pt-1">
               <Dialog.Close asChild>
                 <Button type="button" variant="outline" size="sm">Cancel</Button>
               </Dialog.Close>
               <Button type="submit" size="sm" disabled={saving} className="gap-2">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />} Post
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+                {isEdit ? 'Save changes' : form.scheduledFor ? 'Schedule' : 'Post'}
               </Button>
             </div>
           </form>
@@ -113,6 +160,7 @@ export default function AnnouncementsPage() {
 
   const [items,   setItems]   = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<Announcement | null>(null)
 
   const fetchItems = useCallback(async () => {
     setLoading(true)
@@ -160,8 +208,18 @@ export default function AnnouncementsPage() {
               <p className="text-xs text-surface-muted">Updates and announcements from management.</p>
             </div>
           </div>
-          {canPost && <PostDialog onPost={fetchItems} />}
+          {canPost && <AnnouncementDialog onSaved={fetchItems} />}
         </div>
+
+        {/* Edit dialog (controlled) */}
+        {editing && (
+          <AnnouncementDialog
+            edit={editing}
+            open={!!editing}
+            onOpenChange={o => { if (!o) setEditing(null) }}
+            onSaved={fetchItems}
+          />
+        )}
 
         {loading ? (
           <ListSkeleton rows={4} />
@@ -182,7 +240,7 @@ export default function AnnouncementsPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted flex items-center gap-1.5">
                   <Pin className="w-3 h-3" /> Pinned
                 </p>
-                {pinned.map(item => <AnnouncementCard key={item._id} item={item} canPost={canPost} onPin={togglePin} onDelete={deleteItem} />)}
+                {pinned.map(item => <AnnouncementCard key={item._id} item={item} canPost={canPost} onPin={togglePin} onDelete={deleteItem} onEdit={setEditing} />)}
               </div>
             )}
 
@@ -192,7 +250,7 @@ export default function AnnouncementsPage() {
                 {pinned.length > 0 && (
                   <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">All Announcements</p>
                 )}
-                {unpinned.map(item => <AnnouncementCard key={item._id} item={item} canPost={canPost} onPin={togglePin} onDelete={deleteItem} />)}
+                {unpinned.map(item => <AnnouncementCard key={item._id} item={item} canPost={canPost} onPin={togglePin} onDelete={deleteItem} onEdit={setEditing} />)}
               </div>
             )}
 
@@ -257,14 +315,16 @@ function BroadcastButton({ id }: { id: string }) {
   )
 }
 
-function AnnouncementCard({ item, canPost, onPin, onDelete }: {
+function AnnouncementCard({ item, canPost, onPin, onDelete, onEdit }: {
   item: Announcement
   canPost: boolean
   onPin: (id: string, pinned: boolean) => void
   onDelete: (id: string) => void
+  onEdit: (item: Announcement) => void
 }) {
   const p    = PRIORITY_META[item.priority]
   const PIcon = p.icon
+  const isScheduled = !!item.scheduledFor && new Date(item.scheduledFor).getTime() > Date.now()
 
   return (
     <div className={`group bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-all ${item.pinned ? 'border-brand-200 shadow-sm' : 'border-surface-border'}`}>
@@ -291,6 +351,11 @@ function AnnouncementCard({ item, canPost, onPin, onDelete }: {
                   {p.label}
                 </span>
               )}
+              {isScheduled && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                  <Clock className="w-2.5 h-2.5" /> Scheduled · {new Date(item.scheduledFor!).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
             </div>
 
             <h3 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h3>
@@ -306,6 +371,11 @@ function AnnouncementCard({ item, canPost, onPin, onDelete }: {
           {canPost && (
             <div className="flex gap-1 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <BroadcastButton id={item._id} />
+              <button type="button" aria-label="Edit announcement"
+                onClick={() => onEdit(item)}
+                className="p-1.5 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600 transition-colors">
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
               <button type="button" aria-label={item.pinned ? 'Unpin' : 'Pin'}
                 onClick={() => onPin(item._id, item.pinned)}
                 className="p-1.5 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600 transition-colors">

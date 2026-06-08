@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { getUser } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { getUser, listUsers } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import Expense from '@/models/Expense'
@@ -7,6 +7,8 @@ import TravelRequest from '@/models/TravelRequest'
 import Announcement from '@/models/Announcement'
 import Contact from '@/models/Contact'
 import Employee from '@/models/Employee'
+import { writeAudit } from '@/lib/audit'
+import { getUserEmail, emailExpenseStatusChanged, emailExpensePendingPayout } from '@/lib/email'
 
 export interface NotifItem {
   id:       string
@@ -164,4 +166,60 @@ export async function GET() {
   })
 
   return NextResponse.json({ items, count: items.length, urgentCount: items.filter(i => i.urgent).length })
+}
+
+// Bulk-approve pending expenses straight from the notifications panel.
+// Manager: pending_manager -> pending_boss. Boss: pending_boss -> paid.
+export async function POST(req: NextRequest) {
+  const { userId, user } = await getUser()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const role = user?.role || 'employee'
+  if (role !== 'manager' && role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isBoss = role === 'boss'
+
+  const body = await req.json().catch(() => ({}))
+  const ids: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
+  if (ids.length === 0) return NextResponse.json({ error: 'No expense IDs' }, { status: 400 })
+
+  await connectDB()
+  const fromStatus = isBoss ? 'pending_boss' : 'pending_manager'
+  const toStatus   = isBoss ? 'paid' : 'pending_boss'
+  const actorName  = user?.fullName || user?.firstName || (isBoss ? 'Boss' : 'Manager')
+
+  const expenses = await Expense.find({ _id: { $in: ids }, status: fromStatus })
+  let approved = 0
+  for (const e of expenses) {
+    e.status = toStatus
+    if (isBoss) { e.paidBy = userId; e.paidAt = new Date() } else { e.approvedBy = userId }
+    await e.save()
+    approved++
+    writeAudit({
+      action: `expense.${toStatus}`,
+      performedBy: userId, performedByName: actorName,
+      targetId: String(e._id), targetType: 'expense',
+      metadata: { status: toStatus, employeeName: e.userName, amount: e.amount, bulk: true },
+    })
+    if (isBoss) {
+      getUserEmail(e.userId).then(email => {
+        if (email) emailExpenseStatusChanged({ employeeEmail: email, status: 'paid', title: e.title, amount: e.amount })
+      })
+    }
+  }
+
+  // Manager bulk-approve -> notify bosses
+  if (!isBoss && approved > 0) {
+    ;(async () => {
+      try {
+        const users = await listUsers({ limit: 500 })
+        const bosses = users.filter(u => u.role === 'boss')
+        for (const e of expenses) {
+          for (const b of bosses) {
+            if (b.email) emailExpensePendingPayout({ bossEmail: b.email, employeeName: e.userName, title: e.title, amount: e.amount })
+          }
+        }
+      } catch { /* best-effort */ }
+    })()
+  }
+
+  return NextResponse.json({ approved, skipped: ids.length - approved })
 }

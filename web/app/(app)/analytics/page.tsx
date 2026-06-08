@@ -30,8 +30,17 @@ interface RecentAudit {
   metadata?: Record<string, unknown>
 }
 
+interface FilterOptions {
+  departments: string[]
+  employees: { userId: string; name: string; department: string }[]
+}
+
 interface AnalyticsData {
   range: { from: string; to: string }
+  filterOptions?: FilterOptions
+  appliedFilters?: { dept: string | null; employee: string | null; status: string | null }
+  compare?: 'mom' | 'yoy' | null
+  previous?: { totalLeaves: number; approvedLeaves: number; totalExpenses: number; paidExpense: number }
   kpis: {
     totalLeaves: number; approvedLeaves: number; pendingLeaves: number
     totalExpenses: number; totalExpenseCount: number
@@ -177,6 +186,10 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [from,    setFrom]    = useState(monthsAgo(6))
   const [to,      setTo]      = useState('')
+  const [dept,     setDept]     = useState('')
+  const [employee, setEmployee] = useState('')
+  const [status,   setStatus]   = useState('')
+  const [compare,  setCompare]  = useState<'none' | 'mom' | 'yoy'>('none')
   const [showFilter, setShowFilter] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
@@ -188,15 +201,19 @@ export default function AnalyticsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams()
-    if (from) params.set('from', from)
-    if (to)   params.set('to',   to)
+    if (from)     params.set('from', from)
+    if (to)       params.set('to',   to)
+    if (dept)     params.set('dept', dept)
+    if (employee) params.set('employee', employee)
+    if (status)   params.set('status', status)
+    if (compare !== 'none') params.set('compare', compare)
     try {
       const r = await fetch(`/api/analytics?${params}`)
       const d = await r.json()
       setData(d)
     } catch { setData(null) }
     finally { setLoading(false) }
-  }, [from, to])
+  }, [from, to, dept, employee, status, compare])
   useEffect(() => { fetchData() }, [fetchData])
 
   const activeIds  = useMemo(() => new Set(layout.map(l => l.id)), [layout])
@@ -237,14 +254,23 @@ export default function AnalyticsPage() {
               <p className="text-xs text-surface-muted truncate">
                 {layout.length} tile{layout.length !== 1 ? 's' : ''}
                 {data?.range && ` · ${new Date(data.range.from).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} → ${new Date(data.range.to).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}`}
+                {(dept || employee || status) && <span className="text-brand-600 font-semibold"> · filtered</span>}
               </p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <Button type="button" variant={showFilter ? 'default' : 'outline'} size="sm" className="gap-1.5"
               onClick={() => setShowFilter(f => !f)}>
-              <Filter className="w-3.5 h-3.5" /> Date range
+              <Filter className="w-3.5 h-3.5" /> Filters
             </Button>
+            <div className="inline-flex rounded-lg border border-surface-border overflow-hidden">
+              {(['none', 'mom', 'yoy'] as const).map(c => (
+                <button key={c} type="button" onClick={() => setCompare(c)}
+                  className={`px-2.5 h-8 text-xs font-semibold transition-colors ${compare === c ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                  {c === 'none' ? 'No compare' : c.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <Button type="button" variant={editMode ? 'default' : 'outline'} size="sm" className="gap-1.5"
               onClick={() => setEditMode(e => !e)}>
               {editMode ? <CheckCircle className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
@@ -265,6 +291,52 @@ export default function AnalyticsPage() {
                 </button>
               ))}
             </div>
+
+            {/* Dimension filters (managers) */}
+            {data?.filterOptions && (
+              <div className="flex items-end gap-2 flex-wrap w-full border-t border-surface-border pt-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Department</label>
+                  <select aria-label="Filter by department" value={dept}
+                    onChange={e => { setDept(e.target.value); setEmployee('') }}
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    <option value="">All departments</option>
+                    {data.filterOptions.departments.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Employee</label>
+                  <select aria-label="Filter by employee" value={employee}
+                    onChange={e => setEmployee(e.target.value)}
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    <option value="">All employees</option>
+                    {data.filterOptions.employees
+                      .filter(emp => !dept || emp.department === dept)
+                      .map(emp => <option key={emp.userId} value={emp.userId}>{emp.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Status</label>
+                  <select aria-label="Filter by status" value={status}
+                    onChange={e => setStatus(e.target.value)}
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    <option value="">Any status</option>
+                    <option value="pending">Pending (leave)</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="pending_manager">Pending manager</option>
+                    <option value="pending_boss">Pending boss</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+                {(dept || employee || status) && (
+                  <button type="button" onClick={() => { setDept(''); setEmployee(''); setStatus('') }}
+                    className="px-3 h-9 rounded-xl text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-50 transition-colors">
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            )}
             <div className="flex items-end gap-2 ml-auto flex-wrap">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">From</label>
@@ -530,11 +602,14 @@ function TileBody({ def, data }: { def: TileDef; data: AnalyticsData }) {
    Tile primitives
    ══════════════════════════════════════════════════════════════════════════ */
 
-function KpiTile({ def, value, hint, tone = 'neutral' }: {
+function KpiTile({ def, value, hint, tone = 'neutral', current, previous, compareLabel }: {
   def: TileDef
   value: number | string
   hint?: string
   tone?: 'neutral' | 'success' | 'warning' | 'danger'
+  current?: number
+  previous?: number
+  compareLabel?: string
 }) {
   const valueColor = {
     neutral: 'text-dm-graphite',
@@ -543,6 +618,14 @@ function KpiTile({ def, value, hint, tone = 'neutral' }: {
     danger:  'text-red-600',
   }[tone]
   const Icon = def.icon
+
+  // Delta chip when comparing
+  let delta: { pct: number; up: boolean } | null = null
+  if (typeof current === 'number' && typeof previous === 'number') {
+    if (previous === 0) delta = current > 0 ? { pct: 100, up: true } : null
+    else { const p = ((current - previous) / Math.abs(previous)) * 100; delta = { pct: Math.round(p), up: p >= 0 } }
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
       <div className="flex items-start justify-between">
@@ -552,7 +635,16 @@ function KpiTile({ def, value, hint, tone = 'neutral' }: {
         </div>
       </div>
       <div>
-        <p className={`text-3xl font-extrabold tabular-nums tracking-tighter ${valueColor}`}>{value}</p>
+        <div className="flex items-end gap-2">
+          <p className={`text-3xl font-extrabold tabular-nums tracking-tighter ${valueColor}`}>{value}</p>
+          {delta && (
+            <span className={`mb-1 inline-flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full ${delta.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}
+              title={`vs previous ${compareLabel || 'period'}`}>
+              {delta.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {Math.abs(delta.pct)}%
+            </span>
+          )}
+        </div>
         {hint && <p className="text-[11px] text-surface-muted mt-1 truncate">{hint}</p>}
       </div>
     </div>

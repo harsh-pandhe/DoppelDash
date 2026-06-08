@@ -1,6 +1,7 @@
 'use client'
 import { useUser, clearUserCache } from '@/lib/useUser'
-import { Bell, X, CalendarClock, Receipt, Clock, Menu, Search, Users, FileText, Megaphone, LogOut, User as UserIcon, CheckCheck, Cake, Sparkles } from 'lucide-react'
+import { Bell, X, CalendarClock, Receipt, Clock, Menu, Search, Users, FileText, Megaphone, LogOut, User as UserIcon, CheckCheck, Cake, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -195,20 +196,50 @@ function useNotifications() {
     setReadAt(now)
   }, [])
 
+  // IDs of approvable expense notifications (exp-<id>, not exp-ret-<id>)
+  const approvableExpenseIds = items
+    .filter(i => i.kind === 'expense' && i.id.startsWith('exp-') && !i.id.startsWith('exp-ret-'))
+    .map(i => i.id.slice(4))
+
+  const [bulking, setBulking] = useState(false)
+  const bulkApproveExpenses = useCallback(async () => {
+    if (approvableExpenseIds.length === 0) return null
+    setBulking(true)
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expenseIds: approvableExpenseIds }),
+      })
+      const data = await res.json().catch(() => ({}))
+      await refresh()
+      return data as { approved?: number; skipped?: number }
+    } catch { return null }
+    finally { setBulking(false) }
+  }, [approvableExpenseIds, refresh])
+
   const unreadItems  = items.filter(i => new Date(i.ts).getTime() > readAt)
   const unreadCount  = unreadItems.length
   const urgentUnread = unreadItems.filter(i => i.urgent).length
 
-  return { items, loading, refresh, readAt, markAllRead, unreadCount, urgentUnread }
+  return { items, loading, refresh, readAt, markAllRead, unreadCount, urgentUnread, approvableExpenseIds, bulkApproveExpenses, bulking }
 }
 
 export default function Header({ title }: { title?: string }) {
   const { user }   = useUser()
   const role       = user?.role || 'employee'
   const isManager  = role === 'manager' || role === 'boss'
+  const isBoss     = role === 'boss'
 
   const [panelOpen, setPanelOpen] = useState(false)
-  const { items, loading, readAt, markAllRead, unreadCount, urgentUnread } = useNotifications()
+  const toast = useToast()
+  const { items, loading, readAt, markAllRead, unreadCount, urgentUnread, approvableExpenseIds, bulkApproveExpenses, bulking } = useNotifications()
+
+  const handleBulkApprove = async () => {
+    const r = await bulkApproveExpenses()
+    if (r && typeof r.approved === 'number') {
+      toast(`${r.approved} expense${r.approved !== 1 ? 's' : ''} ${isBoss ? 'paid' : 'approved'}`, 'success')
+    }
+  }
   const panelRef = useRef<HTMLDivElement>(null)
   const total = items.length
 
@@ -284,6 +315,20 @@ export default function Header({ title }: { title?: string }) {
                     </button>
                   </div>
                 </div>
+
+                {isManager && approvableExpenseIds.length > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-brand-50/70 border-b border-brand-100">
+                    <Receipt className="w-3.5 h-3.5 text-brand-600 flex-shrink-0" />
+                    <p className="text-[11px] font-semibold text-brand-800 flex-1 min-w-0 truncate">
+                      {approvableExpenseIds.length} expense{approvableExpenseIds.length > 1 ? 's' : ''} awaiting {isBoss ? 'payout' : 'approval'}
+                    </p>
+                    <button type="button" onClick={handleBulkApprove} disabled={bulking}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-60 transition-colors flex-shrink-0">
+                      {bulking ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                      {isBoss ? 'Pay all' : 'Approve all'}
+                    </button>
+                  </div>
+                )}
 
                 {loading && items.length === 0 ? (
                   <div className="px-4 py-5 space-y-3">

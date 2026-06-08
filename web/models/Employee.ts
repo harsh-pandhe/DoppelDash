@@ -63,6 +63,7 @@ export interface IEmployee extends Document {
   // Profile completion
   onboardingComplete: boolean
   onboardingStep: number        // 0-4: which step they're on
+  onboardingNudgeSentAt?: Date  // last 7-day reminder email sent
 
   // Extended profile
   address?: string
@@ -73,6 +74,14 @@ export interface IEmployee extends Document {
   bankDetails?: IBankDetails
   emergencyContacts: IEmergencyContact[]
   medicalDetails?: IMedicalDetails
+
+  // Out-of-office auto-reply
+  outOfOffice?: {
+    enabled: boolean
+    message?: string
+    from?: Date
+    until?: Date
+  }
 
   // Auth / activity
   lastLoginAt?: Date
@@ -137,6 +146,7 @@ const EmployeeSchema = new Schema<IEmployee>(
 
     onboardingComplete: { type: Boolean, default: false },
     onboardingStep:     { type: Number, default: 0 },
+    onboardingNudgeSentAt: { type: Date },
 
     address:  { type: String },
     city:     { type: String },
@@ -152,6 +162,13 @@ const EmployeeSchema = new Schema<IEmployee>(
     bankDetails:      { type: BankDetailsSchema },
     emergencyContacts: { type: [EmergencyContactSchema], default: [] },
     medicalDetails:   { type: MedicalSchema },
+
+    outOfOffice: {
+      enabled: { type: Boolean, default: false },
+      message: { type: String },
+      from:    { type: Date },
+      until:   { type: Date },
+    },
 
     lastLoginAt:  { type: Date },
     lastActiveAt: { type: Date },

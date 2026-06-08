@@ -7,6 +7,8 @@ export interface IAnnouncement extends Document {
   body:       string
   pinned:     boolean
   priority:   'normal' | 'important' | 'urgent'
+  scheduledFor?: Date
+  urgentEmailSent?: boolean
   createdAt:  Date
   updatedAt:  Date
 }
@@ -19,6 +21,8 @@ const AnnouncementSchema = new Schema<IAnnouncement>(
     body:       { type: String, required: true },
     pinned:     { type: Boolean, default: false },
     priority:   { type: String, enum: ['normal', 'important', 'urgent'], default: 'normal' },
+    scheduledFor: { type: Date, default: null },
+    urgentEmailSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 )

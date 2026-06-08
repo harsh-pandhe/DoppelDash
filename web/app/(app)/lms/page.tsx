@@ -4,7 +4,7 @@ import {
   Plus, CalendarClock, CheckCircle2, XCircle, Clock,
   ChevronLeft, ChevronRight, Calendar, Loader2, User,
   Paperclip, AlertCircle, FileText, Save,
-  Users,
+  Users, Download,
 } from 'lucide-react'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
@@ -24,6 +24,7 @@ interface Leave {
   startDate: string; endDate: string; days: number; reason: string
   status: 'pending' | 'approved' | 'rejected'; managerNote?: string
   medicalDocs?: string[]; createdAt?: string
+  isHalfDay?: boolean; halfDayPeriod?: 'morning' | 'afternoon'
 }
 
 const TYPE_CFG: Record<string, { label: string; pill: string; dot: string; progress: string }> = {
@@ -269,9 +270,22 @@ function InfoTile({ label, value, full }: { label: string; value: string; full?:
 }
 
 /* ─── New Leave Dialog ───────────────────────────────────────────────────── */
-function NewLeaveDialog({ onCreated }: { onCreated: () => void }) {
+function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; myLeaves?: Leave[] }) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ type: 'casual', startDate: '', endDate: '', reason: '', isHalfDay: false, halfDayPeriod: 'morning' as 'morning' | 'afternoon' })
+
+  // Most recent prior request — source for "copy from previous"
+  const lastLeave = myLeaves[0]  // list is sorted createdAt desc
+  const copyPrevious = () => {
+    if (!lastLeave) return
+    setForm(f => ({
+      ...f,
+      type: lastLeave.type,
+      reason: lastLeave.reason,
+      isHalfDay: !!lastLeave.isHalfDay,
+      halfDayPeriod: (lastLeave.halfDayPeriod as 'morning' | 'afternoon') || 'morning',
+    }))
+  }
   const [docs, setDocs] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -351,6 +365,13 @@ function NewLeaveDialog({ onCreated }: { onCreated: () => void }) {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {lastLeave && (
+              <button type="button" onClick={copyPrevious}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-brand-300 bg-brand-50 text-xs font-bold text-brand-700 hover:bg-brand-100 transition-colors">
+                <FileText className="w-3.5 h-3.5" />
+                Copy from last request ({TYPE_CFG[lastLeave.type]?.label || lastLeave.type})
+              </button>
+            )}
             {error && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 font-medium">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
@@ -562,6 +583,56 @@ function MiniCalendar({ leaves }: { leaves: Leave[] }) {
   )
 }
 
+/* ─── Team Workload Heatmap (manager) ────────────────────────────────────── */
+interface WorkloadRow { userId: string; name: string; onLeaveDays: number; cells: ({ type: string; half: boolean } | null)[] }
+
+function WorkloadHeatmap() {
+  const [data, setData] = useState<{ days: string[]; rows: WorkloadRow[] } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/lms/workload?days=14')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setData(d))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div className="h-40 rounded-2xl bg-surface-border animate-pulse" />
+  if (!data || data.rows.length === 0) return null
+
+  const cellColor = (c: { type: string; half: boolean } | null) => {
+    if (!c) return 'bg-gray-50'
+    const base = TYPE_CFG[c.type]?.dot || 'bg-blue-400'
+    return c.half ? `${base} opacity-50` : base
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-surface-muted flex items-center gap-1.5">
+        <Users className="w-3.5 h-3.5" /> Team workload · next 14 days
+      </p>
+      <div className="space-y-1.5 max-h-72 overflow-y-auto scrollbar-thin">
+        {data.rows.map(row => (
+          <div key={row.userId} className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-gray-700 w-16 truncate flex-shrink-0" title={row.name}>{row.name}</span>
+            <div className="flex gap-0.5 flex-1">
+              {row.cells.map((c, i) => (
+                <span key={i} title={data.days[i] + (c ? ` · ${c.type}` : ' · available')}
+                  className={`h-4 flex-1 rounded-sm ${cellColor(c)}`} />
+              ))}
+            </div>
+            <span className={`text-[10px] font-bold w-6 text-right flex-shrink-0 ${row.onLeaveDays > 0 ? 'text-brand-600' : 'text-surface-muted'}`}>
+              {row.onLeaveDays || '·'}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[9px] text-surface-muted">Darker cell = full-day leave · faded = half day · number = leave days in window</p>
+    </div>
+  )
+}
+
 /* ─── Main Page ──────────────────────────────────────────────────────────── */
 export default function LMSPage() {
   const { user } = useUser()
@@ -698,7 +769,12 @@ export default function LMSPage() {
                 </button>
               </div>
             )}
-            <NewLeaveDialog onCreated={fetchLeaves} />
+            <a href={`/api/lms/calendar?scope=${isManager ? 'team' : 'me'}`} download>
+              <Button variant="outline" className="gap-2" title="Download approved leaves + holidays as .ics">
+                <Download className="w-4 h-4" /> Export .ics
+              </Button>
+            </a>
+            <NewLeaveDialog onCreated={fetchLeaves} myLeaves={isManager ? [] : leaves} />
           </div>
         </div>
 
@@ -763,6 +839,8 @@ export default function LMSPage() {
           {/* Sidebar — calendar + team summary */}
           <div className="hidden xl:flex flex-col gap-4 w-72 flex-shrink-0">
             <MiniCalendar leaves={leaves} />
+
+            {isManager && <WorkloadHeatmap />}
 
             {isManager && pending.length > 0 && (
               <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-3">

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   User, Building2, CreditCard, Heart, Phone, MapPin,
-  Mail, Briefcase, Upload, Loader2, Save, Edit3, X, Shield,
+  Mail, Briefcase, Upload, Loader2, Save, Edit3, X, Shield, Plane,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -48,6 +48,7 @@ interface Employee {
     insurancePolicyNumber?: string
   }
   emergencyContacts: { _id?: string; name: string; phone: string; relationship: string }[]
+  outOfOffice?: { enabled: boolean; message?: string; from?: string; until?: string }
   reportingManager?: { id: string; name: string; designation: string; email: string } | null
   privileges?: {
     food:   { tier: string; dailyLimit: number }
@@ -58,7 +59,7 @@ interface Employee {
   }
 }
 
-type Section = 'personal' | 'bank' | 'medical' | 'emergency'
+type Section = 'personal' | 'bank' | 'medical' | 'emergency' | 'ooo'
 
 function fmtDate(d?: string) {
   if (!d) return '—'
@@ -305,6 +306,35 @@ export default function ProfilePage() {
             </div>
           ) : (
             <EmptyState message="No emergency contacts on file yet." />
+          )}
+        </SectionCard>
+
+        {/* Out-of-office auto-reply */}
+        <SectionCard
+          title="Out-of-office" icon={Plane}
+          subtitle="Auto-reply sent while you're away"
+          editing={editing === 'ooo'}
+          onEdit={() => setEditing('ooo')}
+          onCancel={() => setEditing(null)}>
+          {editing === 'ooo' ? (
+            <OOOForm emp={emp} onSave={patch} saving={saving} />
+          ) : emp.outOfOffice?.enabled ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-sm font-bold text-green-700">Active</span>
+                {(emp.outOfOffice.from || emp.outOfOffice.until) && (
+                  <span className="text-xs text-surface-muted">
+                    {emp.outOfOffice.from ? fmtDate(emp.outOfOffice.from) : '—'} → {emp.outOfOffice.until ? fmtDate(emp.outOfOffice.until) : '—'}
+                  </span>
+                )}
+              </div>
+              {emp.outOfOffice.message && (
+                <p className="text-sm text-gray-700 p-3 rounded-xl bg-surface border border-surface-border italic">&ldquo;{emp.outOfOffice.message}&rdquo;</p>
+              )}
+            </div>
+          ) : (
+            <EmptyState message="Auto-reply is off. Turn it on before going on leave." />
           )}
         </SectionCard>
 
@@ -562,6 +592,49 @@ function EmergencyForm({ emp, onSave, saving }: { emp: Employee; onSave: (p: Rec
       )}
       <Button className="gap-2" disabled={saving}
         onClick={() => onSave({ emergencyContacts: list.filter(c => c.name && c.phone) })}>
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
+      </Button>
+    </div>
+  )
+}
+
+function OOOForm({ emp, onSave, saving }: { emp: Employee; onSave: (p: Record<string, unknown>) => Promise<boolean>; saving: boolean }) {
+  const o = emp.outOfOffice
+  const [enabled, setEnabled] = useState(o?.enabled || false)
+  const [message, setMessage] = useState(o?.message || `I'm currently out of office and will respond when I return.`)
+  const [from,    setFrom]    = useState(o?.from ? o.from.split('T')[0] : '')
+  const [until,   setUntil]   = useState(o?.until ? o.until.split('T')[0] : '')
+
+  return (
+    <div className="space-y-4">
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="accent-brand-500 w-4 h-4" />
+        <span className="text-sm font-semibold text-gray-700">Enable out-of-office auto-reply</span>
+      </label>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="From">
+          <input type="date" aria-label="OOO from" value={from} onChange={e => setFrom(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
+        </Field>
+        <Field label="Until">
+          <input type="date" aria-label="OOO until" min={from || undefined} value={until} onChange={e => setUntil(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
+        </Field>
+      </div>
+
+      <Field label="Auto-reply message">
+        <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4}
+          className="w-full rounded-xl border border-surface-border px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+          placeholder="Message senders will receive…" />
+      </Field>
+
+      <Button className="gap-2" disabled={saving}
+        onClick={() => onSave({ outOfOffice: {
+          enabled, message: message.trim(),
+          from:  from  ? new Date(from).toISOString()  : undefined,
+          until: until ? new Date(until).toISOString() : undefined,
+        } })}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
       </Button>
     </div>

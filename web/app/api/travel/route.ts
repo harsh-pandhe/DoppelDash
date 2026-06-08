@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   await connectDB()
   const body = await req.json()
-  const { purpose, destination, departureDate, returnDate, legs, estimatedTotal, advanceRequested, accommodation } = body
+  const { purpose, destination, departureDate, returnDate, legs, estimatedTotal, advanceRequested, accommodation, itineraryDocs } = body
 
   if (!purpose || !destination || !departureDate || !returnDate) {
     return NextResponse.json({ error: 'purpose, destination, dates required' }, { status: 400 })
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     estimatedTotal: estimatedTotal || 0,
     advanceRequested: advanceRequested || 0,
     accommodation,
+    itineraryDocs: Array.isArray(itineraryDocs) ? itineraryDocs : [],
     status: 'pending_manager',
   })
 

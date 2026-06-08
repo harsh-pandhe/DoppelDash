@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
 import { useFormAutosave } from '@/lib/useFormAutosave'
+import FileUploader from '@/components/ui/file-uploader'
 
 interface Privileges {
   food:   { tier: string; dailyLimit: number }
@@ -61,6 +62,7 @@ export default function NewTravelRequestPage() {
 
   const [saving,        setSaving]        = useState(false)
   const [priv,          setPriv]          = useState<Privileges | null>(null)
+  const [itineraryDocs, setItineraryDocs] = useState<string[]>([])
   const { clear: clearDraft } = useFormAutosave('travel-new', draft, setDraft)
 
   useEffect(() => {
@@ -94,6 +96,7 @@ export default function NewTravelRequestPage() {
             required: true, city: hotelCity,
             checkIn: departureDate, checkOut: returnDate, estimatedCost: hotelCost,
           } : { required: false },
+          itineraryDocs,
         }),
       })
       if (!res.ok) { const d = await res.json(); toast(d.error || 'Submit failed', 'error'); return }
@@ -263,6 +266,17 @@ export default function NewTravelRequestPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Itinerary attachments */}
+        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
+          <h3 className="text-sm font-bold text-gray-700">Itinerary &amp; Bookings</h3>
+          <FileUploader
+            label="Tickets, hotel confirmations, agenda (optional)"
+            hint="Flight/train tickets, hotel bookings, meeting agenda · JPG, PNG, PDF"
+            onChange={setItineraryDocs}
+            disabled={saving}
+          />
         </div>
 
         {/* Advance + summary */}

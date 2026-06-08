@@ -8,7 +8,16 @@ export async function GET() {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
-  const items = await Announcement.find().sort({ pinned: -1, createdAt: -1 }).limit(50).lean()
+  const now = new Date()
+  // Hide future-scheduled posts from everyone except their author
+  const visibility = {
+    $or: [
+      { scheduledFor: null },
+      { scheduledFor: { $lte: now } },
+      { authorId: userId },
+    ],
+  }
+  const items = await Announcement.find(visibility).sort({ pinned: -1, createdAt: -1 }).limit(50).lean()
   return NextResponse.json(items)
 }
 
@@ -20,14 +29,19 @@ export async function POST(req: NextRequest) {
 
   await connectDB()
   const body = await req.json()
+  const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
+  const isFutureScheduled = !!(scheduledFor && scheduledFor.getTime() > Date.now())
   const item = await Announcement.create({
     ...body,
+    scheduledFor,
+    // Mark immediate urgent posts as already-emailed so the publish cron skips them
+    urgentEmailSent: body.priority === 'urgent' && !isFutureScheduled,
     authorId:   userId,
     authorName: user?.fullName || user?.firstName || 'Unknown',
   })
 
-  // Fire-and-forget urgent broadcast
-  if (body.priority === 'urgent') {
+  // Fire-and-forget urgent broadcast — skip when scheduled for the future (cron sends at publish time)
+  if (body.priority === 'urgent' && !isFutureScheduled) {
     ;(async () => {
       try {
         const users  = await listUsers({ limit: 500 })

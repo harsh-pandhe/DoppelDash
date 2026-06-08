@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Plane, Plus, Clock, CheckCircle2, XCircle, ChevronRight, Loader2, MapPin, CalendarDays, IndianRupee, RotateCcw } from 'lucide-react'
+import { Plane, Plus, Clock, CheckCircle2, XCircle, ChevronRight, Loader2, MapPin, CalendarDays, IndianRupee, RotateCcw, Receipt } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ interface TravelRequest {
   departureDate: string; returnDate: string
   estimatedTotal: number; advanceRequested: number
   status: string; managerNote?: string; bossNote?: string
+  expenseId?: string
   createdAt: string
 }
 
@@ -34,6 +36,7 @@ const avatarGradient = (n: string) => AVATAR_GRADIENTS[n.charCodeAt(0) % AVATAR_
 export default function TravelPage() {
   const { user } = useUser()
   const toast    = useToast()
+  const router   = useRouter()
   const role     = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'boss'
   const isBoss    = role === 'boss'
@@ -65,6 +68,20 @@ export default function TravelPage() {
     toast(status === 'approved' ? 'Travel approved' : status === 'rejected' ? 'Travel rejected' : 'Sent for boss approval', status === 'rejected' ? 'error' : 'success')
     setActing(null)
     fetchRequests()
+  }
+
+  const createExpense = async (id: string) => {
+    setActing(id)
+    const res = await fetch(`/api/travel/${id}/expense`, { method: 'POST' })
+    setActing(null)
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}))
+      toast(e.error || 'Could not create expense', 'error')
+      return
+    }
+    const exp = await res.json()
+    toast('Expense claim drafted from trip', 'success')
+    router.push(`/rms?highlight=${exp._id}`)
   }
 
   const cancel = async (id: string) => {
@@ -134,6 +151,8 @@ export default function TravelPage() {
               const canManagerApprove = !isBoss && isManager && r.status === 'pending_manager'
               const canBossApprove    = isBoss && r.status === 'pending_boss'
               const canCancel         = r.userId === user?.id && r.status === 'pending_manager'
+              const tripFinished      = new Date(r.returnDate) <= new Date()
+              const canCreateExpense  = r.userId === user?.id && r.status === 'approved' && tripFinished && !r.expenseId
 
               return (
                 <div key={r._id} className="bg-white rounded-2xl border border-surface-border p-5 space-y-3 hover:shadow-md transition-shadow">
@@ -179,8 +198,22 @@ export default function TravelPage() {
                   {/* Action buttons */}
                   <div className="pt-1 border-t border-surface-border">
                     <div className="flex flex-wrap gap-2 items-center justify-between">
-                      {(canManagerApprove || canBossApprove || canCancel) ? (
+                      {(canManagerApprove || canBossApprove || canCancel || canCreateExpense || r.expenseId) ? (
                         <div className="flex flex-wrap gap-2">
+                          {canCreateExpense && (
+                            <Button size="sm" className="gap-1.5 bg-brand-600 hover:bg-brand-700"
+                              onClick={() => createExpense(r._id)} disabled={acting === r._id}>
+                              {acting === r._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Receipt className="w-3 h-3" />}
+                              Create Expense Claim
+                            </Button>
+                          )}
+                          {r.expenseId && (
+                            <Link href={`/rms?highlight=${r.expenseId}`}>
+                              <Button size="sm" variant="outline" className="gap-1.5 text-brand-700 border-brand-200 hover:bg-brand-50">
+                                <Receipt className="w-3 h-3" /> View Expense
+                              </Button>
+                            </Link>
+                          )}
                           {canManagerApprove && (
                             <>
                               <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700"

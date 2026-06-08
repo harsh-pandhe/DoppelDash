@@ -119,29 +119,66 @@ function ReminderCard({ contactId, reminderDate, reminderNote, onSaved }: {
     setSaving(false); onSaved()
   }
 
+  const today0 = new Date(); today0.setHours(0,0,0,0)
+  const daysUntil = date ? Math.round((new Date(date).getTime() - today0.getTime()) / 86400000) : null
+  const friendly = daysUntil === null ? '' :
+    daysUntil < 0  ? `${Math.abs(daysUntil)} day${Math.abs(daysUntil) !== 1 ? 's' : ''} overdue` :
+    daysUntil === 0 ? 'Today' :
+    daysUntil === 1 ? 'Tomorrow' :
+    daysUntil <= 7  ? `In ${daysUntil} days` :
+                      new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  const hasSaved = !!reminderDate
+  const isDirty  = (date !== (reminderDate?.split('T')[0] || '')) || (note !== (reminderNote || ''))
+
   return (
-    <div className={`col-span-2 rounded-2xl border p-4 space-y-3 ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-surface border-surface-border'}`}>
-      <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${isOverdue ? 'text-red-600' : 'text-surface-muted'}`}>
-        <Bell className="w-3.5 h-3.5" /> Follow-up Reminder {isOverdue && '· OVERDUE'}
-      </p>
-      <div className="flex items-end gap-3 flex-wrap">
-        <div className="space-y-1">
-          <label htmlFor={`rd-${contactId}`} className="text-xs font-semibold text-surface-muted">Date</label>
-          <input id={`rd-${contactId}`} type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
-        </div>
-        <div className="flex-1 space-y-1 min-w-[160px]">
-          <label htmlFor={`rn-${contactId}`} className="text-xs font-semibold text-surface-muted">Note</label>
-          <input id={`rn-${contactId}`} type="text" value={note} onChange={e => setNote(e.target.value)}
-            placeholder="Follow up on proposal…"
-            className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
-        </div>
-        <Button type="button" size="sm" onClick={save} disabled={saving || !date} className="gap-1.5">
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bell className="w-3 h-3" />} Set
-        </Button>
-        {reminderDate && (
-          <button type="button" onClick={clear} disabled={saving} className="text-xs text-red-500 hover:underline">Clear</button>
+    <div className={`col-span-2 rounded-2xl border overflow-hidden ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-surface border-surface-border'}`}>
+      {/* Header strip */}
+      <div className={`flex items-center justify-between gap-2 px-4 py-2.5 border-b ${isOverdue ? 'border-red-200 bg-red-100/50' : 'border-surface-border bg-white/40'}`}>
+        <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${isOverdue ? 'text-red-600' : 'text-surface-muted'}`}>
+          <Bell className="w-3.5 h-3.5" /> Follow-up reminder
+        </p>
+        {hasSaved && friendly && (
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full
+            ${isOverdue ? 'bg-red-200 text-red-800'
+              : daysUntil !== null && daysUntil <= 1 ? 'bg-amber-100 text-amber-800'
+              : 'bg-brand-100 text-brand-700'}`}>
+            {friendly}
+          </span>
         )}
+      </div>
+
+      {/* Body */}
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3">
+          <div className="space-y-1">
+            <label htmlFor={`rd-${contactId}`} className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Date</label>
+            <input id={`rd-${contactId}`} type="date" value={date} onChange={e => setDate(e.target.value)}
+              min={today0.toISOString().split('T')[0]}
+              className="h-10 w-full sm:w-44 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <label htmlFor={`rn-${contactId}`} className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Note</label>
+            <input id={`rn-${contactId}`} type="text" value={note} onChange={e => setNote(e.target.value)}
+              placeholder="e.g. Follow up on Q2 proposal"
+              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap justify-end pt-1">
+          {hasSaved && (
+            <button type="button" onClick={clear} disabled={saving}
+              className="text-xs font-semibold text-red-600 hover:text-red-700 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors">
+              Clear reminder
+            </button>
+          )}
+          <Button type="button" size="sm" onClick={save}
+            disabled={saving || !date || (!isDirty && hasSaved)}
+            className="gap-1.5">
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+            {hasSaved ? (isDirty ? 'Update reminder' : 'Saved') : 'Set reminder'}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -278,7 +315,18 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
     const subjectMap: Record<string, string> = {
       birthday: 'Birthday Greetings', 'follow-up': 'Follow-Up', 'meeting-request': 'Meeting Request', introduction: 'Introduction — Doppelmayr India',
     }
-    window.open(`mailto:${contactEmail}?subject=${encodeURIComponent(subjectMap[type] || 'Message')}&body=${encodeURIComponent(message)}`)
+    const subject = encodeURIComponent(subjectMap[type] || 'Message')
+    let body = encodeURIComponent(message)
+    // mailto URLs cap ~2000 chars across browsers; trim body so Outlook draft opens with intact text instead of truncated/empty.
+    const MAX = 1900
+    const overhead = `mailto:${contactEmail}?subject=${subject}&body=`.length
+    if (overhead + body.length > MAX) {
+      body = encodeURIComponent(message.slice(0, MAX - overhead) ) // re-encode on trimmed plain text to avoid splitting an escape sequence
+      navigator.clipboard?.writeText(message).catch(() => {})
+      toast('Message too long for draft — full text copied to clipboard, paste into Outlook', 'info')
+    }
+    // location.href (not window.open) hands off to the OS mail handler without leaving a blank tab in Citrix browsers.
+    window.location.href = `mailto:${contactEmail}?subject=${subject}&body=${body}`
   }
 
   const wrapSelection = (prefix: string, suffix: string) => {
@@ -434,7 +482,7 @@ function ShareQRDialog({ contactId, contactName }: { contactId: string; contactN
             Scan QR or copy link to share {contactName}&apos;s public contact page.
           </Dialog.Description>
           <div className="flex justify-center mb-4 p-4 bg-surface rounded-2xl border border-surface-border">
-            <QRCodeSVG value={shareUrl} size={160} includeMargin />
+            <QRCodeSVG value={shareUrl} size={160} marginSize={4} />
           </div>
           <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border mb-4">
             <p className="text-xs text-gray-600 flex-1 truncate">{shareUrl}</p>

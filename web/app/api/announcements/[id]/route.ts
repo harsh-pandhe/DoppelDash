@@ -11,6 +11,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   await connectDB()
   const body = await req.json()
+  if ('scheduledFor' in body) {
+    body.scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
+  }
   const item = await Announcement.findByIdAndUpdate(params.id, body, { returnDocument: 'after' })
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(item)
