@@ -100,7 +100,8 @@ Output only the email body text, no subject line, no greeting like "Dear", start
     if (!bodyPlain) { toast('Body required', 'error'); return }
 
     if (mode === 'bcc') {
-      const bcc = preview.map(c => c.email).join(',')
+      // Outlook parses mailto recipients by SEMICOLON, not the RFC comma. Use ';' so it resolves each address.
+      const bcc = preview.map(c => c.email).join(';')
       const subj = encodeURIComponent(subject)
       // personalization can't vary per-recipient in one draft; strip placeholders to generic
       const generic = bodyPlain.replace(/\{\{name\}\}/gi, 'there').replace(/\{\{company\}\}/gi, 'your team')
