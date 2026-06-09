@@ -65,12 +65,18 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { contactId, messageType, context, prompt: rawPrompt } = body
+  const { contactId, messageType, context, prompt: rawPrompt, refineInstruction, currentDraft } = body
+
+  // Ask the model to emit a subject line first, then the body. Client splits on the SUBJECT: marker.
+  const SUBJECT_DIRECTIVE = ' Begin your output with a single line "SUBJECT: <a concise email subject, max 8 words>" then a blank line, then the message body.'
 
   let prompt: string
 
-  if (rawPrompt) {
-    // Campaign/direct prompt mode
+  if (refineInstruction && currentDraft) {
+    // Iterative refine: rewrite the existing draft per the user's instruction.
+    prompt = `Here is an email draft:\n\n"""${currentDraft}"""\n\nRewrite it to: ${refineInstruction}. Keep it professional. ${SUBJECT_DIRECTIVE}`
+  } else if (rawPrompt) {
+    // Campaign/direct prompt mode (no subject directive — campaigns set their own subject)
     prompt = rawPrompt
   } else {
     if (!contactId || !messageType) return NextResponse.json({ error: 'contactId and messageType required' }, { status: 400 })
@@ -94,7 +100,7 @@ export async function POST(req: NextRequest) {
     if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
     const promptFn = MESSAGE_PROMPTS[messageType]
     if (!promptFn) return NextResponse.json({ error: 'Unknown message type' }, { status: 400 })
-    prompt = promptFn(contact, context)
+    prompt = promptFn(contact, context) + SUBJECT_DIRECTIVE
   }
 
   const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'

@@ -268,21 +268,35 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
   const [context,    setContext]    = useState('')
   const [generating, setGenerating] = useState(false)
   const [message,    setMessage]    = useState('')
+  const [subject,    setSubject]    = useState('')
   const [charCount,  setCharCount]  = useState(0)
   const [copied,     setCopied]     = useState(false)
+  const [refineText, setRefineText] = useState('')
   const abortRef = useRef<AbortController | null>(null)
   const toast = useToast()
 
-  const generate = async () => {
+  // Split a raw model output of "SUBJECT: x\n\n<body>" into { subject, body }.
+  const splitSubject = (raw: string): { subject: string; body: string } => {
+    const m = raw.match(/^\s*SUBJECT:\s*(.*?)(?:\n|$)([\s\S]*)$/i)
+    if (m) return { subject: m[1].trim(), body: m[2].replace(/^\s+/, '') }
+    return { subject: '', body: raw }
+  }
+
+  // refine: when set, rewrite currentDraft per instruction instead of fresh-gen
+  const generate = async (refineInstruction?: string) => {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-    setGenerating(true); setMessage(''); setCharCount(0)
+    setGenerating(true)
+    if (!refineInstruction) { setMessage(''); setSubject(''); setCharCount(0) }
     try {
+      const payload = refineInstruction
+        ? { refineInstruction, currentDraft: message }
+        : { contactId, messageType: type, context: context.trim() || undefined }
       const res = await fetch('/api/crm/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-        body: JSON.stringify({ contactId, messageType: type, context: context.trim() || undefined }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed') }
@@ -297,9 +311,15 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
           if (!line.startsWith('data: ')) continue
           const data = line.slice(6)
           if (data === '[DONE]') break
-          try { const { token } = JSON.parse(data); acc += token; setMessage(acc); setCharCount(acc.length) } catch { /* skip */ }
+          try {
+            const { token } = JSON.parse(data); acc += token
+            const { subject: s, body: b } = splitSubject(acc)
+            if (s) setSubject(s)
+            setMessage(b); setCharCount(b.length)
+          } catch { /* skip */ }
         }
       }
+      setRefineText('')
     } catch (e) {
       if ((e as Error).name !== 'AbortError') toast(e instanceof Error ? e.message : 'Generation failed', 'error')
     } finally { setGenerating(false) }
@@ -315,18 +335,18 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
     const subjectMap: Record<string, string> = {
       birthday: 'Birthday Greetings', 'follow-up': 'Follow-Up', 'meeting-request': 'Meeting Request', introduction: 'Introduction — Doppelmayr India',
     }
-    const subject = encodeURIComponent(subjectMap[type] || 'Message')
+    const subjectEnc = encodeURIComponent(subject.trim() || subjectMap[type] || 'Message')
     let body = encodeURIComponent(message)
     // mailto URLs cap ~2000 chars across browsers; trim body so Outlook draft opens with intact text instead of truncated/empty.
     const MAX = 1900
-    const overhead = `mailto:${contactEmail}?subject=${subject}&body=`.length
+    const overhead = `mailto:${contactEmail}?subject=${subjectEnc}&body=`.length
     if (overhead + body.length > MAX) {
       body = encodeURIComponent(message.slice(0, MAX - overhead) ) // re-encode on trimmed plain text to avoid splitting an escape sequence
       navigator.clipboard?.writeText(message).catch(() => {})
       toast('Message too long for draft — full text copied to clipboard, paste into Outlook', 'info')
     }
     // location.href (not window.open) hands off to the OS mail handler without leaving a blank tab in Citrix browsers.
-    window.location.href = `mailto:${contactEmail}?subject=${subject}&body=${body}`
+    window.location.href = `mailto:${contactEmail}?subject=${subjectEnc}&body=${body}`
   }
 
   const wrapSelection = (prefix: string, suffix: string) => {
@@ -338,7 +358,9 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
     setTimeout(() => { ta.selectionStart = s + prefix.length; ta.selectionEnd = e + prefix.length; ta.focus() }, 0)
   }
 
-  const reset = () => { setMessage(''); setContext(''); setCharCount(0); abortRef.current?.abort() }
+  const reset = () => { setMessage(''); setSubject(''); setContext(''); setRefineText(''); setCharCount(0); abortRef.current?.abort() }
+
+  const REFINE_PRESETS = ['Shorter', 'More formal', 'Friendlier', 'Add a clear call-to-action']
 
   return (
     <Dialog.Root open={open} onOpenChange={o => { setOpen(o); if (!o) reset() }}>
@@ -395,7 +417,7 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
 
             {/* Generate / Stop */}
             <div className="flex gap-2">
-              <Button type="button" onClick={generate} disabled={generating}
+              <Button type="button" onClick={() => generate()} disabled={generating}
                 className="flex-1 gap-2 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 border-0 text-white">
                 <Sparkles className="w-4 h-4" />
                 {generating ? 'Writing…' : message ? 'Regenerate' : 'Generate Message'}
@@ -425,6 +447,13 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
             {/* Output area */}
             {(message || generating) && (
               <div className="space-y-2">
+                {/* AI-generated subject (editable) */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Subject</label>
+                  <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                    placeholder={generating ? 'Generating…' : 'Subject line'}
+                    className="w-full h-9 px-3 rounded-xl border border-purple-100 bg-purple-50/20 text-sm focus:outline-none focus:border-purple-200 text-gray-800" />
+                </div>
                 <div className="flex items-center gap-1 p-1.5 bg-surface rounded-xl border border-surface-border">
                   <button type="button" onClick={() => wrapSelection('**', '**')}
                     className="px-2.5 py-1 rounded-lg text-xs font-bold text-gray-700 hover:bg-white hover:shadow-sm transition-all" title="Bold">B</button>
@@ -448,6 +477,31 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
                   aria-label="Generated message"
                   className="w-full rounded-xl border border-purple-100 bg-purple-50/20 px-3.5 py-3 text-sm resize-none focus:outline-none focus:border-purple-200 leading-relaxed text-gray-800" />
                 <p className="text-[10px] text-surface-muted text-right">{charCount} chars · Edit before sending</p>
+
+                {/* Iterative refine — presets + free-text feedback */}
+                {message && !generating && (
+                  <div className="space-y-2 pt-2 border-t border-surface-border">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Refine</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {REFINE_PRESETS.map(p => (
+                        <button key={p} type="button" onClick={() => generate(p.toLowerCase())}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-purple-200 text-purple-700 hover:bg-purple-50 transition-colors">
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <input type="text" value={refineText} onChange={e => setRefineText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && refineText.trim()) generate(refineText.trim()) }}
+                        placeholder="e.g. mention the Tirupati project, keep under 4 lines"
+                        className="flex-1 h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-purple-300" />
+                      <button type="button" disabled={!refineText.trim()} onClick={() => generate(refineText.trim())}
+                        className="px-3 h-9 rounded-xl text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-40 transition-colors">
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
