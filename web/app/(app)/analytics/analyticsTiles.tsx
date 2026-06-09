@@ -99,7 +99,9 @@ const LEAVE_TYPE_COLORS: Record<string, string> = { casual: '#3B82F6', sick: '#E
 export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
 /* ════════════ Tile body ════════════ */
-export function TileBody({ def, data, drillBase }: { def: TileDef; data: AnalyticsData; drillBase: string }) {
+export function TileBody({ def, data, drillBase, readOnly = false }: { def: TileDef; data: AnalyticsData; drillBase: string; readOnly?: boolean }) {
+  // On read-only/public views, donut segments are not drillable (drill route needs auth).
+  const dMetric = (m: 'leave' | 'expense' | 'travel') => (readOnly ? undefined : m)
   switch (def.id) {
     case 'kpi.totalLeaves':    return <KpiTile def={def} value={data.kpis.totalLeaves} hint="In selected range" />
     case 'kpi.approvedLeaves': return <KpiTile def={def} value={data.kpis.approvedLeaves} hint={`${data.kpis.totalLeaves} total`} tone="success" />
@@ -116,11 +118,11 @@ export function TileBody({ def, data, drillBase }: { def: TileDef; data: Analyti
     case 'chart.expenseByMonth':
       return <ChartCard def={def}><BarChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" /></ChartCard>
     case 'chart.leaveStatus':
-      return <DonutCard def={def} metric="leave" drillBase={drillBase} data={data.leaveStatus.map(s => ({ label: s._id, raw: s._id, value: s.count, color: LEAVE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
+      return <DonutCard def={def} metric={dMetric('leave')} drillBase={drillBase} data={data.leaveStatus.map(s => ({ label: s._id, raw: s._id, value: s.count, color: LEAVE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.expenseStatus':
-      return <DonutCard def={def} metric="expense" drillBase={drillBase} data={data.expenseStatus.map(s => ({ label: s._id.replace(/_/g, ' '), raw: s._id, value: s.count, color: EXPENSE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
+      return <DonutCard def={def} metric={dMetric('expense')} drillBase={drillBase} data={data.expenseStatus.map(s => ({ label: s._id.replace(/_/g, ' '), raw: s._id, value: s.count, color: EXPENSE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.travelStatus':
-      return <DonutCard def={def} metric="travel" drillBase={drillBase} data={data.travelStatus.map(s => ({ label: s._id.replace(/_/g, ' '), raw: s._id, value: s.count, color: TRAVEL_STATUS_COLORS[s._id] || '#94A3B8' }))} />
+      return <DonutCard def={def} metric={dMetric('travel')} drillBase={drillBase} data={data.travelStatus.map(s => ({ label: s._id.replace(/_/g, ' '), raw: s._id, value: s.count, color: TRAVEL_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.leaveType':
       return <DonutCard def={def} data={data.leaveType.map(s => ({ label: s._id, value: s.count, color: LEAVE_TYPE_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.featureUsage30d':

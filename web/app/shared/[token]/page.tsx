@@ -77,7 +77,7 @@ export default function SharedDashboardPage({ params }: { params: { token: strin
                 const colSpan = e.size === 'sm' ? 'col-span-2 sm:col-span-1' : e.size === 'md' ? 'col-span-2' : 'col-span-2 lg:col-span-4'
                 return (
                   <div key={`${idx}-${e.id}`} className={colSpan}>
-                    <TileBody def={def} data={res.data} drillBase="" />
+                    <TileBody def={def} data={res.data} drillBase="" readOnly />
                   </div>
                 )
               })}
