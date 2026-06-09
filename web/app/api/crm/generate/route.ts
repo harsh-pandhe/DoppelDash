@@ -3,6 +3,44 @@ import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { rateLimit } from '@/lib/ratelimit'
 import { getUser } from '@/lib/auth'
+import { geminiText, geminiStream } from '@/lib/gemini'
+
+const enc = new TextEncoder()
+const sseToken = (token: string) => enc.encode(`data: ${JSON.stringify({ token })}\n\n`)
+const sseDone = () => enc.encode('data: [DONE]\n\n')
+
+/** Gemini fallback as an SSE stream in the same {token} shape the client parses. */
+async function geminiSSE(prompt: string): Promise<Response> {
+  const upstream = await geminiStream(prompt)
+  const readable = new ReadableStream({
+    async start(controller) {
+      const reader = upstream.body!.getReader()
+      const decoder = new TextDecoder()
+      try {
+        let buf = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          for (const line of buf.split('\n')) {
+            const l = line.trim()
+            if (!l.startsWith('data:')) continue
+            try {
+              const j = JSON.parse(l.slice(5).trim())
+              const t = j?.candidates?.[0]?.content?.parts?.[0]?.text || ''
+              if (t) controller.enqueue(sseToken(t))
+            } catch { /* skip partial */ }
+          }
+          buf = buf.slice(buf.lastIndexOf('\n') + 1)
+        }
+      } finally {
+        controller.enqueue(sseDone())
+        controller.close()
+      }
+    },
+  })
+  return new Response(readable, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' } })
+}
 
 const MESSAGE_PROMPTS: Record<string, (c: { name: string; company?: string; designation?: string }, context?: string) => string> = {
   birthday: (c, ctx) =>
@@ -64,8 +102,10 @@ export async function POST(req: NextRequest) {
 
   const stream = req.headers.get('accept')?.includes('text/event-stream')
 
+  // Ollama (local/dev) is primary; if unreachable (e.g. prod on Netlify), fall back to Gemini.
+  let res: Response
   try {
-    const res = await fetch(`${ollamaUrl}/api/chat`, {
+    res = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -73,14 +113,21 @@ export async function POST(req: NextRequest) {
         stream: stream,
         messages: [{ role: 'user', content: prompt }],
       }),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(8_000),   // fail fast → fall back to Gemini
     })
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '')
-      return NextResponse.json({ error: `AI request failed: ${errText}` }, { status: 502 })
+    if (!res.ok) throw new Error(`ollama ${res.status}`)
+  } catch {
+    // Ollama down → Gemini fallback
+    try {
+      if (stream) return await geminiSSE(prompt)
+      const text = await geminiText(prompt)
+      return NextResponse.json({ text, message: text })
+    } catch (e) {
+      return NextResponse.json({ error: `AI unavailable: ${(e as Error).message}` }, { status: 503 })
     }
+  }
 
+  try {
     if (stream && res.body) {
       // Stream SSE back to client
       const encoder = new TextEncoder()
@@ -126,6 +173,6 @@ export async function POST(req: NextRequest) {
     // Return both `text` (legacy campaigns) and `message` (contact profile)
     return NextResponse.json({ text, message: text })
   } catch {
-    return NextResponse.json({ error: 'Could not reach Ollama. Is it running?' }, { status: 503 })
+    return NextResponse.json({ error: 'AI generation failed' }, { status: 502 })
   }
 }
