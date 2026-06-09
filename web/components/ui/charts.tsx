@@ -35,12 +35,14 @@ export function BarChart({
 }
 
 export function DonutChart({
-  data, size = 100,
+  data, size = 100, onSegmentClick,
 }: {
   data: { label: string; value: number; color: string }[]
   size?: number
+  onSegmentClick?: (label: string) => void
 }) {
   const total = data.reduce((s, d) => s + d.value, 0)
+  const clickable = !!onSegmentClick && total > 0
 
   return (
     <div className="shrink-0">
@@ -55,6 +57,8 @@ export function DonutChart({
           startAngle={90}
           endAngle={-270}
           strokeWidth={0}
+          onClick={clickable ? ((slice: { label?: string }) => slice?.label && onSegmentClick!(slice.label)) as never : undefined}
+          className={clickable ? 'cursor-pointer focus:outline-none' : undefined}
         >
           {(total === 0 ? [{ color: '#E4E8EF' }] : data).map((d, i) => (
             <Cell key={i} fill={d.color} />

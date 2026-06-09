@@ -5,6 +5,8 @@ const PUBLIC_PATHS = [
   '/sign-in',
   '/sign-up',
   '/contact/',           // public shared contact cards (QR / link)
+  '/shared/',            // public read-only shared analytics dashboards
+  '/api/analytics/shared/',
   '/api/auth/login',
   '/api/auth/verify-otp',
   '/api/auth/logout',

@@ -1,115 +1,28 @@
 'use client'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useToast } from '@/components/ui/toast'
+import { downloadCsv, downloadTilePng, tileCsvRows } from './tileExport'
 import {
-  TrendingUp, Filter, Activity, CheckCircle2, Clock, IndianRupee,
-  Plane, Megaphone, AlertCircle, CalendarClock, Receipt, Layers,
+  TrendingUp, Filter, Layers,
   Plus, X, ChevronUp, ChevronDown, RotateCcw, Pencil, Sparkles,
-  CheckCircle, Building, ArrowUpRight, ArrowDownRight,
+  CheckCircle, CheckCircle2,
+  MoreHorizontal, ImageDown, FileText, Share2, Copy, Trash2, Link2,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
-import { BarChart, DonutChart } from '@/components/ui/charts'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import * as Dialog from '@radix-ui/react-dialog'
-import { timeAgo } from '@/lib/timeAgo'
 import { SortableTileGrid } from '@/components/SortableTileGrid'
+import {
+  TileBody, tileById, TILE_CATALOG,
+  type TileDef, type TileId, type TileSize, type LayoutEntry, type AnalyticsData,
+} from './analyticsTiles'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Types
    ══════════════════════════════════════════════════════════════════════════ */
 
-interface MonthPoint   { label: string; count: number; days?: number; total?: number }
-interface StatusBucket { _id: string; count: number; total?: number }
-interface LeaveTypeBucket { _id: string; count: number; days: number }
-interface TopSpender { userId: string; userName: string; total: number; count: number }
-interface RecentAudit {
-  action: string
-  performedByName: string
-  createdAt: string
-  metadata?: Record<string, unknown>
-}
 
-interface FilterOptions {
-  departments: string[]
-  employees: { userId: string; name: string; department: string }[]
-}
-
-interface AnalyticsData {
-  range: { from: string; to: string }
-  filterOptions?: FilterOptions
-  appliedFilters?: { dept: string | null; employee: string | null; status: string | null }
-  compare?: 'mom' | 'yoy' | null
-  previous?: { totalLeaves: number; approvedLeaves: number; totalExpenses: number; paidExpense: number }
-  kpis: {
-    totalLeaves: number; approvedLeaves: number; pendingLeaves: number
-    totalExpenses: number; totalExpenseCount: number
-    paidExpense: number; pendingPayout: number; pendingExpensesCount: number
-    travelApproved: number; pendingTravel: number
-    contactCount: number; contactsWithEmail: number
-    announcementCount: number
-    leavesIn30d: number; expensesIn30d: number; travelIn30d: number
-  }
-  leaveByMonth:    MonthPoint[]
-  expenseByMonth:  MonthPoint[]
-  leaveStatus:     StatusBucket[]
-  expenseStatus:   StatusBucket[]
-  travelStatus:    StatusBucket[]
-  leaveType:       LeaveTypeBucket[]
-  topSpenders:     TopSpender[]
-  recentAudits:    RecentAudit[]
-}
-
-type TileSize = 'sm' | 'md' | 'lg'   // sm = 1col, md = 2col on lg+, lg = full-width
-type LayoutEntry = { id: TileId; size: TileSize }
-
-/* ════════════════════════════════════════════════════════════════════════════
-   Tile catalog
-   ══════════════════════════════════════════════════════════════════════════ */
-
-type TileId =
-  | 'kpi.totalLeaves' | 'kpi.approvedLeaves' | 'kpi.pendingLeaves'
-  | 'kpi.totalExpenses' | 'kpi.paidExpense' | 'kpi.pendingPayout'
-  | 'kpi.travelApproved' | 'kpi.pendingTravel'
-  | 'kpi.contacts' | 'kpi.announcements'
-  | 'chart.leaveByMonth' | 'chart.expenseByMonth'
-  | 'chart.leaveStatus' | 'chart.expenseStatus' | 'chart.travelStatus'
-  | 'chart.leaveType' | 'chart.featureUsage30d'
-  | 'list.topSpenders' | 'list.recentActivity'
-
-interface TileDef {
-  id:           TileId
-  label:        string
-  description:  string
-  category:     'kpi' | 'chart' | 'list'
-  defaultSize:  TileSize
-  icon:         React.ElementType
-}
-
-const TILE_CATALOG: TileDef[] = [
-  // KPI tiles (1 column)
-  { id: 'kpi.totalLeaves',     label: 'Total leaves',        description: 'Leave requests in range',      category: 'kpi', defaultSize: 'sm', icon: CalendarClock },
-  { id: 'kpi.approvedLeaves',  label: 'Approved leaves',     description: 'Approved count',               category: 'kpi', defaultSize: 'sm', icon: CheckCircle2 },
-  { id: 'kpi.pendingLeaves',   label: 'Pending leaves',      description: 'Awaiting decision',            category: 'kpi', defaultSize: 'sm', icon: Clock },
-  { id: 'kpi.totalExpenses',   label: 'Total expense (₹)',   description: 'Sum of all claims in range',   category: 'kpi', defaultSize: 'sm', icon: Receipt },
-  { id: 'kpi.paidExpense',     label: 'Paid out (₹)',        description: 'Sum reimbursed',               category: 'kpi', defaultSize: 'sm', icon: IndianRupee },
-  { id: 'kpi.pendingPayout',   label: 'Pending payout (₹)',  description: 'Awaiting payout',              category: 'kpi', defaultSize: 'sm', icon: AlertCircle },
-  { id: 'kpi.travelApproved',  label: 'Travel approved',     description: 'Cleared trips',                category: 'kpi', defaultSize: 'sm', icon: Plane },
-  { id: 'kpi.pendingTravel',   label: 'Travel pending',      description: 'Awaiting approval',            category: 'kpi', defaultSize: 'sm', icon: Plane },
-  { id: 'kpi.contacts',        label: 'CRM contacts',        description: 'Total / with email',           category: 'kpi', defaultSize: 'sm', icon: Building },
-  { id: 'kpi.announcements',   label: 'Announcements',       description: 'Total posted',                 category: 'kpi', defaultSize: 'sm', icon: Megaphone },
-  // Charts (2 columns)
-  { id: 'chart.leaveByMonth',   label: 'Leave requests by month', description: 'Bar chart over selected range', category: 'chart', defaultSize: 'md', icon: TrendingUp },
-  { id: 'chart.expenseByMonth', label: 'Expense ₹ by month',      description: 'Submitted value over range',    category: 'chart', defaultSize: 'md', icon: TrendingUp },
-  { id: 'chart.leaveStatus',    label: 'Leave status breakdown',  description: 'Donut: approved / pending / rejected', category: 'chart', defaultSize: 'md', icon: Layers },
-  { id: 'chart.expenseStatus',  label: 'Expense status breakdown',description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
-  { id: 'chart.travelStatus',   label: 'Travel status breakdown', description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
-  { id: 'chart.leaveType',      label: 'Leave by type',           description: 'Casual / sick / earned etc.',   category: 'chart', defaultSize: 'md', icon: Layers },
-  { id: 'chart.featureUsage30d',label: 'Feature usage · 30 days', description: 'Leaves vs expenses vs travel',  category: 'chart', defaultSize: 'md', icon: Activity },
-  // Lists
-  { id: 'list.topSpenders',     label: 'Top spenders',     description: 'Highest reimbursed in range',   category: 'list', defaultSize: 'md', icon: TrendingUp },
-  { id: 'list.recentActivity',  label: 'Recent activity',  description: 'Latest audit log entries',      category: 'list', defaultSize: 'lg', icon: Activity },
-]
 
 const DEFAULT_LAYOUT: LayoutEntry[] = [
   { id: 'kpi.pendingLeaves',    size: 'sm' },
@@ -126,9 +39,6 @@ const DEFAULT_LAYOUT: LayoutEntry[] = [
 
 const LAYOUT_KEY = 'doppeldash-analytics-layout-v1'
 
-function tileById(id: TileId): TileDef | undefined {
-  return TILE_CATALOG.find(t => t.id === id)
-}
 
 function loadLayout(): LayoutEntry[] {
   if (typeof window === 'undefined') return DEFAULT_LAYOUT
@@ -149,19 +59,6 @@ function saveLayout(layout: LayoutEntry[]) {
    Style maps
    ══════════════════════════════════════════════════════════════════════════ */
 
-const LEAVE_STATUS_COLORS: Record<string, string> = {
-  pending: '#FBBF24', approved: '#0a7d3b', rejected: '#c83838',
-}
-const EXPENSE_STATUS_COLORS: Record<string, string> = {
-  pending_manager: '#FBBF24', pending_boss: '#0057A8', paid: '#0a7d3b', rejected: '#c83838', returned: '#F97316',
-}
-const TRAVEL_STATUS_COLORS: Record<string, string> = {
-  pending_manager: '#FBBF24', pending_boss: '#0057A8', approved: '#0a7d3b', rejected: '#c83838', cancelled: '#94A3B8',
-}
-const LEAVE_TYPE_COLORS: Record<string, string> = {
-  casual: '#3B82F6', sick: '#EF4444', medical: '#EF4444', earned: '#22C55E',
-  privilege: '#A855F7', restricted: '#F97316', lwp: '#6B7280',
-}
 
 const DATE_PRESETS = [
   { label: 'Last 3 months', months: 3 },
@@ -169,13 +66,24 @@ const DATE_PRESETS = [
   { label: 'This year',     months: 12 },
 ]
 
+/* ── Saved custom date-range presets (localStorage) ── */
+type SavedPreset = { label: string; from: string; to: string }
+const PRESETS_KEY = 'doppeldash-date-presets-v1'
+function loadPresets(): SavedPreset[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]') as SavedPreset[] } catch { return [] }
+}
+function savePresets(p: SavedPreset[]) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(PRESETS_KEY, JSON.stringify(p)) } catch { /* quota */ }
+}
+
 function monthsAgo(n: number) {
   const d = new Date()
   d.setMonth(d.getMonth() - n)
   return d.toISOString().split('T')[0]
 }
 
-const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
 /* ════════════════════════════════════════════════════════════════════════════
    Page
@@ -194,9 +102,22 @@ export default function AnalyticsPage() {
   const [editMode, setEditMode] = useState(false)
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [layout, setLayout] = useState<LayoutEntry[]>(DEFAULT_LAYOUT)
+  const [presets, setPresets] = useState<SavedPreset[]>([])
+  const [shareOpen, setShareOpen] = useState(false)
 
-  useEffect(() => { setLayout(loadLayout()) }, [])
+  useEffect(() => { setLayout(loadLayout()); setPresets(loadPresets()) }, [])
   useEffect(() => { saveLayout(layout) }, [layout])
+
+  const saveCurrentPreset = () => {
+    const fromLabel = from ? new Date(from).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'start'
+    const toLabel   = to   ? new Date(to).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'now'
+    const label = `${fromLabel} → ${toLabel}`
+    if (presets.some(p => p.from === from && p.to === to)) return
+    const next = [...presets, { label, from, to }]
+    setPresets(next); savePresets(next)
+  }
+  const applyPreset  = (p: SavedPreset) => { setFrom(p.from); setTo(p.to) }
+  const deletePreset = (idx: number) => { const next = presets.filter((_, i) => i !== idx); setPresets(next); savePresets(next) }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -218,6 +139,16 @@ export default function AnalyticsPage() {
 
   const activeIds  = useMemo(() => new Set(layout.map(l => l.id)), [layout])
   const availableTiles = TILE_CATALOG.filter(t => !activeIds.has(t.id))
+
+  // Querystring carrying current range + dimension filters into the drill-down page
+  const drillBase = useMemo(() => {
+    const p = new URLSearchParams()
+    if (from)     p.set('from', from)
+    if (to)       p.set('to', to)
+    if (dept)     p.set('dept', dept)
+    if (employee) p.set('employee', employee)
+    return p.toString()
+  }, [from, to, dept, employee])
 
   const addTile    = (id: TileId) => {
     const def = tileById(id); if (!def) return
@@ -271,6 +202,10 @@ export default function AnalyticsPage() {
                 </button>
               ))}
             </div>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5"
+              onClick={() => setShareOpen(true)} disabled={layout.length === 0}>
+              <Share2 className="w-3.5 h-3.5" /> Share
+            </Button>
             <Button type="button" variant={editMode ? 'default' : 'outline'} size="sm" className="gap-1.5"
               onClick={() => setEditMode(e => !e)}>
               {editMode ? <CheckCircle className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
@@ -282,7 +217,7 @@ export default function AnalyticsPage() {
         {/* Date filter row */}
         {showFilter && (
           <div className="flex items-end gap-3 p-4 bg-white rounded-2xl border border-surface-border flex-wrap">
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
               {DATE_PRESETS.map(p => (
                 <button key={p.label} type="button"
                   onClick={() => { setFrom(monthsAgo(p.months)); setTo('') }}
@@ -290,6 +225,22 @@ export default function AnalyticsPage() {
                   {p.label}
                 </button>
               ))}
+              {presets.map((p, i) => (
+                <span key={`${p.from}-${p.to}-${i}`} className="inline-flex items-center rounded-xl border border-brand-200 bg-brand-50 overflow-hidden">
+                  <button type="button" onClick={() => applyPreset(p)}
+                    className="px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition-colors">
+                    {p.label}
+                  </button>
+                  <button type="button" aria-label="Delete preset" onClick={() => deletePreset(i)}
+                    className="px-1.5 py-1.5 text-brand-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <button type="button" onClick={saveCurrentPreset}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-dashed border-surface-border text-surface-muted hover:border-brand-400 hover:text-brand-600 transition-all inline-flex items-center gap-1">
+                <Plus className="w-3 h-3" /> Save range
+              </button>
             </div>
 
             {/* Dimension filters (managers) */}
@@ -445,7 +396,7 @@ export default function AnalyticsPage() {
                         </button>
                       </div>
                     )}
-                    <TileBody def={def} data={data} />
+                    <ExportableTile def={def} data={data} drillBase={drillBase} disabled={editMode} />
                   </>
                 )
               }}
@@ -514,8 +465,132 @@ export default function AnalyticsPage() {
           </Dialog.Portal>
         </Dialog.Root>
 
+        <ShareDialog open={shareOpen} onOpenChange={setShareOpen}
+          layout={layout} filters={{ from, to, dept, employee, status }} />
+
       </main>
     </>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Share dialog
+   ══════════════════════════════════════════════════════════════════════════ */
+
+type ShareRow = { token: string; expiresAt: string | null; viewCount: number; createdAt: string; expired: boolean }
+
+function ShareDialog({ open, onOpenChange, layout, filters }: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  layout: LayoutEntry[]
+  filters: { from: string; to: string; dept: string; employee: string; status: string }
+}) {
+  const toast = useToast()
+  const [expiry, setExpiry] = useState<'24h' | '7d' | '30d' | 'never'>('7d')
+  const [shares, setShares] = useState<ShareRow[]>([])
+  const [loading, setLoading] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const fullUrl = (t: string) => `${origin}/shared/${t}`
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    try { const r = await fetch('/api/analytics/share'); const d = await r.json(); setShares(d.shares || []) }
+    catch { /* ignore */ } finally { setLoading(false) }
+  }, [])
+  useEffect(() => { if (open) refresh() }, [open, refresh])
+
+  const create = async () => {
+    setCreating(true)
+    try {
+      const r = await fetch('/api/analytics/share', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ layout, filters, expiry }),
+      })
+      const d = await r.json()
+      if (!r.ok) { toast(d.error || 'Failed to create link', 'error'); return }
+      await navigator.clipboard.writeText(fullUrl(d.token)).catch(() => {})
+      toast('Share link created & copied', 'success')
+      refresh()
+    } catch { toast('Failed to create link', 'error') }
+    finally { setCreating(false) }
+  }
+  const copy = async (t: string) => { await navigator.clipboard.writeText(fullUrl(t)).catch(() => {}); toast('Link copied', 'success') }
+  const revoke = async (t: string) => {
+    const r = await fetch(`/api/analytics/share/${t}`, { method: 'DELETE' })
+    if (r.ok) { toast('Link revoked', 'success'); refresh() } else toast('Failed to revoke', 'error')
+  }
+
+  const fmtExpiry = (e: string | null) => e ? new Date(e).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Never'
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
+          <Dialog.Title className="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-brand-600" /> Share dashboard
+          </Dialog.Title>
+          <Dialog.Description className="text-sm text-surface-muted mb-5">
+            Generate a read-only public link. It snapshots your current tiles + filters. Anyone with the link can view — no login needed.
+          </Dialog.Description>
+
+          <div className="flex items-end gap-2 mb-5">
+            <div className="space-y-1 flex-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Link expires</label>
+              <select aria-label="Link expiry" value={expiry} onChange={e => setExpiry(e.target.value as typeof expiry)}
+                className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                <option value="24h">In 24 hours</option>
+                <option value="7d">In 7 days</option>
+                <option value="30d">In 30 days</option>
+                <option value="never">Never</option>
+              </select>
+            </div>
+            <Button type="button" className="gap-1.5" onClick={create} disabled={creating}>
+              <Link2 className="w-3.5 h-3.5" /> {creating ? 'Creating…' : 'Create link'}
+            </Button>
+          </div>
+
+          <div className="border-t border-surface-border pt-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">Active links</p>
+            {loading ? (
+              <div className="space-y-2">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : shares.length === 0 ? (
+              <p className="text-xs text-surface-muted py-4 text-center">No share links yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {shares.map(s => (
+                  <li key={s.token} className={`flex items-center gap-2 p-2.5 rounded-xl border ${s.expired ? 'border-red-200 bg-red-50/40' : 'border-surface-border'}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-mono text-gray-700 truncate">/shared/{s.token.slice(0, 12)}…</p>
+                      <p className="text-[11px] text-surface-muted">
+                        {s.expired ? <span className="text-red-600 font-semibold">Expired</span> : `Expires ${fmtExpiry(s.expiresAt)}`}
+                        {' · '}{s.viewCount} view{s.viewCount !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    {!s.expired && (
+                      <button type="button" aria-label="Copy link" onClick={() => copy(s.token)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface text-gray-500 transition-colors">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button type="button" aria-label="Revoke link" onClick={() => revoke(s.token)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex justify-end mt-5 pt-4 border-t border-surface-border">
+            <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }
 
@@ -523,256 +598,59 @@ export default function AnalyticsPage() {
    Tile body renderer
    ══════════════════════════════════════════════════════════════════════════ */
 
-function TileBody({ def, data }: { def: TileDef; data: AnalyticsData }) {
-  switch (def.id) {
-    case 'kpi.totalLeaves':
-      return <KpiTile def={def} value={data.kpis.totalLeaves} hint="In selected range" />
-    case 'kpi.approvedLeaves':
-      return <KpiTile def={def} value={data.kpis.approvedLeaves} hint={`${data.kpis.totalLeaves} total`} tone="success" />
-    case 'kpi.pendingLeaves':
-      return <KpiTile def={def} value={data.kpis.pendingLeaves} hint="Awaiting decision" tone={data.kpis.pendingLeaves > 0 ? 'warning' : 'neutral'} />
-    case 'kpi.totalExpenses':
-      return <KpiTile def={def} value={inr(data.kpis.totalExpenses)} hint={`${data.kpis.totalExpenseCount} claim${data.kpis.totalExpenseCount !== 1 ? 's' : ''}`} />
-    case 'kpi.paidExpense':
-      return <KpiTile def={def} value={inr(data.kpis.paidExpense)} hint="Reimbursed so far" tone="success" />
-    case 'kpi.pendingPayout':
-      return <KpiTile def={def} value={inr(data.kpis.pendingPayout)} hint={`${data.kpis.pendingExpensesCount} pending`} tone={data.kpis.pendingPayout > 0 ? 'warning' : 'neutral'} />
-    case 'kpi.travelApproved':
-      return <KpiTile def={def} value={data.kpis.travelApproved} hint="Cleared trips" tone="success" />
-    case 'kpi.pendingTravel':
-      return <KpiTile def={def} value={data.kpis.pendingTravel} hint="Awaiting approval" tone={data.kpis.pendingTravel > 0 ? 'warning' : 'neutral'} />
-    case 'kpi.contacts':
-      return <KpiTile def={def} value={data.kpis.contactCount} hint={`${data.kpis.contactsWithEmail} with email`} />
-    case 'kpi.announcements':
-      return <KpiTile def={def} value={data.kpis.announcementCount} hint="Total posted" />
+/* Wraps a tile with a hover ⋯ menu offering CSV (data tiles) + PNG (all tiles) export. */
+function ExportableTile({ def, data, drillBase, disabled }: { def: TileDef; data: AnalyticsData; drillBase: string; disabled: boolean }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const toast = useToast()
+  const csvRows = tileCsvRows(def.id, data)
 
-    case 'chart.leaveByMonth':
-      return (
-        <ChartCard def={def}>
-          <BarChart data={data.leaveByMonth.map(m => ({ label: m.label, value: m.count }))} color="#0057A8" />
-        </ChartCard>
-      )
-    case 'chart.expenseByMonth':
-      return (
-        <ChartCard def={def}>
-          <BarChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" />
-        </ChartCard>
-      )
-    case 'chart.leaveStatus':
-      return (
-        <DonutCard def={def}
-          data={data.leaveStatus.map(s => ({ label: s._id, value: s.count, color: LEAVE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
-      )
-    case 'chart.expenseStatus':
-      return (
-        <DonutCard def={def}
-          data={data.expenseStatus.map(s => ({ label: s._id.replace(/_/g, ' '), value: s.count, color: EXPENSE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
-      )
-    case 'chart.travelStatus':
-      return (
-        <DonutCard def={def}
-          data={data.travelStatus.map(s => ({ label: s._id.replace(/_/g, ' '), value: s.count, color: TRAVEL_STATUS_COLORS[s._id] || '#94A3B8' }))} />
-      )
-    case 'chart.leaveType':
-      return (
-        <DonutCard def={def}
-          data={data.leaveType.map(s => ({ label: s._id, value: s.count, color: LEAVE_TYPE_COLORS[s._id] || '#94A3B8' }))} />
-      )
-    case 'chart.featureUsage30d':
-      return (
-        <ChartCard def={def}>
-          <BarChart data={[
-            { label: 'Leaves',   value: data.kpis.leavesIn30d   },
-            { label: 'Expenses', value: data.kpis.expensesIn30d },
-            { label: 'Travel',   value: data.kpis.travelIn30d   },
-          ]} color="#0057A8" />
-        </ChartCard>
-      )
+  const slug = def.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-    case 'list.topSpenders':
-      return <TopSpendersCard def={def} data={data.topSpenders} />
-    case 'list.recentActivity':
-      return <RecentActivityCard def={def} data={data.recentAudits} />
-    default:
-      return null
+  const doCsv = () => {
+    if (!csvRows) return
+    downloadCsv(csvRows, `${slug}.csv`)
+    setOpen(false)
+    toast('CSV exported', 'success')
   }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
-   Tile primitives
-   ══════════════════════════════════════════════════════════════════════════ */
-
-function KpiTile({ def, value, hint, tone = 'neutral', current, previous, compareLabel }: {
-  def: TileDef
-  value: number | string
-  hint?: string
-  tone?: 'neutral' | 'success' | 'warning' | 'danger'
-  current?: number
-  previous?: number
-  compareLabel?: string
-}) {
-  const valueColor = {
-    neutral: 'text-dm-graphite',
-    success: 'text-emerald-600',
-    warning: 'text-amber-600',
-    danger:  'text-red-600',
-  }[tone]
-  const Icon = def.icon
-
-  // Delta chip when comparing
-  let delta: { pct: number; up: boolean } | null = null
-  if (typeof current === 'number' && typeof previous === 'number') {
-    if (previous === 0) delta = current > 0 ? { pct: 100, up: true } : null
-    else { const p = ((current - previous) / Math.abs(previous)) * 100; delta = { pct: Math.round(p), up: p >= 0 } }
+  const doPng = async () => {
+    if (!ref.current) return
+    setBusy(true); setOpen(false)
+    try { await downloadTilePng(ref.current, `${slug}.png`); toast('PNG exported', 'success') }
+    catch { toast('PNG export failed', 'error') }
+    finally { setBusy(false) }
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
-      <div className="flex items-start justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">{def.label}</p>
-        <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center flex-shrink-0">
-          <Icon className="w-3.5 h-3.5 text-surface-muted" />
-        </div>
-      </div>
-      <div>
-        <div className="flex items-end gap-2">
-          <p className={`text-3xl font-extrabold tabular-nums tracking-tighter ${valueColor}`}>{value}</p>
-          {delta && (
-            <span className={`mb-1 inline-flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-full ${delta.up ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}
-              title={`vs previous ${compareLabel || 'period'}`}>
-              {delta.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-              {Math.abs(delta.pct)}%
-            </span>
+    <div ref={ref} className="relative h-full">
+      {!disabled && (
+        <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <button type="button" aria-label="Export tile" onClick={() => setOpen(o => !o)}
+            className="w-7 h-7 rounded-lg bg-white/90 border border-surface-border flex items-center justify-center hover:bg-surface shadow-sm">
+            {busy ? <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /> : <MoreHorizontal className="w-4 h-4 text-gray-500" />}
+          </button>
+          {open && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+              <div className="absolute right-0 mt-1 z-20 w-40 bg-white border border-surface-border rounded-xl shadow-lg overflow-hidden py-1">
+                {csvRows && (
+                  <button type="button" onClick={doCsv}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-surface text-left">
+                    <FileText className="w-3.5 h-3.5 text-surface-muted" /> Export CSV
+                  </button>
+                )}
+                <button type="button" onClick={doPng}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-surface text-left">
+                  <ImageDown className="w-3.5 h-3.5 text-surface-muted" /> Export PNG
+                </button>
+              </div>
+            </>
           )}
         </div>
-        {hint && <p className="text-[11px] text-surface-muted mt-1 truncate">{hint}</p>}
-      </div>
+      )}
+      <TileBody def={def} data={data} drillBase={drillBase} />
     </div>
   )
 }
 
-function ChartCard({ def, children }: { def: TileDef; children: React.ReactNode }) {
-  return (
-    <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle>
-        <p className="text-xs text-surface-muted">{def.description}</p>
-      </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
-    </Card>
-  )
-}
-
-function DonutCard({ def, data }: { def: TileDef; data: { label: string; value: number; color: string }[] }) {
-  const empty = data.every(d => d.value === 0)
-  return (
-    <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {empty ? (
-          <p className="text-xs text-surface-muted py-8 text-center">No data in this range.</p>
-        ) : (
-          <div className="flex items-center gap-6">
-            <DonutChart data={data} size={100} />
-            <div className="space-y-2 flex-1 min-w-0">
-              {data.filter(d => d.value > 0).map(s => (
-                <div key={s.label} className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                  <span className="text-xs text-gray-600 capitalize truncate flex-1">{s.label}</span>
-                  <span className="text-xs font-bold text-gray-900 ml-auto">{s.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function TopSpendersCard({ def, data }: { def: TileDef; data: TopSpender[] }) {
-  return (
-    <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle>
-        <p className="text-xs text-surface-muted">{def.description}</p>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {data.length === 0 ? (
-          <p className="text-xs text-surface-muted py-6 text-center">No paid expenses yet.</p>
-        ) : (
-          <ul className="divide-y divide-surface-border">
-            {data.map((s, i) => (
-              <li key={s.userId} className="py-2.5 flex items-center gap-3">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                  ${i === 0 ? 'bg-amber-100 text-amber-700' :
-                    i === 1 ? 'bg-gray-200 text-gray-700' :
-                    i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-surface text-surface-muted'}`}>
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{s.userName}</p>
-                  <p className="text-[10px] text-surface-muted">{s.count} claim{s.count !== 1 ? 's' : ''}</p>
-                </div>
-                <span className="text-sm font-extrabold text-dm-graphite tabular-nums">{inr(s.total)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-function actionLabel(action: string): string {
-  const parts = action.split('.')
-  const noun  = parts[0] || action
-  const verb  = parts[1] || ''
-  return `${verb.replace(/_/g, ' ')} ${noun}`.trim() || action
-}
-
-function RecentActivityCard({ def, data }: { def: TileDef; data: RecentAudit[] }) {
-  return (
-    <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle>
-        <p className="text-xs text-surface-muted">{def.description}</p>
-      </CardHeader>
-      <CardContent className="pt-0">
-        {data.length === 0 ? (
-          <p className="text-xs text-surface-muted py-6 text-center">Nothing to show yet.</p>
-        ) : (
-          <ul className="divide-y divide-surface-border">
-            {data.map((a, i) => {
-              const meta = a.metadata || {}
-              const employeeName = (meta.employeeName as string | undefined) || ''
-              const amount = meta.amount as number | undefined
-              const days = meta.days as number | undefined
-              const dest = meta.destination as string | undefined
-              return (
-                <li key={i} className="py-2.5 flex items-start gap-3">
-                  <Activity className="w-3.5 h-3.5 text-surface-muted flex-shrink-0 mt-1" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
-                      <strong className="font-semibold">{a.performedByName}</strong>
-                      <span className="text-gray-600"> · {actionLabel(a.action)}</span>
-                      {employeeName && <span className="text-gray-600"> for {employeeName}</span>}
-                    </p>
-                    <p className="text-[10px] text-surface-muted">
-                      {dest && <>{dest} · </>}
-                      {days !== undefined && <>{days}d · </>}
-                      {amount !== undefined && <>{inr(amount)} · </>}
-                      {timeAgo(a.createdAt)}
-                    </p>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
