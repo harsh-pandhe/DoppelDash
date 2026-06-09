@@ -84,6 +84,49 @@ Output only the email body text, no subject line, no greeting like "Dear", start
     finally { setAiLoading(false) }
   }
 
+  // Strip HTML → plaintext for mailto body
+  const plain = (html: string) => html
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').trim()
+
+  // Bulk send via the user's LOCAL Outlook (mailto handoff) — no server SMTP.
+  // mode 'bcc' = one draft with everyone in BCC (shared body).
+  // mode 'each' = one personalized Outlook draft per contact ({{name}}/{{company}} filled).
+  const MAILTO_MAX = 1900
+  const openInOutlook = (mode: 'bcc' | 'each') => {
+    if (preview.length === 0) { toast('No contacts', 'error'); return }
+    if (!subject.trim()) { toast('Subject required', 'error'); return }
+    const bodyPlain = plain(body)
+    if (!bodyPlain) { toast('Body required', 'error'); return }
+
+    if (mode === 'bcc') {
+      const bcc = preview.map(c => c.email).join(',')
+      const subj = encodeURIComponent(subject)
+      // personalization can't vary per-recipient in one draft; strip placeholders to generic
+      const generic = bodyPlain.replace(/\{\{name\}\}/gi, 'there').replace(/\{\{company\}\}/gi, 'your team')
+      const body6 = encodeURIComponent(generic.slice(0, MAILTO_MAX))
+      if (generic.length > MAILTO_MAX) { navigator.clipboard?.writeText(generic).catch(()=>{}); toast('Body long — full text copied; paste into Outlook', 'info') }
+      window.location.href = `mailto:?bcc=${bcc}&subject=${subj}&body=${body6}`
+      return
+    }
+
+    // per-contact: open N drafts. Browsers throttle rapid navigations, so stagger via anchor clicks.
+    if (preview.length > 15 && !confirm(`This opens ${preview.length} separate Outlook drafts. Continue?`)) return
+    preview.forEach((c, i) => {
+      const personal = bodyPlain
+        .replace(/\{\{name\}\}/gi, c.name)
+        .replace(/\{\{company\}\}/gi, c.company || 'your team')
+      const subj = encodeURIComponent(subject)
+      const b = encodeURIComponent(personal.slice(0, MAILTO_MAX))
+      setTimeout(() => {
+        const a = document.createElement('a')
+        a.href = `mailto:${c.email}?subject=${subj}&body=${b}`
+        a.click()
+      }, i * 600) // stagger so the OS mail handler keeps up
+    })
+    toast(`Opening ${preview.length} Outlook draft${preview.length !== 1 ? 's' : ''}…`, 'success')
+  }
+
   const sendCampaign = async () => {
     const bodyText = body.replace(/<[^>]*>/g, '').trim()
     if (!subject.trim() || !bodyText) { toast('Subject and body required', 'error'); return }
@@ -177,10 +220,30 @@ Output only the email body text, no subject line, no greeting like "Dear", start
                   </Alert>
                 )}
 
-                <Button type="button" className="w-full gap-2" onClick={sendCampaign}
-                  disabled={sending || preview.length === 0 || !subject || !body.replace(/<[^>]*>/g, '').trim()}>
-                  {sending ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</> : <><Send className="w-4 h-4" />Send to {preview.length} Contact{preview.length !== 1 ? 's' : ''}</>}
-                </Button>
+                {(() => { const ready = preview.length > 0 && !!subject && !!body.replace(/<[^>]*>/g, '').trim(); return (
+                <div className="space-y-2">
+                  <Button type="button" className="w-full gap-2" onClick={sendCampaign}
+                    disabled={sending || !ready}>
+                    {sending ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</> : <><Send className="w-4 h-4" />Send via server to {preview.length} contact{preview.length !== 1 ? 's' : ''}</>}
+                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-px bg-surface-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">or send via Outlook</span>
+                    <div className="flex-1 h-px bg-surface-border" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button type="button" variant="outline" className="gap-1.5" disabled={!ready}
+                      onClick={() => openInOutlook('bcc')} title="One Outlook draft, everyone in BCC">
+                      <Send className="w-3.5 h-3.5" /> One draft (BCC)
+                    </Button>
+                    <Button type="button" variant="outline" className="gap-1.5" disabled={!ready}
+                      onClick={() => openInOutlook('each')} title="One personalized draft per contact">
+                      <Send className="w-3.5 h-3.5" /> Per-contact drafts
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-surface-muted text-center">Outlook sends from your @doppelmayr.com · per-contact fills {'{{name}}'}/{'{{company}}'}</p>
+                </div>
+                )})()}
               </CardContent>
             </Card>
           </div>
