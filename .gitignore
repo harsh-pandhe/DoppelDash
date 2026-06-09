@@ -106,3 +106,5 @@ data/
 
 # File uploads (if local)
 uploads/
+# Local Netlify folder
+.netlify
