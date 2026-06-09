@@ -13,14 +13,18 @@ Also shipped (core features 1–7): Leave copy-feature, Travel auto-expense crea
 
 System: Gmail SMTP + Gemini API key fixed. Test Employee record seeded (EMP-011).
 
-Remaining:
-- ⬜ Step 4 — Feature C: drill-down route + clickable chart segments.
-- ⬜ Step 5 — Feature D: CSV + PNG per-tile export.
-- ⬜ Step 6 — Feature E: saved date-range presets.
-- ⬜ Step 7 — Feature F: shareable read-only dashboard.
-- ⬜ Step 8 — per-tile filter overrides (optional polish).
+Done (cont.):
+- ✅ Step 4 — Feature C: `/api/analytics/drill` + `/analytics/drill` page, clickable donut segments.
+- ✅ Step 5 — Feature D: per-tile CSV + lazy PNG (html2canvas) export menu.
+- ✅ Step 6 — Feature E: saved custom date-range presets (localStorage).
+- ✅ Step 7 — Feature F: `SharedDashboard` model + share/shared APIs + dialog + public `/shared/[token]` view (read-only, expiry-enforced, owner-scoped).
 
-Status: codebase uncommitted, pending local test.
+Refactors shipped: analytics aggregation → `lib/analytics/compute.ts` (shared by authed + public routes); tile renderer → `app/(app)/analytics/analyticsTiles.tsx` (reused by dashboard + public view).
+
+Remaining:
+- ⬜ Step 8 — per-tile filter overrides (optional polish, deferred).
+
+Status: **Phase 5 complete & deployed to prod** (Atlas-backed). All features smoke-tested authed + public. Public share verified no-auth-safe (no session leak).
 
 ---
 
