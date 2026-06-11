@@ -5,8 +5,9 @@ import { useUser } from '@/lib/useUser'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, CalendarClock, Receipt,
-  Settings, ChevronRight, ChevronDown, X, Megaphone, ScanLine,
+  Settings, ChevronRight, ChevronDown, X, Megaphone,
   BarChart2, Shield, ClipboardList, TrendingUp, Plane,
+  Mail, FileEdit,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,12 +24,18 @@ const SECTIONS = [
     items: [
       { href: '/crm',            label: 'Contacts',   icon: Users,      roles: ['employee','manager','boss'] },
       { href: '/crm/directory',  label: 'Directory',  icon: Users,      roles: ['employee','manager','boss'] },
-      { href: '/crm/scan', label: 'Scan Card',        icon: ScanLine,      roles: ['employee','manager','boss'] },
       { href: '/lms',      label: 'Leave',            icon: CalendarClock, roles: ['employee','manager','boss'] },
       { href: '/lms/team',     label: 'Team Calendar',  icon: CalendarClock, roles: ['manager','boss'] },
       { href: '/lms/holidays', label: 'Holidays',       icon: CalendarClock, roles: ['employee','manager','boss'] },
       { href: '/rms',      label: 'Reimbursements',   icon: Receipt,       roles: ['employee','manager','boss'] },
       { href: '/travel',   label: 'Travel Requests',  icon: Plane,         roles: ['employee','manager','boss'] },
+    ],
+  },
+  {
+    label: 'Communications',
+    items: [
+      { href: '/mail',        label: 'Compose Mail', icon: Mail,     roles: ['employee','manager','boss'] },
+      { href: '/mail/drafts', label: 'Drafts',       icon: FileEdit, roles: ['employee','manager','boss'] },
     ],
   },
   {

@@ -33,17 +33,24 @@ export async function POST(req: NextRequest) {
   await connectDB()
   const body = await req.json() as {
     tag?: string; contactIds?: string[]; subject: string; bodyTemplate: string; previewOnly?: boolean
+    // Communications module: explicit recipient list + pre-built rich HTML body
+    recipients?: { name?: string; email: string; company?: string }[]
+    isHtml?: boolean
   }
 
   if (!body.subject?.trim() || !body.bodyTemplate?.trim()) {
     return NextResponse.json({ error: 'Subject and body required' }, { status: 400 })
   }
 
-  let query: Record<string, unknown> = { createdBy: userId, email: { $exists: true, $ne: '' } }
-  if (body.contactIds?.length) query = { ...query, _id: { $in: body.contactIds } }
-  else if (body.tag)           query = { ...query, tags: body.tag }
-
-  const contacts = await Contact.find(query, 'name email company').lean()
+  let contacts: { name?: string; email?: string; company?: string }[]
+  if (body.recipients?.length) {
+    contacts = body.recipients.filter(r => typeof r.email === 'string' && r.email.includes('@'))
+  } else {
+    let query: Record<string, unknown> = { createdBy: userId, email: { $exists: true, $ne: '' } }
+    if (body.contactIds?.length) query = { ...query, _id: { $in: body.contactIds } }
+    else if (body.tag)           query = { ...query, tags: body.tag }
+    contacts = await Contact.find(query, 'name email company').lean()
+  }
   if (!contacts.length) return NextResponse.json({ error: 'No contacts with email found' }, { status: 400 })
 
   if (body.previewOnly) return NextResponse.json({ contacts, count: contacts.length })
@@ -55,14 +62,17 @@ export async function POST(req: NextRequest) {
   let sent = 0; let failed = 0
   await Promise.allSettled(
     contacts.map(async c => {
-      const personalBody = body.bodyTemplate
-        .replace(/\{\{name\}\}/gi, c.name)
-        .replace(/\{\{company\}\}/gi, c.company || '')
-        .replace(/\n/g, '<br>')
+      const personalized = body.bodyTemplate
+        .replace(/\{\{name\}\}/gi, c.name || 'there')
+        .replace(/\{\{company\}\}/gi, c.company || 'your team')
+
+      // isHtml: body is already rich HTML from the mail editor — embed as-is.
+      // Legacy plaintext campaigns: convert newlines and wrap in a paragraph.
+      const inner = body.isHtml ? personalized : `<p>${personalized.replace(/\n/g, '<br>')}</p>`
 
       const html = `
-        <div style="font-family:Inter,system-ui,sans-serif; max-width:600px; margin:0 auto; padding:32px 24px">
-          <p>${personalBody}</p>
+        <div style="font-family:Calibri,'Segoe UI',Inter,system-ui,sans-serif; max-width:640px; margin:0 auto; padding:32px 24px">
+          ${inner}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
           <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash — Doppelmayr India</p>
         </div>`

@@ -115,7 +115,8 @@ export default function RichTextEditor({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      // StarterKit v3 bundles Link — disable it so our configured Link below is the only one (fixes "Duplicate extension names" warning)
+      StarterKit.configure({ link: false }),
       Placeholder.configure({ placeholder }),
       Link.configure({ openOnClick: false, autolink: true }),
     ],

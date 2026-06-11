@@ -48,7 +48,7 @@ function compressImage(file: File, maxKB = 500): Promise<{ base64: string; mimeT
 
 const EMPTY_FORM = { name: '', email: '', phone: '', company: '', designation: '', address: '' }
 
-export default function ScanCardDialog() {
+export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode }) {
   const router    = useRouter()
   const toast     = useToast()
   const videoRef  = useRef<HTMLVideoElement>(null)
@@ -154,14 +154,16 @@ export default function ScanCardDialog() {
   return (
     <Dialog.Root open={open} onOpenChange={handleClose}>
       <Dialog.Trigger asChild>
-        <button type="button"
-          className="flex items-center gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-200 hover:bg-brand-50 transition-all group w-full text-left">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
-            <ScanLine className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-semibold text-gray-700 group-hover:text-brand-700 flex-1">Scan Business Card</span>
-          <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">AI</span>
-        </button>
+        {trigger || (
+          <button type="button"
+            className="flex items-center gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-200 hover:bg-brand-50 transition-all group w-full text-left">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+              <ScanLine className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-brand-700 flex-1">Scan Business Card</span>
+            <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">AI</span>
+          </button>
+        )}
       </Dialog.Trigger>
 
       <Dialog.Portal>

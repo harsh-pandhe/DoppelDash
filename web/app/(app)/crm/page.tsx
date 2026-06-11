@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { SortableTH } from '@/components/ui/sortable-th'
 import { useTableSort } from '@/lib/useTableSort'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
+import ScanCardDialog from '@/components/ScanCardDialog'
 import Papa from 'papaparse'
 
 interface ColorLabel { color: string; label: string }
@@ -547,7 +548,9 @@ export default function CRMPage() {
             </div>
             {contacts.length>0 && <Button type="button" variant="outline" size="sm" className="gap-2" onClick={()=>exportCSV(contacts)}><Download className="w-4 h-4"/>Export</Button>}
             <CSVImportDialog onImport={fetchContacts} />
-            <Link href="/crm/scan"><Button type="button" variant="outline" size="sm" className="gap-2"><ScanLine className="w-4 h-4"/>Scan Card</Button></Link>
+            <ScanCardDialog trigger={
+              <Button type="button" variant="outline" size="sm" className="gap-2"><ScanLine className="w-4 h-4"/>Scan Card</Button>
+            } />
             <Link href="/crm/campaigns"><Button type="button" variant="outline" size="sm" className="gap-2"><Megaphone className="w-4 h-4"/>Campaign</Button></Link>
             <Link href="/crm/new"><Button className="gap-2"><Plus className="w-4 h-4"/>Add Contact</Button></Link>
           </div>

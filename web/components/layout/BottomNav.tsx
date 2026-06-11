@@ -1,13 +1,13 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, CalendarClock, Receipt, Megaphone, ScanLine } from 'lucide-react'
+import { LayoutDashboard, Users, CalendarClock, Receipt, Megaphone, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
   { href: '/dashboard',     label: 'Home',     icon: LayoutDashboard },
   { href: '/crm',           label: 'Contacts', icon: Users },
-  { href: '/crm/scan',      label: 'Scan',     icon: ScanLine },
+  { href: '/mail',          label: 'Mail',     icon: Mail },
   { href: '/lms',           label: 'Leave',    icon: CalendarClock },
   { href: '/rms',           label: 'Expense',  icon: Receipt },
   { href: '/announcements', label: 'News',     icon: Megaphone },

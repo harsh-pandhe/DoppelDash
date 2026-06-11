@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, IndianRupee, Clock, CheckCircle2, XCircle, CreditCard, MapPin, Calendar, FileText, Loader2, AlertCircle, Receipt, X, ZoomIn } from 'lucide-react'
+import { ArrowLeft, IndianRupee, Clock, CheckCircle2, XCircle, CreditCard, MapPin, Calendar, FileText, Loader2, AlertCircle, Receipt, X, ZoomIn, Printer } from 'lucide-react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@/lib/useUser'
@@ -243,9 +243,17 @@ export default function ExpenseDetailPage() {
     <>
       <Header title="Expense Detail" />
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl space-y-5 animate-fade-in w-full mx-auto bg-surface-2">
-        <Link href="/rms" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to Reimbursements
-        </Link>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <Link href="/rms" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to Reimbursements
+          </Link>
+          <Link href={`/print/expense/${id}`}>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5"
+              title="Print-ready Travel Expense Sheet with receipt QR codes and signature rows">
+              <Printer className="w-3.5 h-3.5" /> Expense Sheet (PDF)
+            </Button>
+          </Link>
+        </div>
 
         {/* Status banner */}
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${s.color}`}>
