@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, CalendarClock, Receipt,
   Settings, ChevronRight, ChevronDown, X, Megaphone,
   BarChart2, Shield, ClipboardList, TrendingUp, Plane,
-  Mail, FileEdit,
+  Mail, FileEdit, BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,7 @@ const SECTIONS = [
     label: 'People',
     items: [
       { href: '/crm',            label: 'Contacts',   icon: Users,      roles: ['employee','manager','boss'] },
-      { href: '/crm/directory',  label: 'Directory',  icon: Users,      roles: ['employee','manager','boss'] },
+      { href: '/crm/directory',  label: 'Directory',  icon: BookOpen,   roles: ['employee','manager','boss'] },
       { href: '/lms',      label: 'Leave',            icon: CalendarClock, roles: ['employee','manager','boss'] },
       { href: '/lms/team',     label: 'Team Calendar',  icon: CalendarClock, roles: ['manager','boss'] },
       { href: '/lms/holidays', label: 'Holidays',       icon: CalendarClock, roles: ['employee','manager','boss'] },
