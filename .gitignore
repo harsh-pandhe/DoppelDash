@@ -71,7 +71,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public  — (removed: Gatsby template rule; it was hiding Next.js web/public assets)
 
 # Storybook build outputs
 .out
