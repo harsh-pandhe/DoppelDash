@@ -40,6 +40,8 @@ export async function getUser(): Promise<AuthResult> {
     isActive:           dbUser.isActive,
     isBanned:           dbUser.isBanned,
     mustChangePassword: dbUser.mustChangePassword,
+    totpEnabled:        dbUser.totpEnabled ?? false,
+    tourSeen:           dbUser.tourSeen ?? false,
     lastLoginAt:        dbUser.lastLoginAt,
     loginCount:         dbUser.loginCount,
     unsafeMetadata:     { role: dbUser.role, permissions: dbUser.permissions || [] },

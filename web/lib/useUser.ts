@@ -12,6 +12,8 @@ export interface ClientUser {
   isActive: boolean
   isBanned: boolean
   mustChangePassword: boolean
+  totpEnabled?: boolean
+  tourSeen?: boolean
   loginCount: number
   // Compat with old Clerk shape used across pages
   unsafeMetadata: { role: string; permissions: string[] }

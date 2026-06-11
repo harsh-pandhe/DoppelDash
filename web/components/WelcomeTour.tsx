@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Sparkles, ChevronLeft, ChevronRight, Check, X, type LucideIcon, Users, CalendarClock, Receipt, Plane, Bell, Keyboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useUser } from '@/lib/useUser'
 
 interface Step { icon: LucideIcon; title: string; body: string; emoji?: string }
 
@@ -19,21 +20,29 @@ const STEPS: Step[] = [
 const LS_KEY = 'dd_welcome_tour_seen_v1'
 
 export default function WelcomeTour() {
+  const { isLoaded, user } = useUser()
   const [open, setOpen] = useState(false)
   const [idx,  setIdx]  = useState(0)
 
+  // DB is the source of truth (tourSeen survives Citrix storage resets);
+  // localStorage only short-circuits the popup before /api/auth/me resolves.
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const seen = localStorage.getItem(LS_KEY)
-    if (!seen) {
-      // Small delay so it doesn't pop instantly
-      const t = setTimeout(() => setOpen(true), 800)
-      return () => clearTimeout(t)
+    if (typeof window === 'undefined' || !isLoaded || !user) return
+    if (user.tourSeen || localStorage.getItem(LS_KEY)) {
+      // Backfill DB flag for users who saw the tour before it was DB-persisted
+      if (!user.tourSeen && localStorage.getItem(LS_KEY)) {
+        fetch('/api/auth/tour-seen', { method: 'POST' }).catch(() => {})
+      }
+      return
     }
-  }, [])
+    // Small delay so it doesn't pop instantly
+    const t = setTimeout(() => setOpen(true), 800)
+    return () => clearTimeout(t)
+  }, [isLoaded, user])
 
   const close = () => {
-    localStorage.setItem(LS_KEY, '1')
+    try { localStorage.setItem(LS_KEY, '1') } catch { /* quota */ }
+    fetch('/api/auth/tour-seen', { method: 'POST' }).catch(() => {})
     setOpen(false)
   }
 

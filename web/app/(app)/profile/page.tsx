@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
 import { useUser } from '@/lib/useUser'
+import SecuritySettings from '@/components/SecuritySettings'
 
 interface Employee {
   _id: string
@@ -358,6 +359,9 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Sign-in & security (TOTP + passkeys) */}
+        <SecuritySettings />
       </main>
     </>
   )

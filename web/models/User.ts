@@ -14,6 +14,8 @@ export interface IUserPublic {
   isActive: boolean
   isBanned: boolean
   mustChangePassword: boolean
+  totpEnabled: boolean
+  tourSeen: boolean
   lastLoginAt?: Date
   loginCount: number
   unsafeMetadata: { role: UserRole; permissions: string[] }
@@ -34,6 +36,11 @@ export interface IUser extends Document {
   otp?: string
   otpExpiry?: Date
   otpAttempts: number
+  totpSecret?: string          // AES-encrypted base32 secret (pending until totpEnabled)
+  totpEnabled: boolean
+  webauthnChallenge?: string   // pending WebAuthn challenge (registration or login)
+  webauthnChallengeExpiry?: Date
+  tourSeen: boolean
   lastLoginAt?: Date
   lastActiveAt?: Date
   loginCount: number
@@ -62,6 +69,11 @@ const UserSchema = new Schema<IUser, UserModel>(
     otp:                { type: String },
     otpExpiry:          { type: Date },
     otpAttempts:        { type: Number, default: 0 },
+    totpSecret:         { type: String },
+    totpEnabled:        { type: Boolean, default: false },
+    webauthnChallenge:  { type: String },
+    webauthnChallengeExpiry: { type: Date },
+    tourSeen:           { type: Boolean, default: false },
     lastLoginAt:        { type: Date },
     lastActiveAt:       { type: Date },
     loginCount:         { type: Number, default: 0 },
@@ -85,6 +97,8 @@ UserSchema.methods.toPublic = function (): IUserPublic {
     isActive:           this.isActive,
     isBanned:           this.isBanned,
     mustChangePassword: this.mustChangePassword,
+    totpEnabled:        this.totpEnabled ?? false,
+    tourSeen:           this.tourSeen ?? false,
     lastLoginAt:        this.lastLoginAt,
     loginCount:         this.loginCount,
     unsafeMetadata:     { role: this.role, permissions: this.permissions || [] },

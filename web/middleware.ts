@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
   '/api/analytics/shared/',
   '/api/auth/login',
   '/api/auth/verify-otp',
+  '/api/auth/send-otp',
+  '/api/auth/passkey/login',
   '/api/auth/logout',
   '/api/auth/setup',
   '/api/webhooks',

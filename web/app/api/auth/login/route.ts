@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
+import PasskeyCredential from '@/models/PasskeyCredential'
 import { generateOTP, sendOTP } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
@@ -28,14 +29,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Account suspended — contact your administrator' }, { status: 403 })
   }
 
-  // Generate + send OTP
-  const otp = await generateOTP(user._id.toString())
-  await sendOTP(user.email, otp)
+  const hasPasskey = (await PasskeyCredential.countDocuments({ userId: user._id.toString() })) > 0
+  const methods: string[] = []
+  if (user.totpEnabled) methods.push('totp')
+  methods.push('email')
+
+  // No authenticator set up → auto-send email OTP (legacy flow).
+  // With TOTP enabled, the user chooses; email OTP goes out on demand via /api/auth/send-otp.
+  if (!user.totpEnabled) {
+    const otp = await generateOTP(user._id.toString())
+    await sendOTP(user.email, otp)
+  }
 
   return NextResponse.json({
-    step:      'otp',
-    userId:    user._id.toString(),
-    email:     user.email,
-    firstName: user.firstName,
+    step:       'verify',
+    methods,
+    hasPasskey,
+    emailSent:  !user.totpEnabled,
+    userId:     user._id.toString(),
+    email:      user.email,
+    firstName:  user.firstName,
   })
 }

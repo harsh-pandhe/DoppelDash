@@ -1,12 +1,14 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { startAuthentication } from '@simplewebauthn/browser'
 import {
   Mail, Lock, Eye, EyeOff, ChevronRight, ShieldCheck, Sparkles, X, Send,
-  Loader2, Check, Mountain,
+  Loader2, Check, Mountain, Smartphone, KeyRound,
 } from 'lucide-react'
 
 type Step = 'credentials' | 'otp' | 'change-password'
+type VerifyMethod = 'totp' | 'email'
 type ChatMsg = { role: 'user' | 'model'; text: string }
 
 export default function SignInPage() {
@@ -20,6 +22,10 @@ export default function SignInPage() {
   const [otp,        setOtp]        = useState(['','','','','',''])
   const [userId,     setUserId]     = useState('')
   const [firstName,  setFirstName]  = useState('')
+  const [methods,      setMethods]      = useState<VerifyMethod[]>(['email'])
+  const [verifyMethod, setVerifyMethod] = useState<VerifyMethod>('email')
+  const [emailSent,    setEmailSent]    = useState(false)
+  const [pkLoading,    setPkLoading]    = useState(false)
   const [newPwd,     setNewPwd]     = useState('')
   const [newPwd2,    setNewPwd2]    = useState('')
   const [loading,    setLoading]    = useState(false)
@@ -51,8 +57,48 @@ export default function SignInPage() {
       const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); return }
-      setUserId(data.userId); setFirstName(data.firstName); setStep('otp')
+      setUserId(data.userId); setFirstName(data.firstName)
+      const m: VerifyMethod[] = Array.isArray(data.methods) && data.methods.length ? data.methods : ['email']
+      setMethods(m)
+      setVerifyMethod(m[0])
+      setEmailSent(!!data.emailSent)
+      setStep('otp')
     } catch { setError('Network error — try again') }
+    finally { setLoading(false) }
+  }
+
+  /** Passkey sign-in — skips password entirely. Needs email filled in. */
+  const signInWithPasskey = async () => {
+    if (!email) { setError('Enter your work email first, then use your passkey'); return }
+    setError(''); setPkLoading(true)
+    try {
+      const optRes = await fetch('/api/auth/passkey/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) })
+      const optData = await optRes.json()
+      if (!optRes.ok) { setError(optData.error || 'Passkey unavailable'); return }
+
+      const assertion = await startAuthentication(optData.options)
+
+      const verRes  = await fetch('/api/auth/passkey/login', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: optData.userId, response: assertion }) })
+      const verData = await verRes.json()
+      if (!verRes.ok) { setError(verData.error || 'Passkey verification failed'); return }
+      if (verData.mustChangePassword) { setUserId(optData.userId); setStep('change-password'); return }
+      await routeAfterAuth()
+    } catch (err) {
+      // NotAllowedError = user dismissed the browser prompt — not a real failure
+      if (err instanceof Error && err.name === 'NotAllowedError') setError('')
+      else setError('Passkey sign-in failed — use password instead')
+    } finally { setPkLoading(false) }
+  }
+
+  /** Request the email OTP on demand (TOTP users choosing email fallback / resend). */
+  const requestEmailOtp = async () => {
+    setError(''); setLoading(true)
+    try {
+      const res = await fetch('/api/auth/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId }) })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Could not send code'); return }
+      setEmailSent(true)
+    } catch { setError('Network error') }
     finally { setLoading(false) }
   }
 
@@ -74,7 +120,7 @@ export default function SignInPage() {
   const submitOTPDirect = async (code: string) => {
     setError(''); setLoading(true)
     try {
-      const res  = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, otp: code }) })
+      const res  = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, otp: code, method: verifyMethod }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Invalid OTP'); setOtp(['','','','','','']); otpRefs.current[0]?.focus(); return }
       if (data.mustChangePassword) { setStep('change-password'); return }
@@ -259,7 +305,10 @@ export default function SignInPage() {
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
                   {step === 'credentials' && 'Use your Doppelmayr India work credentials.'}
-                  {step === 'otp'         && <>We sent a 6-digit code to <span className="text-slate-200 font-medium">{email}</span>. It expires in 10 minutes.</>}
+                  {step === 'otp' && verifyMethod === 'totp' && <>Enter the 6-digit code from your <span className="text-slate-200 font-medium">authenticator app</span>.</>}
+                  {step === 'otp' && verifyMethod === 'email' && (emailSent
+                    ? <>We sent a 6-digit code to <span className="text-slate-200 font-medium">{email}</span>. It expires in 10 minutes.</>
+                    : <>We can email a 6-digit code to <span className="text-slate-200 font-medium">{email}</span>.</>)}
                   {step === 'change-password' && 'First sign-in detected. Choose a password only you know.'}
                 </p>
               </div>
@@ -314,12 +363,53 @@ export default function SignInPage() {
                       className="group w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2] disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 px-4 rounded-xl font-medium transition-all active:scale-[0.98] shadow-lg shadow-[#0057A8]/30 mt-6 border border-white/10">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><span>Continue securely</span><ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>)}
                     </button>
+
+                    <div className="flex items-center gap-3 my-1">
+                      <div className="flex-1 h-px bg-white/10" />
+                      <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">or</span>
+                      <div className="flex-1 h-px bg-white/10" />
+                    </div>
+
+                    <button type="button" onClick={signInWithPasskey} disabled={pkLoading}
+                      className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 text-slate-200 py-3.5 px-4 rounded-xl font-medium transition-all active:scale-[0.98] border border-white/10 text-sm">
+                      {pkLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4 text-blue-400" />}
+                      <span>Sign in with a passkey</span>
+                    </button>
+                    <p className="text-[10px] text-slate-500 text-center">
+                      Passkey uses your device fingerprint, face, or PIN — no password or code needed.
+                    </p>
                   </form>
                 )}
 
-                {/* STEP 2 — OTP */}
+                {/* STEP 2 — verify (authenticator app or email code) */}
                 {step === 'otp' && (
                   <div className="space-y-5">
+                    {methods.includes('totp') && (
+                      <div className="grid grid-cols-2 gap-1.5 p-1 bg-white/5 border border-white/10 rounded-xl">
+                        {([
+                          ['totp',  'Authenticator', Smartphone],
+                          ['email', 'Email code',    Mail],
+                        ] as [VerifyMethod, string, typeof Mail][]).map(([m, label, Icon]) => (
+                          <button key={m} type="button"
+                            onClick={() => { setVerifyMethod(m); setOtp(['','','','','','']); setError(''); otpRefs.current[0]?.focus() }}
+                            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                              verifyMethod === m
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            }`}>
+                            <Icon className="w-3.5 h-3.5" />{label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {verifyMethod === 'email' && !emailSent ? (
+                      <button type="button" onClick={requestEmailOtp} disabled={loading}
+                        className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 disabled:opacity-50 text-slate-200 py-3.5 px-4 rounded-xl font-medium transition-all border border-white/10 text-sm">
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-blue-400" />}
+                        <span>Email me the code</span>
+                      </button>
+                    ) : (
                     <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
                       {otp.map((v, i) => (
                         <input key={i}
@@ -336,17 +426,20 @@ export default function SignInPage() {
                         />
                       ))}
                     </div>
+                    )}
 
-                    <button type="button" onClick={submitOTP} disabled={loading || otp.join('').length < 6}
+                    <button type="button" onClick={submitOTP} disabled={loading || otp.join('').length < 6 || (verifyMethod === 'email' && !emailSent)}
                       className="group w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2] disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 px-4 rounded-xl font-medium transition-all active:scale-[0.98] shadow-lg shadow-[#0057A8]/30 border border-white/10">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><ShieldCheck className="h-4 w-4" /><span>Verify and sign in</span></>)}
                     </button>
 
                     <div className="flex items-center justify-between text-xs">
-                      <button type="button" onClick={() => { setStep('credentials'); setOtp(['','','','','','']); setError('') }}
+                      <button type="button" onClick={() => { setStep('credentials'); setOtp(['','','','','','']); setError(''); setEmailSent(false) }}
                         className="text-slate-400 hover:text-white font-medium">← Use different account</button>
-                      <button type="button" onClick={submitCredentials} disabled={loading}
-                        className="text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">Resend code</button>
+                      {verifyMethod === 'email' && emailSent && (
+                        <button type="button" onClick={requestEmailOtp} disabled={loading}
+                          className="text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">Resend code</button>
+                      )}
                     </div>
                   </div>
                 )}
