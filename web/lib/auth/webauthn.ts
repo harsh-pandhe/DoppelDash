@@ -99,8 +99,8 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
       backedUp: info.credentialBackedUp,
       nickname,
     })
-  } catch (e: any) {
-    if (e?.code === 11000) return { ok: false as const, reason: 'Passkey already registered' }
+  } catch (e) {
+    if ((e as { code?: number })?.code === 11000) return { ok: false as const, reason: 'Passkey already registered' }
     return { ok: false as const, reason: e instanceof Error ? e.message : 'Save failed' }
   }
   return { ok: true as const }
