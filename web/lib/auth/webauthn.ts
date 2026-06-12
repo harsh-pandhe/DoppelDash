@@ -79,6 +79,7 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
       expectedChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
+      requireUserVerification: false,
     })
   } catch (e) {
     return { ok: false as const, reason: e instanceof Error ? e.message : 'Verification error' }
@@ -145,6 +146,7 @@ export async function passkeyLoginVerify(userId: string, response: Authenticatio
       expectedChallenge,
       expectedOrigin: origin,
       expectedRPID: rpID,
+      requireUserVerification: false,
       authenticator: {
         credentialID: cred.credentialId,
         credentialPublicKey: isoBase64URL.toBuffer(cred.publicKey),
