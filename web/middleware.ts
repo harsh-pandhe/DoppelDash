@@ -15,6 +15,7 @@ const PUBLIC_PATHS = [
   '/api/auth/setup',
   '/api/webhooks',
   '/api/support/chat',
+  '/api/dev/seed',       // secret-gated inside route (DEV_SEED_SECRET)
 ]
 
 // Public API patterns (regex). Anything under /api/crm/<id>/share is public.
