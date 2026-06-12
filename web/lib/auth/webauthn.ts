@@ -72,27 +72,37 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
   const expectedChallenge = await consumeChallenge(userId)
   if (!expectedChallenge) return { ok: false as const, reason: 'Challenge expired — try again' }
 
-  const verification = await verifyRegistrationResponse({
-    response,
-    expectedChallenge,
-    expectedOrigin: origin,
-    expectedRPID: rpID,
-  })
+  let verification
+  try {
+    verification = await verifyRegistrationResponse({
+      response,
+      expectedChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+    })
+  } catch (e) {
+    return { ok: false as const, reason: e instanceof Error ? e.message : 'Verification error' }
+  }
   if (!verification.verified || !verification.registrationInfo) {
     return { ok: false as const, reason: 'Verification failed' }
   }
 
   const info = verification.registrationInfo
-  await PasskeyCredential.create({
-    userId,
-    credentialId: info.credentialID,
-    publicKey: isoBase64URL.fromBuffer(info.credentialPublicKey),
-    counter: info.counter,
-    transports: response.response.transports || [],
-    deviceType: info.credentialDeviceType,
-    backedUp: info.credentialBackedUp,
-    nickname,
-  })
+  try {
+    await PasskeyCredential.create({
+      userId,
+      credentialId: info.credentialID,
+      publicKey: isoBase64URL.fromBuffer(info.credentialPublicKey),
+      counter: info.counter,
+      transports: response.response.transports || [],
+      deviceType: info.credentialDeviceType,
+      backedUp: info.credentialBackedUp,
+      nickname,
+    })
+  } catch (e: any) {
+    if (e?.code === 11000) return { ok: false as const, reason: 'Passkey already registered' }
+    return { ok: false as const, reason: e instanceof Error ? e.message : 'Save failed' }
+  }
   return { ok: true as const }
 }
 
@@ -128,18 +138,23 @@ export async function passkeyLoginVerify(userId: string, response: Authenticatio
   const expectedChallenge = await consumeChallenge(userId)
   if (!expectedChallenge) return { ok: false as const, reason: 'Challenge expired — try again' }
 
-  const verification = await verifyAuthenticationResponse({
-    response,
-    expectedChallenge,
-    expectedOrigin: origin,
-    expectedRPID: rpID,
-    authenticator: {
-      credentialID: cred.credentialId,
-      credentialPublicKey: isoBase64URL.toBuffer(cred.publicKey),
-      counter: cred.counter,
-      transports: cred.transports as AuthenticatorTransportFuture[],
-    },
-  })
+  let verification
+  try {
+    verification = await verifyAuthenticationResponse({
+      response,
+      expectedChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      authenticator: {
+        credentialID: cred.credentialId,
+        credentialPublicKey: isoBase64URL.toBuffer(cred.publicKey),
+        counter: cred.counter,
+        transports: cred.transports as AuthenticatorTransportFuture[],
+      },
+    })
+  } catch (e) {
+    return { ok: false as const, reason: e instanceof Error ? e.message : 'Verification error' }
+  }
   if (!verification.verified) return { ok: false as const, reason: 'Verification failed' }
 
   cred.counter = verification.authenticationInfo.newCounter

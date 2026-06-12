@@ -38,10 +38,11 @@ const D     = (offsetDays: number) => {
 const dob = (y: number, m: number, d: number) => new Date(y, m - 1, d)
 
 export async function POST(req: NextRequest) {
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Disabled in production' }, { status: 403 })
-  }
   const required = process.env.DEV_SEED_SECRET
+  // In production the secret is mandatory — never runnable without it.
+  if (process.env.NODE_ENV === 'production' && !required) {
+    return NextResponse.json({ error: 'Disabled in production (no DEV_SEED_SECRET)' }, { status: 403 })
+  }
   if (required) {
     const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
     if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   // 2 managers
   const managerA = await User.create({
-    email: 'priya.iyer@doppelmayr.com', passwordHash: hash, role: 'manager',
+    email: 'harshpandhepcs@gmail.com', passwordHash: hash, role: 'manager',
     firstName: 'Priya', lastName: 'Iyer',
     createdByUserId: boss._id.toString(),
     mustChangePassword: false, isActive: true,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
 
   // 6 employees
   const empSeeds = [
-    { f: 'Aarav',   l: 'Sharma',   email: 'aarav.sharma@doppelmayr.com',   dept: 'Engineering',  desig: 'Senior Engineer',   mgr: managerA, dob: dob(1991, 4, 17), join: dob(2021, 6, 15), city: 'Mumbai',     state: 'Maharashtra' },
+    { f: 'Aarav',   l: 'Sharma',   email: 'harshpandhehome@gmail.com',     dept: 'Engineering',  desig: 'Senior Engineer',   mgr: managerA, dob: dob(1991, 4, 17), join: dob(2021, 6, 15), city: 'Mumbai',     state: 'Maharashtra' },
     { f: 'Diya',    l: 'Menon',    email: 'diya.menon@doppelmayr.com',     dept: 'Engineering',  desig: 'Project Engineer',  mgr: managerA, dob: dob(1994, 11, 8), join: dob(2022, 1, 10), city: 'Navi Mumbai',state: 'Maharashtra' },
     { f: 'Vikram',  l: 'Singh',    email: 'vikram.singh@doppelmayr.com',   dept: 'Operations',   desig: 'Operations Lead',   mgr: managerB, dob: dob(1988, 7, 22), join: dob(2019, 9, 1),  city: 'Pune',       state: 'Maharashtra' },
     { f: 'Sneha',   l: 'Reddy',    email: 'sneha.reddy@doppelmayr.com',    dept: 'Operations',   desig: 'Field Engineer',    mgr: managerB, dob: dob(1996, 3, 3),  join: dob(2023, 2, 20), city: 'Hyderabad',  state: 'Telangana' },
