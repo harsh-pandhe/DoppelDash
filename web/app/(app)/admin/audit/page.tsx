@@ -205,7 +205,7 @@ export default function AuditPage() {
               const meta = ACTION_META[log.action] || { gradient: 'from-gray-400 to-gray-500', dot: 'bg-gray-400' }
               const labelColor = ACTION_LABEL_COLORS[log.action] || 'bg-gray-50 text-gray-700 border-gray-200'
               const isLast = i === logs.length - 1
-              const initials = log.performedByName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+              const initials = (log.performedByName || 'Unknown').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
               return (
                 <div key={log._id} className={`flex items-start gap-4 p-4 hover:bg-surface/50 transition-colors ${!isLast ? 'border-b border-surface-border' : ''}`}>
                   {/* Actor avatar */}

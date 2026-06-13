@@ -92,5 +92,7 @@ const ExpenseSchema = new Schema<IExpense>(
   { timestamps: true }
 )
 
+ExpenseSchema.index({ userId: 1, status: 1 })
+
 const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema)
 export default Expense

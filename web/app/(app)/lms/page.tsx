@@ -648,24 +648,33 @@ export default function LMSPage() {
   const [bulking,   setBulking]   = useState(false)
   const [serverBalance, setServerBalance] = useState<Record<string, { entitlement: number; used: number; remaining: number }> | null>(null)
 
-  const fetchLeaves = useCallback(async () => {
+  const fetchLeaves = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
       const [resLeaves, resBal] = await Promise.all([
-        fetch('/api/lms'),
-        fetch('/api/lms/balance'),
+        fetch('/api/lms', { signal }),
+        fetch('/api/lms/balance', { signal }),
       ])
       const data = await resLeaves.json()
+      if (signal?.aborted) return
       setLeaves(Array.isArray(data) ? data : [])
       if (resBal.ok) {
         const bd = await resBal.json()
+        if (signal?.aborted) return
         setServerBalance(bd?.balance || null)
       }
-    } catch { setLeaves([]) }
-    finally { setLoading(false) }
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setLeaves([])
+    }
+    finally { if (!signal?.aborted) setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchLeaves() }, [fetchLeaves])
+  useEffect(() => {
+    const ac = new AbortController()
+    fetchLeaves(ac.signal)
+    return () => ac.abort()
+  }, [fetchLeaves])
   useAutoRefresh(fetchLeaves)
 
   const handleAction = async (id: string, status: 'approved' | 'rejected', note?: string) => {

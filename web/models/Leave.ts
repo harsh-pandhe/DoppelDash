@@ -41,5 +41,8 @@ const LeaveSchema = new Schema<ILeave>(
   { timestamps: true }
 )
 
+LeaveSchema.index({ userId: 1, startDate: -1 })
+LeaveSchema.index({ status: 1 })
+
 const Leave: Model<ILeave> = mongoose.models.Leave || mongoose.model('Leave', LeaveSchema)
 export default Leave

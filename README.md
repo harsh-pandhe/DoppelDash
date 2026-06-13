@@ -51,6 +51,16 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 3. Set up environment variables
 4. Run the development server: `npm start`
 
+### Changelog
+
+#### Phase 8 — Critical Bugs (2026-06-13)
+- **8A** Audit page crash fixed — null-guarded `performedByName` before `.split()` (`(app)/admin/audit/page.tsx`).
+- **8B** LMS `ERR_NETWORK_CHANGED` reload loop fixed — AbortController on polled `fetchLeaves`, cancels on unmount (`(app)/lms/page.tsx`).
+- **8C** Sidebar logo — replaced placeholder "D" with `/icon-192.png` image (`components/layout/Sidebar.tsx`).
+- **8D** Performance (partial) — added MongoDB compound indexes: `Leave(userId,startDate)`, `Leave(status)`, `Expense(userId,status)`, `TravelRequest(userId,status)`.
+
+Deferred to later phases: GET-route HTTP caching (per-route public/private audit needed first), app-wide AbortController, route `loading.tsx` skeletons, `boss→admin` global rename (Phase 10A). See `web/ROADMAP.md` for full status.
+
 ### Contributing
 
 Please read the contributing guidelines before making contributions.

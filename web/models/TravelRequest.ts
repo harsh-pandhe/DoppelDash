@@ -96,5 +96,7 @@ const TravelRequestSchema = new Schema<ITravelRequest>(
   { timestamps: true }
 )
 
+TravelRequestSchema.index({ userId: 1, status: 1 })
+
 const TravelRequest: Model<ITravelRequest> = mongoose.models.TravelRequest || mongoose.model('TravelRequest', TravelRequestSchema)
 export default TravelRequest
