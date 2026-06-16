@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { Megaphone, Pin, PinOff, Trash2, Plus, AlertTriangle, Info, Loader2, Mail, Pencil, Clock } from 'lucide-react'
-import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -9,6 +8,8 @@ import { ListSkeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 import RichTextEditor from '@/components/ui/rich-text-editor'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 
 interface Announcement {
@@ -81,74 +82,71 @@ function AnnouncementDialog({ onSaved, edit, open, onOpenChange }: {
   }
 
   return (
-    <Dialog.Root open={openState} onOpenChange={setOpen}>
-      {!isEdit && (
-        <Dialog.Trigger asChild>
-          <Button data-post-announcement className="gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2]">
-            <Plus className="w-4 h-4" /> Post Announcement
-          </Button>
-        </Dialog.Trigger>
-      )}
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-4">{isEdit ? 'Edit Announcement' : 'New Announcement'}</Dialog.Title>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Title *</label>
-              <input
-                value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="Announcement title…" required
-                className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-              />
+    <Modal
+      open={openState}
+      onOpenChange={setOpen}
+      size="lg"
+      trigger={!isEdit ? (
+        <Button data-post-announcement className="gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2]">
+          <Plus className="w-4 h-4" /> Post Announcement
+        </Button>
+      ) : undefined}
+    >
+      <ModalHeader title={isEdit ? 'Edit Announcement' : 'New Announcement'} />
+      <form onSubmit={submit} className="flex flex-col min-h-0 flex-1">
+        <ModalBody>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Title *</label>
+            <input
+              value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Announcement title…" required
+              className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Message *</label>
+            <RichTextEditor value={form.body} onChange={html => setForm(f => ({ ...f, body: html }))} placeholder="Write your announcement…" minHeight={120} />
+          </div>
+          <div className="flex gap-4 flex-wrap">
+            <div className="space-y-1.5 flex-1 min-w-[120px]">
+              <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Priority</label>
+              <select
+                aria-label="Priority"
+                value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Announcement['priority'] }))}
+                className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500">
+                <option value="normal">Normal</option>
+                <option value="important">Important</option>
+                <option value="urgent">Urgent</option>
+              </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Message *</label>
-              <RichTextEditor value={form.body} onChange={html => setForm(f => ({ ...f, body: html }))} placeholder="Write your announcement…" minHeight={120} />
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              <div className="space-y-1.5 flex-1 min-w-[120px]">
-                <label className="text-xs font-bold text-surface-muted uppercase tracking-widest">Priority</label>
-                <select
-                  aria-label="Priority"
-                  value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Announcement['priority'] }))}
-                  className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500">
-                  <option value="normal">Normal</option>
-                  <option value="important">Important</option>
-                  <option value="urgent">Urgent</option>
-                </select>
-              </div>
-              <div className="flex items-end pb-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
-                    className="w-4 h-4 rounded accent-brand-500" />
-                  <span className="text-sm font-medium text-gray-700">Pin to top</span>
-                </label>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="ann-schedule" className="text-xs font-bold text-surface-muted uppercase tracking-widest flex items-center gap-1.5">
-                <Clock className="w-3 h-3" /> Schedule publish <span className="font-medium normal-case tracking-normal text-surface-muted/70">(optional)</span>
+            <div className="flex items-end pb-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
+                  className="w-4 h-4 rounded accent-brand-500" />
+                <span className="text-sm font-medium text-gray-700">Pin to top</span>
               </label>
-              <input id="ann-schedule" type="datetime-local"
-                value={form.scheduledFor} min={toLocalInput(new Date().toISOString())}
-                onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value }))}
-                className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
-              <p className="text-[11px] text-surface-muted">Leave empty to publish immediately. Scheduled posts stay hidden from others until then.</p>
             </div>
-            <div className="flex gap-3 justify-end pt-1">
-              <Dialog.Close asChild>
-                <Button type="button" variant="outline" size="sm">Cancel</Button>
-              </Dialog.Close>
-              <Button type="submit" size="sm" disabled={saving} className="gap-2">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
-                {isEdit ? 'Save changes' : form.scheduledFor ? 'Schedule' : 'Post'}
-              </Button>
-            </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </div>
+          <div className="space-y-1.5">
+            <label htmlFor="ann-schedule" className="text-xs font-bold text-surface-muted uppercase tracking-widest flex items-center gap-1.5">
+              <Clock className="w-3 h-3" /> Schedule publish <span className="font-medium normal-case tracking-normal text-surface-muted/70">(optional)</span>
+            </label>
+            <input id="ann-schedule" type="datetime-local"
+              value={form.scheduledFor} min={toLocalInput(new Date().toISOString())}
+              onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value }))}
+              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+            <p className="text-[11px] text-surface-muted">Leave empty to publish immediately. Scheduled posts stay hidden from others until then.</p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button type="submit" size="sm" disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+            {isEdit ? 'Save changes' : form.scheduledFor ? 'Schedule' : 'Post'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   )
 }
 
@@ -160,14 +158,24 @@ export default function AnnouncementsPage() {
 
   const [items,   setItems]   = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
   const [editing, setEditing] = useState<Announcement | null>(null)
 
   const fetchItems = useCallback(async () => {
     setLoading(true)
-    const res  = await fetch('/api/announcements')
-    const data = await res.json()
-    setItems(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/announcements')
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setItems(Array.isArray(data) ? data : [])
+      setError(false)
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      setItems([])
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchItems() }, [fetchItems])
@@ -223,6 +231,8 @@ export default function AnnouncementsPage() {
 
         {loading ? (
           <ListSkeleton rows={4} />
+        ) : error && items.length === 0 ? (
+          <ErrorState onRetry={() => fetchItems()} />
         ) : items.length === 0 ? (
           <EmptyState
             icon={Megaphone}
@@ -282,36 +292,36 @@ function BroadcastButton({ id }: { id: string }) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
+    <Modal
+      open={open}
+      onOpenChange={setOpen}
+      size="md"
+      trigger={(
         <button type="button" aria-label="Send as email"
           className="p-1.5 rounded-lg hover:bg-blue-50 text-surface-muted hover:text-blue-600 transition-colors">
           <Mail className="w-3.5 h-3.5" />
         </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4">
-          <Dialog.Title className="text-base font-bold text-gray-900">Send as Email</Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted">Choose who receives this announcement by email.</Dialog.Description>
-          <div className="space-y-2">
-            {([['employee', 'Employees'],['manager', 'Managers'],['boss', 'Boss']] as const).map(([r, label]) => (
-              <label key={r} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border cursor-pointer hover:bg-surface transition-colors">
-                <input type="checkbox" checked={roles.includes(r)} onChange={() => toggle(r)} className="accent-brand-500 w-4 h-4" />
-                <span className="text-sm font-semibold text-gray-700">{label}</span>
-              </label>
-            ))}
-          </div>
-          <div className="flex gap-3">
-            <Button className="flex-1 gap-2" onClick={send} disabled={sending || roles.length===0}>
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-              Send Email
-            </Button>
-            <Dialog.Close asChild><Button variant="outline">Cancel</Button></Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      )}
+    >
+      <ModalHeader title="Send as Email" description="Choose who receives this announcement by email." />
+      <ModalBody>
+        <div className="space-y-2">
+          {([['employee', 'Employees'],['manager', 'Managers'],['boss', 'Boss']] as const).map(([r, label]) => (
+            <label key={r} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border cursor-pointer hover:bg-surface transition-colors">
+              <input type="checkbox" checked={roles.includes(r)} onChange={() => toggle(r)} className="accent-brand-500 w-4 h-4" />
+              <span className="text-sm font-semibold text-gray-700">{label}</span>
+            </label>
+          ))}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button className="gap-2" onClick={send} disabled={sending || roles.length===0}>
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+          Send Email
+        </Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 

@@ -53,6 +53,11 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 9 — Global UI/UX Overhaul (2026-06-16)
+- **9A** Standardized dialogs — new reusable `Modal`/`ModalHeader`/`ModalBody`/`ModalFooter` (`components/ui/modal.tsx`): consistent width presets, `max-h-[90vh]` overflow, Escape + backdrop close (suppressible for destructive confirms), pinned footer. Migrated all 10 raw Radix dialogs across RMS, CRM, Announcements, Analytics, Reports.
+- **9B** Responsive polish — CRM contacts table now falls back to a card list below `md`; RMS expense line-items stack on mobile; Reports summary tables scroll horizontally in-container. No page-level horizontal scroll at 375px.
+- **9C** Loading & error states — added route-segment `loading.tsx` skeletons to 20 segments (new `PageSkeleton`/`TableSkeleton` primitives); new `ErrorState` (inline error + retry) wired into 9 data pages (LMS, RMS, CRM, Travel, Profile, Mail, Analytics, Reports, Announcements) — failed fetches now show a retry affordance instead of a blank/silent page.
+
 #### Phase 8 — Critical Bugs (2026-06-13)
 - **8A** Audit page crash fixed — null-guarded `performedByName` before `.split()` (`(app)/admin/audit/page.tsx`).
 - **8B** LMS `ERR_NETWORK_CHANGED` reload loop fixed — AbortController on polled `fetchLeaves`, cancels on unmount (`(app)/lms/page.tsx`).

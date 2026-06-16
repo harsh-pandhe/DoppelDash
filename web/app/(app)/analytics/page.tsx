@@ -11,7 +11,8 @@ import {
 import Header from '@/components/layout/Header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import * as Dialog from '@radix-ui/react-dialog'
+import { ErrorState } from '@/components/ui/error-state'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { SortableTileGrid } from '@/components/SortableTileGrid'
 import {
   TileBody, tileById, TILE_CATALOG,
@@ -92,6 +93,7 @@ function monthsAgo(n: number) {
 export default function AnalyticsPage() {
   const [data,    setData]    = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
   const [from,    setFrom]    = useState(monthsAgo(6))
   const [to,      setTo]      = useState('')
   const [dept,     setDept]     = useState('')
@@ -130,9 +132,15 @@ export default function AnalyticsPage() {
     if (compare !== 'none') params.set('compare', compare)
     try {
       const r = await fetch(`/api/analytics?${params}`)
+      if (!r.ok) throw new Error()
       const d = await r.json()
       setData(d)
-    } catch { setData(null) }
+      setError(false)
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      setData(null)
+      setError(true)
+    }
     finally { setLoading(false) }
   }, [from, to, dept, employee, status, compare])
   useEffect(() => { fetchData() }, [fetchData])
@@ -339,11 +347,17 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : !data ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
-            <TrendingUp className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">No analytics data yet</p>
-            <p className="text-sm text-surface-muted mt-1">Tiles will populate as leave, expense, and travel records are created.</p>
-          </div>
+          error ? (
+            <div className="bg-white rounded-2xl border border-surface-border">
+              <ErrorState onRetry={() => fetchData()} variant="block" />
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+              <TrendingUp className="w-12 h-12 text-brand-200 mx-auto mb-3" />
+              <p className="font-semibold text-gray-900">No analytics data yet</p>
+              <p className="text-sm text-surface-muted mt-1">Tiles will populate as leave, expense, and travel records are created.</p>
+            </div>
+          )
         ) : layout.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-surface-border">
             <Layers className="w-12 h-12 text-brand-200 mx-auto mb-3" />
@@ -413,57 +427,51 @@ export default function AnalyticsPage() {
         )}
 
         {/* Tile catalog dialog */}
-        <Dialog.Root open={catalogOpen} onOpenChange={setCatalogOpen}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-              <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Add a tile</Dialog.Title>
-              <Dialog.Description className="text-sm text-surface-muted mb-5">
-                Pick a metric or chart to drop into your dashboard. You can reorder and resize after.
-              </Dialog.Description>
-              {availableTiles.length === 0 ? (
-                <div className="text-center py-10">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                  <p className="font-semibold text-gray-700">Every tile is already on your dashboard.</p>
-                  <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
-                </div>
-              ) : (
-                ['kpi', 'chart', 'list'].map(cat => {
-                  const inCat = availableTiles.filter(t => t.category === cat)
-                  if (inCat.length === 0) return null
-                  return (
-                    <div key={cat} className="mb-5 last:mb-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">
-                        {cat === 'kpi' ? 'KPI tiles' : cat === 'chart' ? 'Charts' : 'Lists'}
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {inCat.map(t => {
-                          const Icon = t.icon
-                          return (
-                            <button key={t.id} type="button" onClick={() => addTile(t.id)}
-                              className="flex items-start gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-left">
-                              <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <Icon className="w-4 h-4 text-brand-600" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-gray-900">{t.label}</p>
-                                <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
-                              </div>
-                              <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-              <div className="flex justify-end mt-5 pt-4 border-t border-surface-border">
-                <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
+        <Modal open={catalogOpen} onOpenChange={setCatalogOpen} size="2xl">
+          <ModalHeader title="Add a tile" description="Pick a metric or chart to drop into your dashboard. You can reorder and resize after." />
+          <ModalBody>
+            {availableTiles.length === 0 ? (
+              <div className="text-center py-10">
+                <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+                <p className="font-semibold text-gray-700">Every tile is already on your dashboard.</p>
+                <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
               </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+            ) : (
+              ['kpi', 'chart', 'list'].map(cat => {
+                const inCat = availableTiles.filter(t => t.category === cat)
+                if (inCat.length === 0) return null
+                return (
+                  <div key={cat} className="mb-5 last:mb-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">
+                      {cat === 'kpi' ? 'KPI tiles' : cat === 'chart' ? 'Charts' : 'Lists'}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {inCat.map(t => {
+                        const Icon = t.icon
+                        return (
+                          <button key={t.id} type="button" onClick={() => addTile(t.id)}
+                            className="flex items-start gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-left">
+                            <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-4 h-4 text-brand-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-gray-900">{t.label}</p>
+                              <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
+                            </div>
+                            <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => setCatalogOpen(false)}>Close</Button>
+          </ModalFooter>
+        </Modal>
 
         <ShareDialog open={shareOpen} onOpenChange={setShareOpen}
           layout={layout} filters={{ from, to, dept, employee, status }} />
@@ -525,72 +533,66 @@ function ShareDialog({ open, onOpenChange, layout, filters }: {
   const fmtExpiry = (e: string | null) => e ? new Date(e).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Never'
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
-            <Share2 className="w-4 h-4 text-brand-600" /> Share dashboard
-          </Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted mb-5">
-            Generate a read-only public link. It snapshots your current tiles + filters. Anyone with the link can view — no login needed.
-          </Dialog.Description>
-
-          <div className="flex items-end gap-2 mb-5">
-            <div className="space-y-1 flex-1">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Link expires</label>
-              <select aria-label="Link expiry" value={expiry} onChange={e => setExpiry(e.target.value as typeof expiry)}
-                className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
-                <option value="24h">In 24 hours</option>
-                <option value="7d">In 7 days</option>
-                <option value="30d">In 30 days</option>
-                <option value="never">Never</option>
-              </select>
-            </div>
-            <Button type="button" className="gap-1.5" onClick={create} disabled={creating}>
-              <Link2 className="w-3.5 h-3.5" /> {creating ? 'Creating…' : 'Create link'}
-            </Button>
+    <Modal open={open} onOpenChange={onOpenChange} size="lg">
+      <ModalHeader
+        title="Share dashboard"
+        description="Generate a read-only public link. It snapshots your current tiles + filters. Anyone with the link can view — no login needed."
+        icon={Share2}
+      />
+      <ModalBody>
+        <div className="flex items-end gap-2">
+          <div className="space-y-1 flex-1">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Link expires</label>
+            <select aria-label="Link expiry" value={expiry} onChange={e => setExpiry(e.target.value as typeof expiry)}
+              className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+              <option value="24h">In 24 hours</option>
+              <option value="7d">In 7 days</option>
+              <option value="30d">In 30 days</option>
+              <option value="never">Never</option>
+            </select>
           </div>
+          <Button type="button" className="gap-1.5" onClick={create} disabled={creating}>
+            <Link2 className="w-3.5 h-3.5" /> {creating ? 'Creating…' : 'Create link'}
+          </Button>
+        </div>
 
-          <div className="border-t border-surface-border pt-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">Active links</p>
-            {loading ? (
-              <div className="space-y-2">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : shares.length === 0 ? (
-              <p className="text-xs text-surface-muted py-4 text-center">No share links yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {shares.map(s => (
-                  <li key={s.token} className={`flex items-center gap-2 p-2.5 rounded-xl border ${s.expired ? 'border-red-200 bg-red-50/40' : 'border-surface-border'}`}>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-mono text-gray-700 truncate">/shared/{s.token.slice(0, 12)}…</p>
-                      <p className="text-[11px] text-surface-muted">
-                        {s.expired ? <span className="text-red-600 font-semibold">Expired</span> : `Expires ${fmtExpiry(s.expiresAt)}`}
-                        {' · '}{s.viewCount} view{s.viewCount !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    {!s.expired && (
-                      <button type="button" aria-label="Copy link" onClick={() => copy(s.token)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface text-gray-500 transition-colors">
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                    <button type="button" aria-label="Revoke link" onClick={() => revoke(s.token)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
+        <div className="border-t border-surface-border pt-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">Active links</p>
+          {loading ? (
+            <div className="space-y-2">{[...Array(2)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : shares.length === 0 ? (
+            <p className="text-xs text-surface-muted py-4 text-center">No share links yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {shares.map(s => (
+                <li key={s.token} className={`flex items-center gap-2 p-2.5 rounded-xl border ${s.expired ? 'border-red-200 bg-red-50/40' : 'border-surface-border'}`}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-mono text-gray-700 truncate">/shared/{s.token.slice(0, 12)}…</p>
+                    <p className="text-[11px] text-surface-muted">
+                      {s.expired ? <span className="text-red-600 font-semibold">Expired</span> : `Expires ${fmtExpiry(s.expiresAt)}`}
+                      {' · '}{s.viewCount} view{s.viewCount !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {!s.expired && (
+                    <button type="button" aria-label="Copy link" onClick={() => copy(s.token)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface text-gray-500 transition-colors">
+                      <Copy className="w-3.5 h-3.5" />
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="flex justify-end mt-5 pt-4 border-t border-surface-border">
-            <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+                  )}
+                  <button type="button" aria-label="Revoke link" onClick={() => revoke(s.token)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-red-50 text-red-500 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>Close</Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 

@@ -8,7 +8,8 @@ import {
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import * as Dialog from '@radix-ui/react-dialog'
+import { ErrorState } from '@/components/ui/error-state'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { SortableTileGrid } from '@/components/SortableTileGrid'
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -214,6 +215,7 @@ async function exportFullPDF(d: ReportData, dateLabel: string) {
 export default function ReportsPage() {
   const [data,    setData]    = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
   const [from, setFrom] = useState('')
   const [to,   setTo]   = useState('')
   const [showFilter, setShowFilter] = useState(false)
@@ -233,9 +235,15 @@ export default function ReportsPage() {
     if (to)   params.set('to',   to)
     try {
       const res  = await fetch(`/api/reports?${params}`)
+      if (!res.ok) throw new Error()
       const json = await res.json()
       setData(json)
-    } catch { setData(null) }
+      setError(false)
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      setData(null)
+      setError(true)
+    }
     finally { setLoading(false) }
   }, [from, to])
   useEffect(() => { fetchData() }, [fetchData])
@@ -359,11 +367,17 @@ export default function ReportsPage() {
             ))}
           </div>
         ) : !data ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
-            <BarChart3 className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">No report data yet</p>
-            <p className="text-sm text-surface-muted mt-1">Reports populate as leave, expense, and travel records are created.</p>
-          </div>
+          error ? (
+            <div className="bg-white rounded-2xl border border-surface-border">
+              <ErrorState onRetry={() => fetchData()} variant="block" />
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+              <BarChart3 className="w-12 h-12 text-brand-200 mx-auto mb-3" />
+              <p className="font-semibold text-gray-900">No report data yet</p>
+              <p className="text-sm text-surface-muted mt-1">Reports populate as leave, expense, and travel records are created.</p>
+            </div>
+          )
         ) : layout.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-surface-border">
             <Layers className="w-12 h-12 text-brand-200 mx-auto mb-3" />
@@ -432,57 +446,51 @@ export default function ReportsPage() {
         )}
 
         {/* Catalog */}
-        <Dialog.Root open={catalogOpen} onOpenChange={setCatalogOpen}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-              <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Add a tile</Dialog.Title>
-              <Dialog.Description className="text-sm text-surface-muted mb-5">
-                Pick a metric, summary table, or breakdown to add to your report.
-              </Dialog.Description>
-              {available.length === 0 ? (
-                <div className="text-center py-10">
-                  <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                  <p className="font-semibold text-gray-700">Every tile is already on your report.</p>
-                  <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
-                </div>
-              ) : (
-                ['kpi', 'table', 'list'].map(cat => {
-                  const inCat = available.filter(t => t.category === cat)
-                  if (inCat.length === 0) return null
-                  return (
-                    <div key={cat} className="mb-5 last:mb-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">
-                        {cat === 'kpi' ? 'KPI tiles' : cat === 'table' ? 'Summary tables' : 'Breakdown lists'}
-                      </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {inCat.map(t => {
-                          const Icon = t.icon
-                          return (
-                            <button key={t.id} type="button" onClick={() => addTile(t.id)}
-                              className="flex items-start gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-left">
-                              <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-                                <Icon className="w-4 h-4 text-brand-600" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-gray-900">{t.label}</p>
-                                <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
-                              </div>
-                              <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-              <div className="flex justify-end mt-5 pt-4 border-t border-surface-border">
-                <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
+        <Modal open={catalogOpen} onOpenChange={setCatalogOpen} size="2xl">
+          <ModalHeader title="Add a tile" description="Pick a metric, summary table, or breakdown to add to your report." />
+          <ModalBody>
+            {available.length === 0 ? (
+              <div className="text-center py-10">
+                <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+                <p className="font-semibold text-gray-700">Every tile is already on your report.</p>
+                <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
               </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+            ) : (
+              ['kpi', 'table', 'list'].map(cat => {
+                const inCat = available.filter(t => t.category === cat)
+                if (inCat.length === 0) return null
+                return (
+                  <div key={cat} className="mb-5 last:mb-0">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2">
+                      {cat === 'kpi' ? 'KPI tiles' : cat === 'table' ? 'Summary tables' : 'Breakdown lists'}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {inCat.map(t => {
+                        const Icon = t.icon
+                        return (
+                          <button key={t.id} type="button" onClick={() => addTile(t.id)}
+                            className="flex items-start gap-3 p-3 rounded-xl border border-surface-border hover:border-brand-400 hover:bg-brand-50/30 transition-colors text-left">
+                            <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-4 h-4 text-brand-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-gray-900">{t.label}</p>
+                              <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
+                            </div>
+                            <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button type="button" variant="outline" size="sm" onClick={() => setCatalogOpen(false)}>Close</Button>
+          </ModalFooter>
+        </Modal>
       </main>
     </>
   )
@@ -620,8 +628,8 @@ function LeaveSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: LeaveR
       {rows.length === 0 ? (
         <p className="text-sm text-surface-muted py-8 text-center">No leave data for this period.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-surface-border bg-surface">
                 {['Employee','Requests','Days','Approved','Rejected'].map(h => (
@@ -666,8 +674,8 @@ function ExpenseSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: Expe
       {rows.length === 0 ? (
         <p className="text-sm text-surface-muted py-8 text-center">No expense data for this period.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-surface-border bg-surface">
                 {['Employee','Claims','Total','Paid','Pending'].map(h => (
@@ -712,8 +720,8 @@ function TravelSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: Trave
       {rows.length === 0 ? (
         <p className="text-sm text-surface-muted py-8 text-center">No travel data for this period.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-sm min-w-[640px]">
             <thead>
               <tr className="border-b border-surface-border bg-surface">
                 {['Employee','Requests','Estimated','Approved'].map(h => (

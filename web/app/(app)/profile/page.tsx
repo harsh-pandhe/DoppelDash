@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/toast'
+import { ErrorState } from '@/components/ui/error-state'
 import { useUser } from '@/lib/useUser'
 import SecuritySettings from '@/components/SecuritySettings'
 
@@ -72,6 +73,7 @@ export default function ProfilePage() {
   const { user } = useUser()
   const [emp, setEmp]       = useState<Employee | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(false)
   const [editing, setEditing] = useState<Section | null>(null)
   const [saving,  setSaving]  = useState(false)
 
@@ -79,9 +81,15 @@ export default function ProfilePage() {
     setLoading(true)
     try {
       const res = await fetch('/api/employees/me')
+      if (!res.ok) throw new Error('fetch failed')
       const data = await res.json()
       setEmp(data || null)
-    } catch { setEmp(null) }
+      setError(false)
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setEmp(null)
+      setError(true)
+    }
     finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
@@ -121,6 +129,15 @@ export default function ProfilePage() {
       <Header title="My Profile" />
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto space-y-5 bg-surface-2">
         {[...Array(4)].map((_, i) => <div key={i} className="h-40 rounded-2xl bg-surface-border animate-pulse" />)}
+      </main>
+    </>
+  )
+
+  if (error && !emp) return (
+    <>
+      <Header title="My Profile" />
+      <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto space-y-5 bg-surface-2">
+        <ErrorState variant="block" onRetry={() => load()} />
       </main>
     </>
   )

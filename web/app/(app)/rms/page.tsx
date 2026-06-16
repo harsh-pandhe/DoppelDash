@@ -4,7 +4,6 @@ import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, D
 import { ListSkeleton } from '@/components/ui/skeleton'
 import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
-import * as Dialog from '@radix-ui/react-dialog'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -16,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetHeader, SheetBody, SheetFooter } from '@/components/ui/sheet'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { useUrlState } from '@/lib/useUrlState'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 
@@ -238,25 +239,14 @@ function NewExpenseDialog({
   const hl = (field: string) => ocrFlds.has(field) ? 'border-emerald-300 bg-emerald-50/40' : ''
 
   return (
-    <Dialog.Root open={currentOpen} onOpenChange={setCurrentOpen}>
-      {trigger ? <Dialog.Trigger asChild>{trigger}</Dialog.Trigger> : null}
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
-          {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-surface-border px-6 py-4 flex items-center justify-between z-10">
-            <div>
-              <Dialog.Title className="text-base font-bold text-gray-900">{editExpense ? 'Revise Expense' : 'Log Expense'}</Dialog.Title>
-              <Dialog.Description className="text-xs text-surface-muted mt-0.5">Upload receipt — AI auto-fills the form.</Dialog.Description>
-            </div>
-            <Dialog.Close asChild>
-              <button type="button" aria-label="Close" className="p-1.5 rounded-lg text-surface-muted hover:bg-surface transition-colors">
-                <XCircle className="w-4 h-4" />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          <div className="p-6 space-y-5">
+    <Modal open={currentOpen} onOpenChange={setCurrentOpen} size="2xl" trigger={trigger}>
+      <ModalHeader
+        title={editExpense ? 'Revise Expense' : 'Log Expense'}
+        description="Upload receipt — AI auto-fills the form."
+        icon={Receipt}
+      />
+      <ModalBody>
+        <div className="space-y-5">
             {/* Privilege banner */}
             {priv && (
               <div className="px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px]">
@@ -324,7 +314,7 @@ function NewExpenseDialog({
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form id="expense-form" onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="exp-title">Expense Title *</Label>
                 <Input id="exp-title" name="title" value={form.title} placeholder="Site visit to Mumbai"
@@ -356,26 +346,38 @@ function NewExpenseDialog({
                     </button>
                   </div>
                   <div className="rounded-xl border border-surface-border overflow-hidden">
-                    <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] text-[10px] font-bold uppercase tracking-wide text-surface-muted bg-surface px-3 py-2 gap-2">
+                    <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr_auto] text-[10px] font-bold uppercase tracking-wide text-surface-muted bg-surface px-3 py-2 gap-2">
                       <span>Description</span><span>Category</span><span>Date</span><span>Amount</span><span>Receipt</span>
                     </div>
                     {lineItems.map((l, i) => (
-                      <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 p-2 border-t border-surface-border items-center">
-                        <Input value={l.description} onChange={e => updateLine(i,'description',e.target.value)} placeholder="e.g. Lunch" className="text-xs h-8" aria-label={`Line ${i+1} description`} />
-                        <select aria-label={`Line ${i+1} category`} title={`Line ${i+1} category`} value={l.category} onChange={e => updateLine(i,'category',e.target.value)}
-                          className="h-8 px-2 rounded-lg border border-surface-border text-xs focus:outline-none focus:border-brand-500 capitalize">
-                          {LINE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                        <input type="date" aria-label={`Line ${i+1} date`} title={`Line ${i+1} date`} value={l.date} onChange={e => updateLine(i,'date',e.target.value)}
-                          className="h-8 px-2 rounded-lg border border-surface-border text-xs focus:outline-none focus:border-brand-500" />
-                        <div className="relative">
-                          <IndianRupee className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-surface-muted pointer-events-none" />
-                          <Input type="number" min="0" value={l.amount || ''} onChange={e => updateLine(i,'amount',Number(e.target.value))} className="pl-5 text-xs h-8" aria-label={`Line ${i+1} amount`} />
+                      <div key={i} className="flex flex-col gap-2 p-3 border-t border-surface-border sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:gap-2 sm:p-2 sm:items-center">
+                        <div className="flex flex-col gap-1 sm:contents">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-surface-muted sm:hidden">Description</span>
+                          <Input value={l.description} onChange={e => updateLine(i,'description',e.target.value)} placeholder="e.g. Lunch" className="text-xs h-8" aria-label={`Line ${i+1} description`} />
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-1 sm:contents">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-surface-muted sm:hidden">Category</span>
+                          <select aria-label={`Line ${i+1} category`} title={`Line ${i+1} category`} value={l.category} onChange={e => updateLine(i,'category',e.target.value)}
+                            className="h-8 px-2 rounded-lg border border-surface-border text-xs focus:outline-none focus:border-brand-500 capitalize">
+                            {LINE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1 sm:contents">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-surface-muted sm:hidden">Date</span>
+                          <input type="date" aria-label={`Line ${i+1} date`} title={`Line ${i+1} date`} value={l.date} onChange={e => updateLine(i,'date',e.target.value)}
+                            className="h-8 px-2 rounded-lg border border-surface-border text-xs focus:outline-none focus:border-brand-500" />
+                        </div>
+                        <div className="flex flex-col gap-1 sm:contents">
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-surface-muted sm:hidden">Amount</span>
+                          <div className="relative">
+                            <IndianRupee className="absolute left-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-surface-muted pointer-events-none" />
+                            <Input type="number" min="0" value={l.amount || ''} onChange={e => updateLine(i,'amount',Number(e.target.value))} className="pl-5 text-xs h-8" aria-label={`Line ${i+1} amount`} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-0.5 sm:pt-0">
                           {l.receiptUrl ? (
                             <a href={l.receiptUrl} target="_blank" rel="noreferrer"
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-green-50 border border-green-200 text-green-700">✓</a>
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-green-50 border border-green-200 text-green-700">✓ Receipt</a>
                           ) : (
                             <label className="cursor-pointer text-[9px] px-1.5 py-0.5 rounded bg-surface border border-surface-border text-surface-muted hover:border-brand-400 hover:text-brand-600 whitespace-nowrap">
                               {lineUploading === i ? '…' : '+ img'}
@@ -385,7 +387,7 @@ function NewExpenseDialog({
                           )}
                           {lineItems.length > 1 && (
                             <button type="button" title="Remove row" aria-label="Remove row" onClick={() => setLineItems(ls => ls.filter((_,j) => j !== i))}
-                              className="text-red-400 hover:text-red-600">
+                              className="text-red-400 hover:text-red-600 ml-auto sm:ml-0">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
@@ -414,17 +416,16 @@ function NewExpenseDialog({
                   <div className="space-y-1"><Label htmlFor="exp-end" className="text-xs">End</Label><Input id="exp-end" type="date" value={form.endDate} min={form.startDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} /></div>
                 </div>
               </div>
-              <div className="flex gap-3 pt-1">
-                <Button type="submit" disabled={saving || scanning} className="flex-1 gap-2">
-                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</> : <><Save className="w-4 h-4" />Submit Request</>}
-                </Button>
-                <Dialog.Close asChild><Button type="button" variant="outline">Cancel</Button></Dialog.Close>
-              </div>
             </form>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" onClick={() => setCurrentOpen(false)}>Cancel</Button>
+        <Button type="submit" form="expense-form" disabled={saving || scanning} className="min-w-[120px] gap-2">
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</> : <><Save className="w-4 h-4" />Submit Request</>}
+        </Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 
@@ -692,51 +693,41 @@ function PaymentProofDialog({ onConfirm }: { onConfirm: (proofUrl: string, metho
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
-        <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700">Mark Paid</Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
-          <Dialog.Title className="text-base font-bold text-gray-900">Confirm Payment</Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted -mt-2">Record how payment was made.</Dialog.Description>
+    <Modal open={open} onOpenChange={setOpen} size="md" dismissible={false}
+      trigger={<Button type="button" size="sm" className="bg-green-600 hover:bg-green-700">Mark Paid</Button>}>
+      <ModalHeader title="Confirm Payment" description="Record how payment was made." icon={CreditCard} />
+      <ModalBody>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wide text-surface-muted" htmlFor="pay-method">Payment Method</label>
+          <select id="pay-method" aria-label="Payment method" title="Payment method" value={method} onChange={e => setMethod(e.target.value)}
+            className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500">
+            {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-surface-muted" htmlFor="pay-method">Payment Method</label>
-            <select id="pay-method" aria-label="Payment method" title="Payment method" value={method} onChange={e => setMethod(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500">
-              {PAYMENT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-            </select>
-          </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold uppercase tracking-wide text-surface-muted" htmlFor="pay-note">Reference / Note <span className="font-normal normal-case">(optional)</span></label>
+          <input id="pay-note" value={note} onChange={e => setNote(e.target.value)} placeholder="UTR number, transaction ID…"
+            className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
+        </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wide text-surface-muted" htmlFor="pay-note">Reference / Note <span className="font-normal normal-case">(optional)</span></label>
-            <input id="pay-note" value={note} onChange={e => setNote(e.target.value)} placeholder="UTR number, transaction ID…"
-              className="w-full h-10 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
-          </div>
-
-          {method !== 'cash' && method !== 'na' && (
-            <FileUploader
-              label="Payment Proof (optional)"
-              hint="Bank screenshot or receipt"
-              maxFiles={1}
-              onChange={setProof}
-            />
-          )}
-
-          <div className="flex gap-3 justify-end pt-1">
-            <Dialog.Close asChild>
-              <Button type="button" variant="outline" size="sm">Cancel</Button>
-            </Dialog.Close>
-            <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700 gap-2" onClick={confirm} disabled={saving}>
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Confirm Paid
-            </Button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        {method !== 'cash' && method !== 'na' && (
+          <FileUploader
+            label="Payment Proof (optional)"
+            hint="Bank screenshot or receipt"
+            maxFiles={1}
+            onChange={setProof}
+          />
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button type="button" size="sm" className="bg-green-600 hover:bg-green-700 gap-2 min-w-[120px]" onClick={confirm} disabled={saving}>
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+          Confirm Paid
+        </Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 
@@ -745,27 +736,19 @@ function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
   const [note, setNote] = useState('')
   const confirm = () => { onConfirm(note); setNote(''); setOpen(false) }
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
-        <Button type="button" size="sm" variant="secondary" className="text-red-600 hover:bg-red-50 border-red-200">Reject</Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Reject Expense</Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted mb-4">Optionally provide a reason for the employee.</Dialog.Description>
-          <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
-            placeholder="Reason for rejection (optional)…"
-            className="w-full rounded-lg border border-surface-border px-3 py-2 text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
-          <div className="flex gap-3 mt-4 justify-end">
-            <Dialog.Close asChild>
-              <Button type="button" variant="outline" size="sm">Cancel</Button>
-            </Dialog.Close>
-            <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700" onClick={confirm}>Confirm Reject</Button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <Modal open={open} onOpenChange={setOpen} size="md" dismissible={false}
+      trigger={<Button type="button" size="sm" variant="secondary" className="text-red-600 hover:bg-red-50 border-red-200">Reject</Button>}>
+      <ModalHeader title="Reject Expense" description="Optionally provide a reason for the employee." icon={XCircle} />
+      <ModalBody>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+          placeholder="Reason for rejection (optional)…"
+          className="w-full rounded-lg border border-surface-border px-3 py-2 text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 min-w-[120px]" onClick={confirm}>Confirm Reject</Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 
@@ -795,6 +778,7 @@ export default function RMSPage() {
   const [expenses,     setExpenses]     = useState<Expense[]>([])
   const [filter,       setFilter]       = useUrlState('status', 'all')
   const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState(false)
   const [dateFrom,     setDateFrom]     = useState('')
   const [dateTo,       setDateTo]       = useState('')
   const [showFilters,  setShowFilters]  = useState(false)
@@ -805,22 +789,31 @@ export default function RMSPage() {
   const [sheetOpen,    setSheetOpen]    = useState(false)
   const [editExpense,  setEditExpense]  = useState<Expense | null>(null)
 
-  const fetchExpenses = useCallback(async () => {
+  const fetchExpenses = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
       if (filter !== 'all') params.set('status', filter)
       if (dateFrom) params.set('from', dateFrom)
       if (dateTo)   params.set('to',   dateTo)
-      const res = await fetch(`/api/rms${params.toString() ? '?' + params : ''}`)
-      if (!res.ok) { setExpenses([]); return }
+      const res = await fetch(`/api/rms${params.toString() ? '?' + params : ''}`, { signal })
+      if (!res.ok) throw new Error('fetch failed')
       const data = await res.json()
+      if (signal?.aborted) return
       setExpenses(Array.isArray(data) ? data : [])
-    } catch { setExpenses([]) }
-    finally { setLoading(false) }
+      setError(false)
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setExpenses([]); setError(true)
+    }
+    finally { if (!signal?.aborted) setLoading(false) }
   }, [filter, dateFrom, dateTo])
 
-  useEffect(() => { fetchExpenses() }, [fetchExpenses])
+  useEffect(() => {
+    const ac = new AbortController()
+    fetchExpenses(ac.signal)
+    return () => ac.abort()
+  }, [fetchExpenses])
   useAutoRefresh(fetchExpenses)
 
   const handleAction = async (id: string, status: string, note?: string, paymentProof?: string, paymentMethod?: string) => {
@@ -1021,6 +1014,8 @@ export default function RMSPage() {
         {/* List */}
         {loading ? (
           <ListSkeleton rows={4} />
+        ) : error && expenses.length === 0 ? (
+          <ErrorState onRetry={() => fetchExpenses()} />
         ) : expenses.length === 0 ? (
           <EmptyState
             icon={Receipt}

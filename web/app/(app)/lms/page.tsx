@@ -14,6 +14,7 @@ import { Progress } from '@/components/ui/progress'
 import { TabsRoot, TabsList, TabItem, TabsContent } from '@/components/ui/tabs'
 import { Sheet, SheetHeader, SheetBody, SheetFooter } from '@/components/ui/sheet'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 import * as Dialog from '@radix-ui/react-dialog'
 import FileUploader from '@/components/ui/file-uploader'
@@ -642,6 +643,7 @@ export default function LMSPage() {
 
   const [leaves,    setLeaves]    = useState<Leave[]>([])
   const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState(false)
   const [selected,  setSelected]  = useState<Leave | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [bulkSel,   setBulkSel]   = useState<Set<string>>(new Set())
@@ -655,9 +657,11 @@ export default function LMSPage() {
         fetch('/api/lms', { signal }),
         fetch('/api/lms/balance', { signal }),
       ])
+      if (!resLeaves.ok) throw new Error('fetch failed')
       const data = await resLeaves.json()
       if (signal?.aborted) return
       setLeaves(Array.isArray(data) ? data : [])
+      setError(false)
       if (resBal.ok) {
         const bd = await resBal.json()
         if (signal?.aborted) return
@@ -665,7 +669,7 @@ export default function LMSPage() {
       }
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') return
-      setLeaves([])
+      setLeaves([]); setError(true)
     }
     finally { if (!signal?.aborted) setLoading(false) }
   }, [])
@@ -718,6 +722,11 @@ export default function LMSPage() {
     if (loading) return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => <div key={i} className="h-40 rounded-2xl bg-surface-border animate-pulse" />)}
+      </div>
+    )
+    if (error && items.length === 0) return (
+      <div className="col-span-full">
+        <ErrorState onRetry={() => fetchLeaves()} />
       </div>
     )
     if (items.length === 0) return (

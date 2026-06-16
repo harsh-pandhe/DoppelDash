@@ -8,6 +8,7 @@ import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
 import { useUrlState } from '@/lib/useUrlState'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 import { timeAgo } from '@/lib/timeAgo'
@@ -43,15 +44,25 @@ export default function TravelPage() {
 
   const [requests, setRequests] = useState<TravelRequest[]>([])
   const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState(false)
   const [filter,   setFilter]   = useUrlState('status', 'all')
   const [acting,   setActing]   = useState<string | null>(null)
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
-    const res  = await fetch('/api/travel')
-    const data = await res.json()
-    setRequests(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/travel')
+      if (!res.ok) throw new Error('fetch failed')
+      const data = await res.json()
+      setRequests(Array.isArray(data) ? data : [])
+      setError(false)
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setRequests([])
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { fetchRequests() }, [fetchRequests])
@@ -135,6 +146,8 @@ export default function TravelPage() {
         {/* List */}
         {loading ? (
           <div className="space-y-3">{[...Array(4)].map((_,i) => <div key={i} className="h-28 rounded-2xl bg-surface-border animate-pulse" />)}</div>
+        ) : error && requests.length === 0 ? (
+          <ErrorState onRetry={() => fetchRequests()} />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Plane}

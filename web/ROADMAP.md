@@ -42,7 +42,13 @@ Deferred (carry to Phase 9C / next session):
 
 ---
 
-## Phase 9 — Global UI/UX Overhaul
+## Phase 9 — Global UI/UX Overhaul ✅ DONE (2026-06-16)
+
+Shipped: reusable `components/ui/modal.tsx` (Modal/Header/Body/Footer), `components/ui/error-state.tsx`, and `PageSkeleton`/`TableSkeleton` in `components/ui/skeleton.tsx`.
+- **9A done:** all 10 raw Radix dialogs migrated to `Modal` (RMS×3, CRM×2, Announcements×2, Analytics×2, Reports×1). Destructive confirms (Confirm Payment, Reject Expense, Delete Contact) use `dismissible={false}`.
+- **9B done:** CRM table→card fallback below `md`; RMS line-items stack on mobile (`sm:contents` grid restore); Reports tables wrapped in `overflow-x-auto -mx-4 px-4` + `min-w-[640px]`. No h-scroll at 375px.
+- **9C done:** 20 route-segment `loading.tsx` files; `ErrorState` (inline + retry) wired into 9 pages. Segment `error.tsx` already existed.
+- Carryover (low risk): mail page has no initial-load skeleton (streaming UI); profile uses object-not-array error guard. Empty states already used `EmptyState` pre-9.
 
 ### 9A Dialog Boxes (all dialogs app-wide)
 Current problem: dialogs are narrow, cramped, inconsistent padding, slow to open.

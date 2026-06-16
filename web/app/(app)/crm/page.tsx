@@ -7,7 +7,6 @@ import {
   Palette, X, ScanLine,
 } from 'lucide-react'
 import Link from 'next/link'
-import * as Dialog from '@radix-ui/react-dialog'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +14,8 @@ import { Badge } from '@/components/ui/badge'
 import { CardSkeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/components/ui/toast'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { SortableTH } from '@/components/ui/sortable-th'
 import { useTableSort } from '@/lib/useTableSort'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
@@ -224,71 +225,75 @@ function CSVImportDialog({ onImport }: { onImport: () => void }) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={o => { setOpen(o); if(!o){setRows([]);setResult(null)} }}>
-      <Dialog.Trigger asChild>
-        <Button type="button" variant="outline" size="sm" className="gap-2"><Upload className="w-4 h-4" />Import</Button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Import Contacts</Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted mb-4">CSV with columns: name, email, phone, company, designation, tags</Dialog.Description>
-          <label className="flex flex-col items-center gap-2 p-6 border-2 border-dashed border-surface-border rounded-xl cursor-pointer hover:border-brand-400 transition-colors">
-            <Upload className="w-6 h-6 text-surface-muted" />
-            <span className="text-sm font-semibold text-gray-700">Choose CSV file</span>
-            <input type="file" accept=".csv" className="hidden" onChange={onFile} aria-label="Choose CSV file" />
-          </label>
-          {rows.length > 0 && !result && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs font-semibold text-gray-700">{rows.length} rows detected</p>
-              <div className="max-h-32 overflow-y-auto rounded-xl border border-surface-border text-xs divide-y">
-                {rows.slice(0,8).map((r,i) => <div key={i} className="px-3 py-1.5 truncate">{r.name||r.Name||'(no name)'}</div>)}
-                {rows.length>8 && <div className="px-3 py-1.5 text-surface-muted">…+{rows.length-8} more</div>}
-              </div>
+    <Modal
+      open={open}
+      onOpenChange={o => { setOpen(o); if(!o){setRows([]);setResult(null)} }}
+      size="lg"
+      trigger={<Button type="button" variant="outline" size="sm" className="gap-2"><Upload className="w-4 h-4" />Import</Button>}
+    >
+      <ModalHeader
+        title="Import Contacts"
+        description="CSV with columns: name, email, phone, company, designation, tags"
+        icon={Upload}
+      />
+      <ModalBody>
+        <label className="flex flex-col items-center gap-2 p-6 border-2 border-dashed border-surface-border rounded-xl cursor-pointer hover:border-brand-400 transition-colors">
+          <Upload className="w-6 h-6 text-surface-muted" />
+          <span className="text-sm font-semibold text-gray-700">Choose CSV file</span>
+          <input type="file" accept=".csv" className="hidden" onChange={onFile} aria-label="Choose CSV file" />
+        </label>
+        {rows.length > 0 && !result && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-gray-700">{rows.length} rows detected</p>
+            <div className="max-h-32 overflow-y-auto rounded-xl border border-surface-border text-xs divide-y">
+              {rows.slice(0,8).map((r,i) => <div key={i} className="px-3 py-1.5 truncate">{r.name||r.Name||'(no name)'}</div>)}
+              {rows.length>8 && <div className="px-3 py-1.5 text-surface-muted">…+{rows.length-8} more</div>}
             </div>
-          )}
-          {result && (
-            <div className={`mt-3 flex items-center gap-2 p-3 rounded-xl text-sm font-semibold ${result.errors===0?'bg-green-50 text-green-700':'bg-orange-50 text-orange-700'}`}>
-              {result.errors===0?<CheckCircle2 className="w-4 h-4"/>:<AlertCircle className="w-4 h-4"/>}
-              {result.created} imported{result.errors>0?`, ${result.errors} failed`:''}
-            </div>
-          )}
-          <div className="flex gap-3 mt-4 justify-end">
-            <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
-            {rows.length>0&&!result&&(
-              <Button type="button" size="sm" onClick={importAll} disabled={loading} className="gap-1.5">
-                {loading?<Loader2 className="w-3 h-3 animate-spin"/>:<Upload className="w-3 h-3"/>}
-                Import {rows.length}
-              </Button>
-            )}
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        )}
+        {result && (
+          <div className={`flex items-center gap-2 p-3 rounded-xl text-sm font-semibold ${result.errors===0?'bg-green-50 text-green-700':'bg-orange-50 text-orange-700'}`}>
+            {result.errors===0?<CheckCircle2 className="w-4 h-4"/>:<AlertCircle className="w-4 h-4"/>}
+            {result.created} imported{result.errors>0?`, ${result.errors} failed`:''}
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" size="sm" onClick={() => { setOpen(false); setRows([]); setResult(null) }}>Close</Button>
+        {rows.length>0&&!result&&(
+          <Button type="button" size="sm" onClick={importAll} disabled={loading} className="gap-1.5 min-w-[120px]">
+            {loading?<Loader2 className="w-3 h-3 animate-spin"/>:<Upload className="w-3 h-3"/>}
+            Import {rows.length}
+          </Button>
+        )}
+      </ModalFooter>
+    </Modal>
   )
 }
 
 function DeleteDialog({ name, onConfirm }: { name: string; onConfirm: () => void }) {
   const [open, setOpen] = useState(false)
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger asChild>
+    <Modal
+      open={open}
+      onOpenChange={setOpen}
+      size="md"
+      dismissible={false}
+      trigger={
         <button type="button" aria-label="Delete contact" className="p-1.5 rounded-lg hover:bg-red-50 text-surface-muted hover:text-red-500 transition-colors">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Delete Contact</Dialog.Title>
-          <Dialog.Description className="text-sm text-surface-muted mb-5">Delete <strong>{name}</strong>? This cannot be undone.</Dialog.Description>
-          <div className="flex gap-3 justify-end">
-            <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Cancel</Button></Dialog.Close>
-            <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => { onConfirm(); setOpen(false) }}>Delete</Button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+      }
+    >
+      <ModalHeader title="Delete Contact" icon={Trash2} />
+      <ModalBody>
+        <p className="text-sm text-surface-muted">Delete <strong>{name}</strong>? This cannot be undone.</p>
+      </ModalBody>
+      <ModalFooter>
+        <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+        <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 min-w-[120px]" onClick={() => { onConfirm(); setOpen(false) }}>Delete</Button>
+      </ModalFooter>
+    </Modal>
   )
 }
 
@@ -313,6 +318,7 @@ export default function CRMPage() {
   const [debQ,      setDebQ]      = useState('')
   const [tagFilter, setTagFilter] = useState('')
   const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState(false)
   const [view,      setView]      = useState<ViewMode>('card')
 
   useEffect(() => {
@@ -320,17 +326,27 @@ export default function CRMPage() {
     return () => clearTimeout(t)
   }, [query])
 
-  const fetchContacts = useCallback(async () => {
+  const fetchContacts = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
-      const res  = await fetch(`/api/crm?q=${encodeURIComponent(debQ)}`)
+      const res  = await fetch(`/api/crm?q=${encodeURIComponent(debQ)}`, { signal })
+      if (!res.ok) throw new Error('fetch failed')
       const data = await res.json()
+      if (signal?.aborted) return
       setContacts(Array.isArray(data) ? data : [])
-    } catch { setContacts([]) }
-    finally { setLoading(false) }
+      setError(false)
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setContacts([]); setError(true)
+    }
+    finally { if (!signal?.aborted) setLoading(false) }
   }, [debQ])
 
-  useEffect(() => { fetchContacts() }, [fetchContacts])
+  useEffect(() => {
+    const ac = new AbortController()
+    fetchContacts(ac.signal)
+    return () => ac.abort()
+  }, [fetchContacts])
   useAutoRefresh(fetchContacts, { intervalMs: 30_000 })
 
   const deleteContact = async (id: string, name: string) => {
@@ -456,8 +472,62 @@ export default function CRMPage() {
   /* ── Table View ────────────────────────────────────────────────────────── */
   const TableView = () => {
     const { sorted, sortKey, sortDir, toggle } = useTableSort(displayed as unknown as Record<string, unknown>[])
+    const rows = sorted as unknown as Contact[]
     return (
-    <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+    <>
+    {/* Mobile: card list (below md) */}
+    <div className="md:hidden space-y-3">
+      {rows.map(c => {
+        const grad = avatarGradient(c.name)
+        const initials = c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
+        return (
+          <div key={c._id} className="bg-white rounded-2xl border border-surface-border p-4 group">
+            <div className="flex items-start gap-3">
+              <div className="relative flex-shrink-0">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center`}>
+                  {c.photo ? <img src={c.photo} alt="" className="w-10 h-10 rounded-xl object-cover"/> : <span className="text-white font-bold text-[11px]">{initials}</span>}
+                </div>
+                {c.colorLabel && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style={{ background: c.colorLabel.color }} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <Link href={`/crm/${c._id}`} className="block">
+                  <p className="text-sm font-bold text-gray-900 truncate hover:text-brand-600 transition-colors">{c.name}</p>
+                  {c.designation && <p className="text-[10px] text-surface-muted truncate">{c.designation}</p>}
+                </Link>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <ColorLabelPopover contactId={c._id} current={c.colorLabel} onSaved={l => updateLocal(c._id, { colorLabel: l ?? undefined })} />
+                <Link href={`/crm/${c._id}`}><button type="button" aria-label="Edit" className="p-1.5 rounded-lg hover:bg-brand-50 text-surface-muted hover:text-brand-600"><Pencil className="w-3.5 h-3.5"/></button></Link>
+                <DeleteDialog name={c.name} onConfirm={() => deleteContact(c._id, c.name)} />
+              </div>
+            </div>
+            <div className="space-y-1.5 mt-3">
+              {c.company && <div className="flex items-center gap-2 text-xs text-gray-600"><Building2 className="w-3 h-3 text-surface-muted flex-shrink-0" /><span className="truncate font-medium">{c.company}</span></div>}
+              {c.email   && <div className="flex items-center gap-2 text-xs text-gray-500"><Mail    className="w-3 h-3 text-surface-muted flex-shrink-0" /><span className="truncate">{c.email}</span></div>}
+              {c.phone   && <div className="flex items-center gap-2 text-xs text-gray-500"><Phone   className="w-3 h-3 text-surface-muted flex-shrink-0" /><span className="truncate">{c.phone}</span></div>}
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-surface-border">
+              <div className="flex flex-wrap items-center gap-1 min-w-0">
+                {c.colorLabel && (
+                  <span className="flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-surface border border-surface-border">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background:c.colorLabel.color}}/>
+                    {c.colorLabel.label}
+                  </span>
+                )}
+                {(c.tags||[]).slice(0,3).map(tag => (
+                  <Badge key={tag} variant="secondary" className="text-[9px] px-1.5 py-0 cursor-pointer hover:bg-brand-100 hover:text-brand-700" onClick={() => setTagFilter(tag)}>{tag}</Badge>
+                ))}
+                {(c.tags||[]).length > 3 && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">+{(c.tags||[]).length-3}</Badge>}
+              </div>
+              <VisibilitySelect contactId={c._id} current={c.visibility} onSaved={v => updateLocal(c._id, { visibility: v as Contact['visibility'] })} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+
+    {/* Desktop: full table (md and up) */}
+    <div className="hidden md:block bg-white rounded-2xl border border-surface-border overflow-hidden">
       <div className="overflow-x-auto max-h-[calc(100vh-260px)]">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-surface shadow-sm">
@@ -473,7 +543,7 @@ export default function CRMPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-border">
-            {(sorted as unknown as Contact[]).map(c => {
+            {rows.map(c => {
               const grad = avatarGradient(c.name)
               const initials = c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)
               return (
@@ -523,6 +593,7 @@ export default function CRMPage() {
         </table>
       </div>
     </div>
+    </>
   )}
 
   return (
@@ -583,6 +654,8 @@ export default function CRMPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[...Array(6)].map((_,i) => <CardSkeleton key={i} />)}
           </div>
+        ) : error && contacts.length === 0 ? (
+          <ErrorState onRetry={() => fetchContacts()} />
         ) : displayed.length === 0 ? (
           <EmptyState
             icon={Users}

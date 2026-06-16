@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
+import { ErrorState } from '@/components/ui/error-state'
 import { useUser } from '@/lib/useUser'
 import MailEditor, { DevicePreviewDialog } from '@/components/mail/MailEditor'
 
@@ -344,6 +345,7 @@ function MailComposeInner() {
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [savedAt, setSavedAt]       = useState<Date | null>(null)
   const [saving, setSaving]         = useState(false)
+  const [draftError, setDraftError] = useState(false)
 
   // AI state
   const [aiType, setAiType]         = useState('Follow-up')
@@ -375,16 +377,29 @@ function MailComposeInner() {
   }, [])
 
   // Load draft from ?draft=
-  useEffect(() => {
+  const loadDraft = useCallback(async () => {
     const id = searchParams.get('draft')
     if (!id) return
-    fetch(`/api/mail/drafts/${id}`).then(r => r.ok ? r.json() : null).then(d => {
-      if (!d) { toast('Draft not found', 'error'); return }
+    try {
+      const res = await fetch(`/api/mail/drafts/${id}`)
+      if (!res.ok) {
+        // 404 → draft genuinely gone; surface a toast, no error pane
+        if (res.status === 404) { toast('Draft not found', 'error'); setDraftError(false); return }
+        throw new Error('fetch failed')
+      }
+      const d = await res.json()
+      if (!d) { toast('Draft not found', 'error'); setDraftError(false); return }
       setDraftId(d._id); setSubject(d.subject || ''); setBodyHtml(d.bodyHtml || '')
       setRecipients(d.recipients || []); setSavedAt(new Date(d.updatedAt))
-    })
+      setDraftError(false)
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return
+      setDraftError(true)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
+
+  useEffect(() => { loadDraft() }, [loadDraft])
 
   // Designation for the signature block
   useEffect(() => {
@@ -604,6 +619,9 @@ Excerpt:
           </div>
         </div>
 
+        {draftError && !draftId && !subject && !bodyPlain ? (
+          <ErrorState onRetry={() => loadDraft()} />
+        ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-5 items-start">
           {/* ── Left: compose ── */}
           <div className="space-y-4 min-w-0">
@@ -762,6 +780,7 @@ Excerpt:
             </Card>
           </div>
         </div>
+        )}
 
         {/* Dialogs */}
         <ConfirmSendDialog
