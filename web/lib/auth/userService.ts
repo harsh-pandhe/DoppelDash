@@ -16,6 +16,7 @@ export interface ListedUser {
   permissions: string[]
   banned: boolean
   isActive: boolean
+  mailAccess: boolean
   primaryEmailAddress: { emailAddress: string }
   unsafeMetadata: { role: UserRole; permissions: string[] }
   lastActiveAt: number | null
@@ -35,6 +36,7 @@ export async function listUsers(opts: { limit?: number } = {}): Promise<ListedUs
     permissions: u.permissions || [],
     banned:    u.isBanned,
     isActive:  u.isActive,
+    mailAccess: u.mailAccess ?? false,
     primaryEmailAddress: { emailAddress: u.email },
     unsafeMetadata: { role: u.role, permissions: u.permissions || [] },
     lastActiveAt: u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : null,
@@ -57,6 +59,7 @@ export async function getUserById(id: string): Promise<ListedUser | null> {
       permissions: u.permissions || [],
       banned:    u.isBanned,
       isActive:  u.isActive,
+      mailAccess: u.mailAccess ?? false,
       primaryEmailAddress: { emailAddress: u.email },
       unsafeMetadata: { role: u.role, permissions: u.permissions || [] },
       lastActiveAt: u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : null,
@@ -65,7 +68,7 @@ export async function getUserById(id: string): Promise<ListedUser | null> {
   } catch { return null }
 }
 
-export async function updateUser(id: string, patch: { role?: UserRole; permissions?: string[]; isBanned?: boolean; isActive?: boolean; firstName?: string; lastName?: string }) {
+export async function updateUser(id: string, patch: { role?: UserRole; permissions?: string[]; isBanned?: boolean; isActive?: boolean; mailAccess?: boolean; firstName?: string; lastName?: string }) {
   await connectDB()
   return User.findByIdAndUpdate(id, patch, { returnDocument: 'after' }).lean()
 }

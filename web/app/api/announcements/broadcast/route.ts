@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'boss' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { announcementId, targetRoles } = await req.json()
   if (!announcementId) return NextResponse.json({ error: 'announcementId required' }, { status: 400 })
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const users  = await listUsers({ limit: 500 })
   const roles: string[] = Array.isArray(targetRoles) && targetRoles.length
     ? targetRoles
-    : ['employee', 'manager', 'boss']
+    : ['employee', 'manager', 'admin']
   const emails = users
     .filter(u => roles.includes(u.role || 'employee'))
     .map(u => u.email)

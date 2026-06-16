@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   await connectDB()
 
   // Already have a boss → disabled
-  const existing = await User.findOne({ role: 'boss' })
+  const existing = await User.findOne({ role: 'admin' })
   if (existing) {
     return NextResponse.json({ error: 'Setup already completed' }, { status: 409 })
   }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const boss  = await User.create({
     email:              email.toLowerCase().trim(),
     passwordHash:       hash,
-    role:               'boss',
+    role:               'admin',
     firstName,
     lastName,
     mustChangePassword: false,

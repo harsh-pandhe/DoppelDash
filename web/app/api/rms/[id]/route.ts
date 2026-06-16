@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     ;(async () => {
       try {
         const users = await listUsers({ limit: 500 })
-        const bosses = users.filter(u => u.role === 'boss')
+        const bosses = users.filter(u => u.role === 'admin')
         for (const b of bosses) {
           if (b.email) {
             emailExpensePendingPayout({
@@ -106,7 +106,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!expense) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = expense.userId === userId
-  const isPriv  = role === 'manager' || role === 'boss'
+  const isPriv  = role === 'manager' || role === 'admin'
   const canOwnerDelete = isOwner && (expense.status === 'pending_manager' || expense.status === 'returned')
   if (!isPriv && !canOwnerDelete) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

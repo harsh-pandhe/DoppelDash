@@ -17,7 +17,7 @@ export async function notifyTargetsFor(employeeUserId: string): Promise<string[]
 
   const emp     = await Employee.findOne({ clerkUserId: employeeUserId }, 'reportingManagerId').lean()
   const users   = await listUsers({ limit: 500 })
-  const bosses  = users.filter(u => u.role === 'boss').map(u => u.email).filter((e): e is string => !!e)
+  const bosses  = users.filter(u => u.role === 'admin').map(u => u.email).filter((e): e is string => !!e)
 
   if (emp?.reportingManagerId) {
     const mgr = await getUserById(emp.reportingManagerId)
@@ -27,7 +27,7 @@ export async function notifyTargetsFor(employeeUserId: string): Promise<string[]
 
   // Fallback: every manager + boss
   const all = users
-    .filter(u => u.role === 'manager' || u.role === 'boss')
+    .filter(u => u.role === 'manager' || u.role === 'admin')
     .map(u => u.email)
     .filter((e): e is string => !!e)
   return Array.from(new Set(all))

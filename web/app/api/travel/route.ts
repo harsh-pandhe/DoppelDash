@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
 
   await connectDB()
   const { searchParams } = new URL(req.url)

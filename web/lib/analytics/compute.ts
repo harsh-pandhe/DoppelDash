@@ -34,7 +34,7 @@ function buildMonths(start: Date, end: Date) {
  * route AND the public shared-dashboard route (which passes the share owner's identity).
  */
 export async function computeAnalytics(userId: string, role: string, p: AnalyticsParams) {
-  const isManager = role === 'manager' || role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
   await connectDB()
 
   const now = new Date()

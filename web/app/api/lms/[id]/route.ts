@@ -68,7 +68,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!leave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = leave.userId === userId
-  const isPriv  = role === 'manager' || role === 'boss'
+  const isPriv  = role === 'manager' || role === 'admin'
   if (!isPriv && !(isOwner && leave.status === 'pending')) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

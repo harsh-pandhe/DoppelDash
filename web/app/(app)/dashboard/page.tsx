@@ -5,7 +5,7 @@ import Header from '@/components/layout/Header'
 import RouterAutoRefresh from '@/components/RouterAutoRefresh'
 import ManagerDashboard  from './_components/ManagerDashboard'
 import EmployeeDashboard from './_components/EmployeeDashboard'
-import BossDashboard     from './_components/BossDashboard'
+import AdminDashboard    from './_components/AdminDashboard'
 
 export default async function DashboardPage() {
   const { userId, user } = await getUser()
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     <>
       <Header title="Dashboard" />
       <RouterAutoRefresh intervalMs={30_000} />
-      {role === 'boss'    && <BossDashboard     firstName={firstName} />}
+      {role === 'admin'    && <AdminDashboard    firstName={firstName} />}
       {role === 'manager' && <ManagerDashboard  userId={userId} firstName={firstName} isBoss={false} />}
       {role === 'employee'&& <EmployeeDashboard userId={userId} firstName={firstName} />}
     </>

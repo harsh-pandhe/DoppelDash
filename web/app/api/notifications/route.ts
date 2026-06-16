@@ -24,8 +24,8 @@ export async function GET() {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role  = user?.role || 'employee'
-  const isMgr = role === 'manager' || role === 'boss'
-  const isBoss = role === 'boss'
+  const isMgr = role === 'manager' || role === 'admin'
+  const isBoss = role === 'admin'
 
   await connectDB()
   const items: NotifItem[] = []
@@ -174,8 +174,8 @@ export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'manager' && role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const isBoss = role === 'boss'
+  if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isBoss = role === 'admin'
 
   const body = await req.json().catch(() => ({}))
   const ids: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
     ;(async () => {
       try {
         const users = await listUsers({ limit: 500 })
-        const bosses = users.filter(u => u.role === 'boss')
+        const bosses = users.filter(u => u.role === 'admin')
         for (const e of expenses) {
           for (const b of bosses) {
             if (b.email) emailExpensePendingPayout({ bossEmail: b.email, employeeName: e.userName, title: e.title, amount: e.amount })

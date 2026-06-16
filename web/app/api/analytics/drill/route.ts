@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
 
   await connectDB()
 

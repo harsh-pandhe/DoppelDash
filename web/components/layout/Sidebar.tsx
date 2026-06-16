@@ -16,47 +16,47 @@ const SECTIONS = [
   {
     label: 'Workspace',
     items: [
-      { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard, roles: ['employee','manager','boss'] },
-      { href: '/announcements', label: 'Announcements', icon: Megaphone,       roles: ['employee','manager','boss'] },
+      { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard, roles: ['employee','manager','admin'] },
+      { href: '/announcements', label: 'Announcements', icon: Megaphone,       roles: ['employee','manager','admin'] },
     ],
   },
   {
     label: 'People',
     items: [
-      { href: '/crm',            label: 'Contacts',   icon: Users,      roles: ['employee','manager','boss'] },
-      { href: '/crm/directory',  label: 'Directory',  icon: BookOpen,   roles: ['employee','manager','boss'] },
-      { href: '/lms',      label: 'Leave',            icon: CalendarClock, roles: ['employee','manager','boss'] },
-      { href: '/lms/team',     label: 'Team Calendar',  icon: CalendarClock, roles: ['manager','boss'] },
-      { href: '/lms/holidays', label: 'Holidays',       icon: CalendarClock, roles: ['employee','manager','boss'] },
-      { href: '/rms',      label: 'Reimbursements',   icon: Receipt,       roles: ['employee','manager','boss'] },
-      { href: '/travel',   label: 'Travel Requests',  icon: Plane,         roles: ['employee','manager','boss'] },
+      { href: '/crm',            label: 'Contacts',   icon: Users,      roles: ['employee','manager','admin'] },
+      { href: '/crm/directory',  label: 'Directory',  icon: BookOpen,   roles: ['employee','manager','admin'] },
+      { href: '/lms',      label: 'Leave',            icon: CalendarClock, roles: ['employee','manager','admin'] },
+      { href: '/lms/team',     label: 'Team Calendar',  icon: CalendarClock, roles: ['manager','admin'] },
+      { href: '/lms/holidays', label: 'Holidays',       icon: CalendarClock, roles: ['employee','manager','admin'] },
+      { href: '/rms',      label: 'Reimbursements',   icon: Receipt,       roles: ['employee','manager','admin'] },
+      { href: '/travel',   label: 'Travel Requests',  icon: Plane,         roles: ['employee','manager','admin'] },
     ],
   },
   {
     label: 'Communications',
     items: [
-      { href: '/mail',        label: 'Compose Mail', icon: Mail,     roles: ['employee','manager','boss'] },
-      { href: '/mail/drafts', label: 'Drafts',       icon: FileEdit, roles: ['employee','manager','boss'] },
+      { href: '/mail',        label: 'Compose Mail', icon: Mail,     roles: ['employee','manager','admin'], requiresMailAccess: true },
+      { href: '/mail/drafts', label: 'Drafts',       icon: FileEdit, roles: ['employee','manager','admin'], requiresMailAccess: true },
     ],
   },
   {
     label: 'Insights',
     items: [
-      { href: '/analytics', label: 'Analytics', icon: TrendingUp, roles: ['manager','boss'] },
-      { href: '/reports',   label: 'Reports',   icon: BarChart2,  roles: ['manager','boss'] },
+      { href: '/analytics', label: 'Analytics', icon: TrendingUp, roles: ['manager','admin'] },
+      { href: '/reports',   label: 'Reports',   icon: BarChart2,  roles: ['manager','admin'] },
     ],
   },
   {
     label: 'Admin',
     items: [
-      { href: '/admin/users', label: 'Users',     icon: Shield,       roles: ['boss'] },
-      { href: '/admin/audit', label: 'Audit Log', icon: ClipboardList, roles: ['boss'] },
+      { href: '/admin/users', label: 'Users',     icon: Shield,       roles: ['admin'] },
+      { href: '/admin/audit', label: 'Audit Log', icon: ClipboardList, roles: ['admin'] },
     ],
   },
 ]
 
 const ROLE_COLOR: Record<string, string> = {
-  boss:     'bg-accent-500/20 text-accent-300 border border-accent-400/30',
+  admin:    'bg-accent-500/20 text-accent-300 border border-accent-400/30',
   manager:  'bg-brand-400/20 text-brand-100 border border-brand-300/30',
   employee: 'bg-white/10 text-white/60 border border-white/15',
 }
@@ -68,8 +68,8 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false)
   // Insights + Admin collapsed by default for managers/employees, expanded for boss
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => ({
-    Insights: role !== 'boss',
-    Admin:    role !== 'boss',
+    Insights: role !== 'admin',
+    Admin:    role !== 'admin',
   }))
 
   useEffect(() => {
@@ -106,7 +106,12 @@ export default function Sidebar() {
       {/* Nav sections */}
       <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin space-y-3">
         {SECTIONS.map(section => {
-          const visible = section.items.filter(i => i.roles.includes(role))
+          const visible = section.items.filter(i => {
+            if (!i.roles.includes(role)) return false
+            // 10B: mail items hidden for employees without granted mailAccess
+            if ('requiresMailAccess' in i && i.requiresMailAccess && role === 'employee' && !user?.mailAccess) return false
+            return true
+          })
           if (visible.length === 0) return null
           // Workspace + People always open. Insights/Admin collapsible.
           const isCollapsible = section.label !== 'Workspace' && section.label !== 'People'

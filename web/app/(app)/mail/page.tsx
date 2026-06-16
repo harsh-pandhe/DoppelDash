@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
 import { ErrorState } from '@/components/ui/error-state'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useUser } from '@/lib/useUser'
 import MailEditor, { DevicePreviewDialog } from '@/components/mail/MailEditor'
 
@@ -592,7 +593,25 @@ Excerpt:
     }
   }
 
-  const canServerSend = role === 'manager' || role === 'boss'
+  const canServerSend = role === 'manager' || role === 'admin'
+  // 10B: employees need granted mailAccess to use the mass-mail tool
+  const hasMailAccess = role === 'admin' || role === 'manager' || user?.mailAccess === true
+
+  if (user && !hasMailAccess) {
+    return (
+      <>
+        <Header title="Compose Mail" />
+        <main className="flex-1 p-5 lg:p-8 flex items-center justify-center">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Mail access not granted"
+            description="The mass-mail tool is available to managers and admins. Ask your administrator to grant you access."
+            action={{ label: 'Back to Dashboard', href: '/dashboard' }}
+          />
+        </main>
+      </>
+    )
+  }
 
   return (
     <>

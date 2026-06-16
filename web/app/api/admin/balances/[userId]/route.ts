@@ -9,7 +9,7 @@ const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2,
 export async function GET(_: NextRequest, { params }: { params: { userId: string } }) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (user?.role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const year = new Date().getFullYear()
@@ -20,7 +20,7 @@ export async function GET(_: NextRequest, { params }: { params: { userId: string
 export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (user?.role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const body = await req.json()

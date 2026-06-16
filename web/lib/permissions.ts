@@ -21,7 +21,7 @@ export interface UserMeta {
 export function hasPermission(meta: UserMeta | null | undefined, perm: Permission): boolean {
   if (!meta) return false
   const role = meta.role || 'employee'
-  if (role === 'boss') return true
+  if (role === 'admin') return true
   if (role === 'manager') {
     if (['approve_leaves', 'approve_expenses', 'post_announcements', 'view_all_data', 'manage_contacts'].includes(perm)) return true
   }
@@ -29,7 +29,7 @@ export function hasPermission(meta: UserMeta | null | undefined, perm: Permissio
 }
 
 export function getRolePermissions(role: string): Permission[] {
-  if (role === 'boss') return ALL_PERMISSIONS.map(p => p.key)
+  if (role === 'admin') return ALL_PERMISSIONS.map(p => p.key)
   if (role === 'manager') return ['approve_leaves', 'approve_expenses', 'post_announcements', 'view_all_data', 'manage_contacts']
   return []
 }

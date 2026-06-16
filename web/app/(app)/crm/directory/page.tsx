@@ -14,7 +14,7 @@ const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-purple-400 to-viol
 const avatarGradient = (n: string) => AVATAR_GRADIENTS[n.charCodeAt(0) % AVATAR_GRADIENTS.length]
 
 const ROLE_BADGE: Record<string, string> = {
-  boss:     'bg-amber-100 text-amber-700',
+  admin:    'bg-amber-100 text-amber-700',
   manager:  'bg-brand-100 text-brand-700',
   employee: 'bg-gray-100 text-gray-600',
 }

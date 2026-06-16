@@ -772,8 +772,8 @@ export default function RMSPage() {
   const { user } = useUser()
   const toast = useToast()
   const role = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
-  const isBoss    = role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
+  const isBoss    = role === 'admin'
 
   const [expenses,     setExpenses]     = useState<Expense[]>([])
   const [filter,       setFilter]       = useUrlState('status', 'all')

@@ -227,8 +227,8 @@ function useNotifications() {
 export default function Header({ title }: { title?: string }) {
   const { user }   = useUser()
   const role       = user?.role || 'employee'
-  const isManager  = role === 'manager' || role === 'boss'
-  const isBoss     = role === 'boss'
+  const isManager  = role === 'manager' || role === 'admin'
+  const isBoss     = role === 'admin'
 
   const [panelOpen, setPanelOpen] = useState(false)
   const toast = useToast()

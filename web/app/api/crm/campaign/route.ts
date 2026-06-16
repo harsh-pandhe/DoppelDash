@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // 10B: mass mail = admin + manager by default; employees only if granted mailAccess
   const role = user?.role || 'employee'
-  const perms = user?.permissions || []
-  const canPost = role === 'manager' || role === 'boss' || perms.includes('post_announcements')
-  if (!canPost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const canPost = role === 'admin' || role === 'manager' || user?.mailAccess === true
+  if (!canPost) return NextResponse.json({ error: 'Mail access not granted — contact your administrator.' }, { status: 403 })
 
   await connectDB()
   const body = await req.json() as {

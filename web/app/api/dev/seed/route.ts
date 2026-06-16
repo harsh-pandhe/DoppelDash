@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   const boss = await User.create({
     email:              'harsh.pandhe@doppelmayr.com',
     passwordHash:       hash,
-    role:               'boss',
+    role:               'admin',
     firstName:          'Harsh',
     lastName:           'Pandhe',
     mustChangePassword: false,
@@ -454,7 +454,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     accounts: [
-      { role: 'boss',     email: boss.email,     password: DEFAULT_PASSWORD },
+      { role: 'admin',     email: boss.email,     password: DEFAULT_PASSWORD },
       { role: 'manager',  email: managerA.email, password: DEFAULT_PASSWORD },
       { role: 'manager',  email: managerB.email, password: DEFAULT_PASSWORD },
       ...empSeeds.map((e, i) => ({

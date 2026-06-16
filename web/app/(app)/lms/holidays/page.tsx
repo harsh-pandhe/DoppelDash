@@ -26,7 +26,7 @@ export default function HolidaysPage() {
   const { user } = useUser()
   const toast    = useToast()
   const role    = user?.role || 'employee'
-  const canEdit = role === 'boss' || role === 'manager'
+  const canEdit = role === 'admin' || role === 'manager'
 
   const [year,     setYear]     = useState(new Date().getFullYear())
   const [holidays, setHolidays] = useState<Holiday[]>([])

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'manager' && role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const days = Math.min(60, Math.max(7, Number(new URL(req.url).searchParams.get('days')) || 14))

@@ -10,7 +10,7 @@ export async function GET() {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'boss' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const year      = new Date().getFullYear()
@@ -20,7 +20,7 @@ export async function GET() {
   const balMap    = new Map(balances.map(b => [b.userId, b]))
   const empMap    = new Map(employees.map(e => [e.clerkUserId, e]))
 
-  const filtered = role === 'boss'
+  const filtered = role === 'admin'
     ? allUsers
     : allUsers.filter(u =>
         String(u._id) === userId ||
@@ -38,6 +38,7 @@ export async function GET() {
       role:        u.role,
       permissions: u.permissions || [],
       banned:      u.isBanned,
+      mailAccess:  u.mailAccess ?? false,
       lastActive:  u.lastLoginAt,
       createdAt:   u.createdAt,
       balance: {
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'boss' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
   const { firstName, lastName, email, newRole, department, designation, employeeType, joiningDate, privileges } = body

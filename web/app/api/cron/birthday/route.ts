@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   try {
     const users = await listUsers({ limit: 500 })
     managerEmails = users
-      .filter(u => u.role === 'manager' || u.role === 'boss')
+      .filter(u => u.role === 'manager' || u.role === 'admin')
       .map(u => u.email)
       .filter((e): e is string => Boolean(e))
   } catch { /* best-effort */ }

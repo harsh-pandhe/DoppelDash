@@ -154,7 +154,7 @@ export default function AnnouncementsPage() {
   const { user } = useUser()
   const toast    = useToast()
   const role     = user?.role || 'employee'
-  const canPost  = role === 'manager' || role === 'boss'
+  const canPost  = role === 'manager' || role === 'admin'
 
   const [items,   setItems]   = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
@@ -274,7 +274,7 @@ export default function AnnouncementsPage() {
 function BroadcastButton({ id }: { id: string }) {
   const toast   = useToast()
   const [open,  setOpen]  = useState(false)
-  const [roles, setRoles] = useState(['employee','manager','boss'])
+  const [roles, setRoles] = useState(['employee','manager','admin'])
   const [sending, setSending] = useState(false)
 
   const toggle = (r: string) => setRoles(prev => prev.includes(r) ? prev.filter(x=>x!==r) : [...prev, r])
@@ -306,7 +306,7 @@ function BroadcastButton({ id }: { id: string }) {
       <ModalHeader title="Send as Email" description="Choose who receives this announcement by email." />
       <ModalBody>
         <div className="space-y-2">
-          {([['employee', 'Employees'],['manager', 'Managers'],['boss', 'Boss']] as const).map(([r, label]) => (
+          {([['employee', 'Employees'],['manager', 'Managers'],['admin', 'Admins']] as const).map(([r, label]) => (
             <label key={r} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border cursor-pointer hover:bg-surface transition-colors">
               <input type="checkbox" checked={roles.includes(r)} onChange={() => toggle(r)} className="accent-brand-500 w-4 h-4" />
               <span className="text-sm font-semibold text-gray-700">{label}</span>

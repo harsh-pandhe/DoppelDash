@@ -31,6 +31,7 @@ interface EmployeeProfile {
 
 interface UserRow {
   id: string; name: string; email: string; role: string; banned: boolean
+  mailAccess?: boolean
   lastActive: number | null
   balance: { casual: number; sick: number; earned: number; privilege: number; restricted: number }
   permissions?: Permission[]
@@ -38,12 +39,12 @@ interface UserRow {
   createdAt?: string
 }
 
-const ROLES = ['employee', 'manager', 'boss'] as const
+const ROLES = ['employee', 'manager', 'admin'] as const
 
 const ROLE_META: Record<string, { gradient: string; badge: string; icon: React.ElementType }> = {
   employee: { gradient: 'from-gray-400 to-gray-500',    badge: 'bg-gray-100 text-gray-700',    icon: User      },
   manager:  { gradient: 'from-brand-400 to-brand-600',  badge: 'bg-brand-100 text-brand-700',  icon: Briefcase },
-  boss:     { gradient: 'from-amber-400 to-orange-500', badge: 'bg-amber-100 text-amber-700',  icon: Shield    },
+  admin:    { gradient: 'from-amber-400 to-orange-500', badge: 'bg-amber-100 text-amber-700',  icon: Shield    },
 }
 
 const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-purple-400 to-violet-600','from-orange-400 to-red-500','from-emerald-400 to-green-600','from-pink-400 to-rose-500','from-cyan-400 to-teal-600']
@@ -210,6 +211,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
   const toast  = useToast()
   const [roleUpdating, setRoleUpdating] = useState(false)
   const [banUpdating,  setBanUpdating]  = useState(false)
+  const [mailUpdating, setMailUpdating] = useState(false)
   const [editBal,  setEditBal]   = useState(false)
   const [bal,      setBal]       = useState(u.balance)
   const [savingBal,setSavingBal] = useState(false)
@@ -221,7 +223,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
   const [privs, setPrivs] = useState<NonNullable<EmployeeProfile['privileges']>>(u.employee?.privileges || DEFAULT_PRIVILEGES)
   const [savingMgr, setSavingMgr] = useState(false)
 
-  const managers = allUsers.filter(x => (x.role === 'manager' || x.role === 'boss') && x.id !== u.id && !x.banned)
+  const managers = allUsers.filter(x => (x.role === 'manager' || x.role === 'admin') && x.id !== u.id && !x.banned)
   const currentMgr = managers.find(m => m.id === u.employee?.reportingManagerId)
 
   const setReportingManager = async (mgrId: string | null) => {
@@ -277,6 +279,13 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
     setBanUpdating(true)
     await fetch(`/api/admin/users/${u.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ banned: !u.banned }) })
     toast(u.banned ? 'User reinstated' : 'User suspended', u.banned ? 'success' : 'info'); setBanUpdating(false); onUpdate()
+  }
+
+  // 10B: grant/revoke mass-mail access (only meaningful for employees; managers/admins always have it)
+  const toggleMail = async () => {
+    setMailUpdating(true)
+    await fetch(`/api/admin/users/${u.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ mailAccess: !u.mailAccess }) })
+    toast(u.mailAccess ? 'Mail access revoked' : 'Mail access granted', 'success'); setMailUpdating(false); onUpdate()
   }
 
   const saveBalance = async () => {
@@ -361,7 +370,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
             )}
 
             {/* Reporting manager — boss only, employees + managers */}
-            {isBoss && u.role !== 'boss' && (
+            {isBoss && u.role !== 'admin' && (
               <div className="mt-3 flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Reports to</span>
                 <select aria-label="Reporting manager" value={u.employee?.reportingManagerId || ''}
@@ -377,6 +386,19 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
                 {currentMgr && (
                   <span className="text-[10px] text-surface-muted">→ approvals routed to {currentMgr.name.split(' ')[0]}</span>
                 )}
+              </div>
+            )}
+
+            {/* 10B: Mail access — boss only, employees only (managers/admins have it by default) */}
+            {isBoss && u.role === 'employee' && (
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Mass mail</span>
+                <button type="button" onClick={toggleMail} disabled={mailUpdating}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all
+                    ${u.mailAccess ? 'bg-green-100 text-green-700' : 'bg-surface text-surface-muted hover:bg-surface-border'}`}>
+                  {mailUpdating ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : u.mailAccess ? <Check className="w-2.5 h-2.5" /> : null}
+                  {u.mailAccess ? 'Access granted' : 'No access'}
+                </button>
               </div>
             )}
 
@@ -580,7 +602,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
 export default function AdminUsersPage() {
   const { user } = useUser()
   const role = (user?.unsafeMetadata?.role as string) || 'employee'
-  const isBoss = role === 'boss'
+  const isBoss = role === 'admin'
 
   const [users,   setUsers]   = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)

@@ -39,8 +39,8 @@ export default function TravelPage() {
   const toast    = useToast()
   const router   = useRouter()
   const role     = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
-  const isBoss    = role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
+  const isBoss    = role === 'admin'
 
   const [requests, setRequests] = useState<TravelRequest[]>([])
   const [loading,  setLoading]  = useState(true)

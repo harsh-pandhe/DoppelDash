@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
-  if (role !== 'boss') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body   = await req.json()
   const target = await getUserById(params.userId)
@@ -18,6 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   if (Array.isArray(body.permissions))        patch.permissions = body.permissions
   if (typeof body.role     === 'string')      patch.role        = body.role
   if (typeof body.banned   === 'boolean')     patch.isBanned    = body.banned
+  if (typeof body.mailAccess === 'boolean')   patch.mailAccess  = body.mailAccess
   if (typeof body.firstName === 'string')     patch.firstName   = body.firstName
   if (typeof body.lastName  === 'string')     patch.lastName    = body.lastName
 
@@ -77,8 +78,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   if (body.reportingManagerId !== undefined) {
     writeAudit({
       action: 'user.reporting_manager_changed', performedBy: userId,
-      performedByName: user?.fullName || 'Boss', targetId: params.userId,
+      performedByName: user?.fullName || 'Admin', targetId: params.userId,
       targetType: 'user', metadata: { reportingManagerId: body.reportingManagerId, employeeName: target.fullName },
+    })
+  }
+  if (body.mailAccess !== undefined) {
+    writeAudit({
+      action: 'user.mail_access_changed', performedBy: userId,
+      performedByName: user?.fullName || 'Admin', targetId: params.userId,
+      targetType: 'user', metadata: { mailAccess: body.mailAccess, employeeName: target.fullName },
     })
   }
 

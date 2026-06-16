@@ -15,7 +15,7 @@ import FileUploader from '@/components/ui/file-uploader'
 const ROLE_META: Record<string, { icon: React.ElementType; color: string; label: string; desc: string }> = {
   employee: { icon: User,      color: 'text-gray-500',  label: 'Employee', desc: 'Standard access' },
   manager:  { icon: Briefcase, color: 'text-brand-500', label: 'Manager',  desc: 'Approve requests, manage team' },
-  boss:     { icon: Shield,    color: 'text-amber-500', label: 'Boss',     desc: 'Full oversight & admin' },
+  admin:    { icon: Shield,    color: 'text-amber-500', label: 'Admin',    desc: 'Full oversight & admin' },
 }
 
 function ChangePasswordCard() {
@@ -394,7 +394,7 @@ export default function SettingsPage() {
 
         <ChangePasswordCard />
 
-        <OrgProfileCard isBoss={role === 'boss'} />
+        <OrgProfileCard isBoss={role === 'admin'} />
 
         <Card>
           <CardHeader>

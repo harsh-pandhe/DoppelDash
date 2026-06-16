@@ -35,6 +35,12 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const body  = await req.json()
+
+  // 11B: earned leave capped at 4 days per single application
+  if (body.type === 'earned' && Number(body.days) > 4) {
+    return NextResponse.json({ error: 'Earned leave is capped at 4 days per application.' }, { status: 400 })
+  }
+
   const leave = await Leave.create({
     ...body,
     userId,

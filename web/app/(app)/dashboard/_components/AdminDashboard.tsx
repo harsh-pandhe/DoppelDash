@@ -18,7 +18,7 @@ interface Props {
   firstName: string
 }
 
-export default async function BossDashboard({ firstName }: Props) {
+export default async function AdminDashboard({ firstName }: Props) {
   await connectDB()
 
   const now      = new Date()

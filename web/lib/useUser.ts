@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 export interface ClientUser {
   id: string
   email: string
-  role: 'boss' | 'manager' | 'employee'
+  role: 'admin' | 'manager' | 'employee'
   firstName: string
   lastName: string
   fullName: string
@@ -14,6 +14,7 @@ export interface ClientUser {
   mustChangePassword: boolean
   totpEnabled?: boolean
   tourSeen?: boolean
+  mailAccess?: boolean
   loginCount: number
   // Compat with old Clerk shape used across pages
   unsafeMetadata: { role: string; permissions: string[] }

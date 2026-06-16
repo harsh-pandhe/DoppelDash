@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 import bcrypt from 'bcryptjs'
 
-export type UserRole = 'boss' | 'manager' | 'employee'
+export type UserRole = 'admin' | 'manager' | 'employee'
 
 export interface IUserPublic {
   id: string
@@ -16,6 +16,7 @@ export interface IUserPublic {
   mustChangePassword: boolean
   totpEnabled: boolean
   tourSeen: boolean
+  mailAccess: boolean
   lastLoginAt?: Date
   loginCount: number
   unsafeMetadata: { role: UserRole; permissions: string[] }
@@ -33,6 +34,7 @@ export interface IUser extends Document {
   isActive: boolean
   isBanned: boolean
   mustChangePassword: boolean
+  mailAccess: boolean
   otp?: string
   otpExpiry?: Date
   otpAttempts: number
@@ -58,7 +60,8 @@ const UserSchema = new Schema<IUser, UserModel>(
   {
     email:              { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash:       { type: String, required: true },
-    role:               { type: String, enum: ['boss','manager','employee'], required: true },
+    role:               { type: String, enum: ['admin','manager','employee'], required: true },
+    mailAccess:         { type: Boolean, default: false },  // 10B: grant employee mass-mail access
     firstName:          { type: String, required: true, trim: true },
     lastName:           { type: String, required: true, trim: true },
     createdByUserId:    { type: String },
@@ -97,6 +100,7 @@ UserSchema.methods.toPublic = function (): IUserPublic {
     isActive:           this.isActive,
     isBanned:           this.isBanned,
     mustChangePassword: this.mustChangePassword,
+    mailAccess:         this.mailAccess ?? false,
     totpEnabled:        this.totpEnabled ?? false,
     tourSeen:           this.tourSeen ?? false,
     lastLoginAt:        this.lastLoginAt,

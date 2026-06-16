@@ -85,7 +85,7 @@ export default function LeaveDetailPage() {
   const { user } = useUser()
   const toast    = useToast()
   const role      = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
 
   const [leave,   setLeave]   = useState<Leave | null>(null)
   const [loading, setLoading] = useState(true)

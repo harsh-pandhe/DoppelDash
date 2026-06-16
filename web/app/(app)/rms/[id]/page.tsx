@@ -167,8 +167,8 @@ export default function ExpenseDetailPage() {
   const { user } = useUser()
   const toast    = useToast()
   const role     = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
-  const isBoss    = role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
+  const isBoss    = role === 'admin'
 
   const [expense, setExpense] = useState<Expense | null>(null)
   const [loading, setLoading] = useState(true)

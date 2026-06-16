@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: `Cannot move from ${tr.status} to ${status}` }, { status: 409 })
   }
   // Boss-only actions on pending_boss
-  if (tr.status === 'pending_boss' && (status === 'approved' || status === 'rejected') && role !== 'boss') {
+  if (tr.status === 'pending_boss' && (status === 'approved' || status === 'rejected') && role !== 'admin') {
     return NextResponse.json({ error: 'Only the boss can approve at this stage' }, { status: 403 })
   }
 
@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     ;(async () => {
       try {
         const users = await listUsers({ limit: 500 })
-        const bosses = users.filter(u => u.role === 'boss')
+        const bosses = users.filter(u => u.role === 'admin')
         for (const b of bosses) {
           if (b.email) {
             emailTravelForwardedToBoss({

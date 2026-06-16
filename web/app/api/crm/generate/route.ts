@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
       { visibility: 'org' },
       { sharedWith: userId },
     ]
-    if (role === 'manager' || role === 'boss') visClauses.push({ visibility: 'team' })
-    if (role === 'boss') visClauses.push({ visibility: 'boss_only' })
+    if (role === 'manager' || role === 'admin') visClauses.push({ visibility: 'team' })
+    if (role === 'admin') visClauses.push({ visibility: 'boss_only' })
 
     const contact = await Contact.findOne({
       _id: contactId,

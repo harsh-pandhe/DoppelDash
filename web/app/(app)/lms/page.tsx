@@ -318,6 +318,7 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
   const isSick  = form.type === 'sick'
   const isLWP   = form.type === 'lwp'
   const sickReq = isSick && rawDays > 2
+  const earnedOverCap = form.type === 'earned' && days > 4   // 11B: max 4 earned/application
   const balance = isLWP ? Infinity : Math.max(0, (entitlement[form.type] ?? LEAVE_MAX[form.type] ?? 0) - (used[form.type] ?? 0))
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -325,6 +326,7 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
     if (!form.startDate || !form.endDate || !form.reason.trim()) { setError('All fields are required.'); return }
     if (new Date(form.endDate) < new Date(form.startDate)) { setError('End date must be after start date.'); return }
     if (sickReq && docs.length === 0) { setError('Medical docs required for sick leave > 2 days.'); return }
+    if (earnedOverCap) { setError('Earned leave is capped at 4 days per application.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/lms', {
@@ -449,6 +451,7 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
                   <span className="ml-auto text-xs text-red-500 font-semibold">⚠ Exceeds balance ({balance} left)</span>
                 )}
                 {isLWP && <span className="ml-auto text-xs text-orange-600 font-semibold">Salary deduction: {days}d</span>}
+                {earnedOverCap && <span className="ml-auto text-xs text-red-500 font-semibold">⚠ Max 4 earned days per application</span>}
               </div>
             )}
 
@@ -475,7 +478,7 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
             )}
 
             <div className="flex gap-3 pt-1">
-              <Button type="submit" disabled={loading} className="flex-1 gap-2">
+              <Button type="submit" disabled={loading || earnedOverCap} className="flex-1 gap-2">
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</> : <><Save className="w-4 h-4" />Submit Request</>}
               </Button>
               <Dialog.Close asChild>
@@ -639,7 +642,7 @@ export default function LMSPage() {
   const { user } = useUser()
   const toast    = useToast()
   const role      = user?.role || 'employee'
-  const isManager = role === 'manager' || role === 'boss'
+  const isManager = role === 'manager' || role === 'admin'
 
   const [leaves,    setLeaves]    = useState<Leave[]>([])
   const [loading,   setLoading]   = useState(true)
@@ -649,12 +652,22 @@ export default function LMSPage() {
   const [bulkSel,   setBulkSel]   = useState<Set<string>>(new Set())
   const [bulking,   setBulking]   = useState(false)
   const [serverBalance, setServerBalance] = useState<Record<string, { entitlement: number; used: number; remaining: number }> | null>(null)
+  // 11A: month filter — default to current month (YYYY-MM)
+  const [month, setMonth] = useState<string>(() => new Date().toISOString().slice(0, 7))
 
   const fetchLeaves = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
     try {
+      // month → first/last day range; empty month = all leaves
+      let qs = ''
+      if (month) {
+        const [y, m] = month.split('-').map(Number)
+        const from = new Date(y, m - 1, 1).toISOString().slice(0, 10)
+        const to   = new Date(y, m, 0).toISOString().slice(0, 10)
+        qs = `?from=${from}&to=${to}`
+      }
       const [resLeaves, resBal] = await Promise.all([
-        fetch('/api/lms', { signal }),
+        fetch(`/api/lms${qs}`, { signal }),
         fetch('/api/lms/balance', { signal }),
       ])
       if (!resLeaves.ok) throw new Error('fetch failed')
@@ -672,7 +685,7 @@ export default function LMSPage() {
       setLeaves([]); setError(true)
     }
     finally { if (!signal?.aborted) setLoading(false) }
-  }, [])
+  }, [month])
 
   useEffect(() => {
     const ac = new AbortController()
@@ -787,6 +800,23 @@ export default function LMSPage() {
                 </button>
               </div>
             )}
+            {/* 11A: month filter */}
+            <div className="flex items-center gap-1.5">
+              <input
+                type="month"
+                value={month}
+                onChange={e => setMonth(e.target.value)}
+                aria-label="Filter leaves by month"
+                className="h-10 rounded-xl border border-surface-border bg-white px-3 text-sm font-medium text-gray-700 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              />
+              {month && (
+                <button type="button" onClick={() => setMonth('')}
+                  className="text-xs font-semibold text-surface-muted hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
+                  title="Show all months">
+                  All
+                </button>
+              )}
+            </div>
             <a href={`/api/lms/calendar?scope=${isManager ? 'team' : 'me'}`} download>
               <Button variant="outline" className="gap-2" title="Download approved leaves + holidays as .ics">
                 <Download className="w-4 h-4" /> Export .ics

@@ -27,7 +27,7 @@ export async function GET() {
         id:          mgr.id,
         name:        mgr.fullName,
         email:       mgr.email,
-        designation: mgrEmp?.designation || (mgr.role === 'boss' ? 'Leadership' : 'Manager'),
+        designation: mgrEmp?.designation || (mgr.role === 'admin' ? 'Leadership' : 'Manager'),
       }
     }
   }
