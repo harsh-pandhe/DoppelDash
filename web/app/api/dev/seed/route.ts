@@ -250,9 +250,9 @@ export async function POST(req: NextRequest) {
   /* ─── 6) Expenses ────────────────────────────────────────────────── */
   const expSeeds = [
     { u: employees[0], title: 'Mumbai → BKC site survey',     reason: 'Client site visit, taxi + meals.',                amount: 2450, status: 'paid',            mgr: managerA, days: -40, from: 'Mumbai', to: 'BKC'      },
-    { u: employees[0], title: 'AutoCAD subscription',          reason: 'Annual renewal for design workstation.',         amount: 45000,status: 'pending_boss',    mgr: managerA, days: -7,  from: '',       to: ''         },
+    { u: employees[0], title: 'AutoCAD subscription',          reason: 'Annual renewal for design workstation.',         amount: 45000,status: 'pending_admin',    mgr: managerA, days: -7,  from: '',       to: ''         },
     { u: employees[1], title: 'Pune site inspection',          reason: 'Travel + lodging for 2-day inspection.',         amount: 8600, status: 'paid',            mgr: managerA, days: -20, from: 'Mumbai', to: 'Pune'     },
-    { u: employees[2], title: 'Conference: Ropeway Asia 2026', reason: 'Registration, flight, hotel.',                   amount: 32500,status: 'pending_boss',    mgr: managerB, days: -5,  from: 'Pune',   to: 'Singapore'},
+    { u: employees[2], title: 'Conference: Ropeway Asia 2026', reason: 'Registration, flight, hotel.',                   amount: 32500,status: 'pending_admin',    mgr: managerB, days: -5,  from: 'Pune',   to: 'Singapore'},
     { u: employees[2], title: 'Team lunch — Q1 closeout',      reason: 'Department team lunch, 8 people.',               amount: 6400, status: 'paid',            mgr: managerB, days: -50, from: '',       to: ''         },
     { u: employees[3], title: 'Hyderabad office supplies',     reason: 'Stationery + printer cartridges.',               amount: 3200, status: 'returned',        mgr: managerB, days: -3,  from: '',       to: '',        managerNote: 'Attach itemised bill from vendor.' },
     { u: employees[4], title: 'Client dinner — Delhi NCR',     reason: 'Dinner with L&T procurement team.',              amount: 9800, status: 'pending_manager', mgr: managerA, days: -2,  from: '',       to: ''         },
@@ -268,7 +268,7 @@ export async function POST(req: NextRequest) {
     receipts: [],
     status: e.status,
     managerNote: (e as { managerNote?: string }).managerNote,
-    approvedBy: ['pending_boss', 'paid'].includes(e.status) ? e.mgr._id.toString() : undefined,
+    approvedBy: ['pending_admin', 'paid'].includes(e.status) ? e.mgr._id.toString() : undefined,
     paidBy:     e.status === 'paid' ? boss._id.toString() : undefined,
     createdAt: D(e.days - 1),
   })))
@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
     },
     {
       u: employees[2], purpose: 'Ropeway Asia 2026 conference', destination: 'Singapore',
-      depart: 21, ret: 25, est: 145000, adv: 75000, status: 'pending_boss',
+      depart: 21, ret: 25, est: 145000, adv: 75000, status: 'pending_admin',
       mgrNote: 'High value — please review carefully.',
     },
     {
@@ -307,7 +307,7 @@ export async function POST(req: NextRequest) {
     advanceRequested: t.adv,
     status: t.status,
     managerNote: (t as { mgrNote?: string }).mgrNote,
-    approvedBy: t.status === 'approved' ? boss._id.toString() : (t.status === 'pending_boss' ? managerA._id.toString() : undefined),
+    approvedBy: t.status === 'approved' ? boss._id.toString() : (t.status === 'pending_admin' ? managerA._id.toString() : undefined),
     approvedAt: t.status === 'approved' ? D(t.depart - 5) : undefined,
     rejectedBy: t.status === 'rejected' ? managerB._id.toString() : undefined,
     rejectedAt: t.status === 'rejected' ? D(t.depart - 2) : undefined,

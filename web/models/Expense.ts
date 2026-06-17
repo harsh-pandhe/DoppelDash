@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
-export type ExpenseStatus = 'pending_manager' | 'pending_boss' | 'paid' | 'rejected' | 'returned'
+export type ExpenseStatus = 'pending_manager' | 'pending_admin' | 'paid' | 'rejected' | 'returned'
 export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance_adjusted' | 'na'
 
 export interface IExpenseLineItem {
@@ -35,7 +35,7 @@ export interface IExpense extends Document {
   receipts: string[]      // legacy top-level receipts
   status: ExpenseStatus
   managerNote?: string
-  bossNote?: string
+  adminNote?: string
 
   // Payment details
   paymentMethod?: PaymentMethod
@@ -77,9 +77,9 @@ const ExpenseSchema = new Schema<IExpense>(
     travelRequestId: { type: String },
 
     receipts:     [{ type: String }],
-    status:       { type: String, enum: ['pending_manager','pending_boss','paid','rejected','returned'], default: 'pending_manager' },
+    status:       { type: String, enum: ['pending_manager','pending_admin','paid','rejected','returned'], default: 'pending_manager' },
     managerNote:  { type: String },
-    bossNote:     { type: String },
+    adminNote:     { type: String },
 
     paymentMethod: { type: String, enum: ['cash','card','upi','bank_transfer','advance_adjusted','na'] },
     paymentProof:  { type: String },

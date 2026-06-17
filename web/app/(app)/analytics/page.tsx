@@ -284,7 +284,7 @@ export default function AnalyticsPage() {
                     <option value="approved">Approved</option>
                     <option value="rejected">Rejected</option>
                     <option value="pending_manager">Pending manager</option>
-                    <option value="pending_boss">Pending boss</option>
+                    <option value="pending_admin">Pending boss</option>
                     <option value="paid">Paid</option>
                   </select>
                 </div>

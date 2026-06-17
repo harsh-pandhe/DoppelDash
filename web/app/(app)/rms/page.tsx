@@ -27,7 +27,7 @@ interface ExpenseLineItem {
 
 interface Expense {
   _id: string; userId: string; userName: string; title: string; reason: string
-  amount: number; startDate: string; status: string; managerNote?: string; bossNote?: string
+  amount: number; startDate: string; status: string; managerNote?: string; adminNote?: string
   receipts?: string[]; createdAt?: string
   travelFrom?: string; travelTo?: string; endDate?: string
   lineItems?: ExpenseLineItem[]; hasLineItems?: boolean
@@ -36,7 +36,7 @@ interface Expense {
 
 const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'default' | 'success' | 'destructive' | 'secondary'; icon: React.ElementType; pipeline: number }> = {
   pending_manager: { label: 'Manager Review', variant: 'warning',     icon: Clock,        pipeline: 1 },
-  pending_boss:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2 },
+  pending_admin:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2 },
   paid:            { label: 'Paid',            variant: 'success',    icon: CheckCircle2, pipeline: 3 },
   rejected:        { label: 'Rejected',        variant: 'destructive',icon: XCircle,      pipeline: 0 },
   returned:        { label: 'Needs Revision',  variant: 'secondary',  icon: RotateCcw,    pipeline: 0 },
@@ -430,9 +430,9 @@ function NewExpenseDialog({
 }
 
 /* ─── Expense Detail Sheet ─────────────────────────────────────────────────── */
-function ExpenseDetailSheet({ expense, open, onClose, isManager, isBoss, onRevise, onAction }: {
+function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevise, onAction }: {
   expense: Expense | null; open: boolean; onClose: () => void
-  isManager: boolean; isBoss: boolean
+  isManager: boolean; isAdmin: boolean
   onRevise?: (expense: Expense) => void
   onAction: (id: string, status: string, note?: string, proof?: string) => void
 }) {
@@ -591,9 +591,9 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isBoss, onRevis
           </div>
         )}
 
-        {(expense.managerNote || expense.bossNote) && (
+        {(expense.managerNote || expense.adminNote) && (
           <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700">
-            <span className="font-bold">Note: </span>{expense.managerNote || expense.bossNote}
+            <span className="font-bold">Note: </span>{expense.managerNote || expense.adminNote}
           </div>
         )}
 
@@ -628,19 +628,19 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isBoss, onRevis
       </SheetBody>
 
       {isManager && !showReject && (
-        (isManager && !isBoss && expense.status === 'pending_manager') ||
-        (isBoss && expense.status === 'pending_boss')
+        (isManager && !isAdmin && expense.status === 'pending_manager') ||
+        (isAdmin && expense.status === 'pending_admin')
       ) ? (
         <SheetFooter>
           <div className="space-y-2">
             <div className="flex gap-2">
-              {isBoss ? (
+              {isAdmin ? (
                 <div className="flex-1">
                   <PaymentProofDialog onConfirm={(proof, method, note) => act('paid', note, proof)} />
                 </div>
               ) : (
                 <Button className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700"
-                  onClick={() => act('pending_boss')} disabled={acting}>
+                  onClick={() => act('pending_admin')} disabled={acting}>
                   {acting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   Approve
                 </Button>
@@ -651,13 +651,13 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isBoss, onRevis
               </Button>
             </div>
             {/* Send-back row */}
-            {isBoss && expense.status === 'pending_boss' && (
+            {isAdmin && expense.status === 'pending_admin' && (
               <Button variant="outline" className="w-full gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50"
                 onClick={() => act('pending_manager', 'Sent back for manager review')} disabled={acting}>
                 <RotateCcw className="w-3.5 h-3.5" /> Send Back to Manager
               </Button>
             )}
-            {!isBoss && expense.status === 'pending_manager' && (
+            {!isAdmin && expense.status === 'pending_manager' && (
               <Button variant="outline" className="w-full gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
                 onClick={() => act('returned', 'Please revise and resubmit')} disabled={acting}>
                 <RotateCcw className="w-3.5 h-3.5" /> Return to Employee
@@ -753,12 +753,12 @@ function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
 }
 
 function exportCSV(expenses: Expense[]) {
-  const headers = ['Title', 'Reason', 'Amount (₹)', 'Date', 'Status', 'Employee', 'Manager Note', 'Boss Note']
+  const headers = ['Title', 'Reason', 'Amount (₹)', 'Date', 'Status', 'Employee', 'Manager Note', 'Admin Note']
   const rows = expenses.map(e => [
     `"${e.title}"`, `"${e.reason}"`, e.amount,
     new Date(e.startDate).toLocaleDateString('en-IN'),
     e.status, `"${e.userName}"`,
-    `"${e.managerNote || ''}"`, `"${e.bossNote || ''}"`,
+    `"${e.managerNote || ''}"`, `"${e.adminNote || ''}"`,
   ])
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -773,7 +773,7 @@ export default function RMSPage() {
   const toast = useToast()
   const role = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
-  const isBoss    = role === 'admin'
+  const isAdmin    = role === 'admin'
 
   const [expenses,     setExpenses]     = useState<Expense[]>([])
   const [filter,       setFilter]       = useUrlState('status', 'all')
@@ -818,7 +818,7 @@ export default function RMSPage() {
 
   const handleAction = async (id: string, status: string, note?: string, paymentProof?: string, paymentMethod?: string) => {
     const body: Record<string, string> = { status }
-    if (note) body[isManager && !isBoss ? 'managerNote' : 'bossNote'] = note
+    if (note) body[isManager && !isAdmin ? 'managerNote' : 'adminNote'] = note
     if (status === 'paid') {
       body.paidBy = user?.id || ''
       if (paymentProof)  body.paymentProof  = paymentProof
@@ -837,7 +837,7 @@ export default function RMSPage() {
         return
       }
       const labels: Record<string, string> = {
-        pending_boss:    'Expense approved — sent to boss',
+        pending_admin:    'Expense approved — sent to boss',
         pending_manager: 'Sent back to manager for review',
         returned:        'Returned to employee for revision',
         paid:            'Marked as paid',
@@ -850,12 +850,12 @@ export default function RMSPage() {
     }
   }
 
-  const totalPending = expenses.filter(e => e.status === 'pending_manager' || e.status === 'pending_boss')
+  const totalPending = expenses.filter(e => e.status === 'pending_manager' || e.status === 'pending_admin')
     .reduce((s, e) => s + e.amount, 0)
 
   const bulkPendingExpenses = expenses.filter(e =>
-    (isManager && !isBoss && e.status === 'pending_manager') ||
-    (isBoss && e.status === 'pending_boss')
+    (isManager && !isAdmin && e.status === 'pending_manager') ||
+    (isAdmin && e.status === 'pending_admin')
   )
   const toggleSelect = (id: string) => setSelected(prev => {
     const next = new Set(prev)
@@ -896,7 +896,7 @@ export default function RMSPage() {
           <div className="flex gap-3 flex-wrap">
             {[
               { label: 'Manager Review', count: expenses.filter(e => e.status === 'pending_manager').length, color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-              { label: 'Pending Payout', count: expenses.filter(e => e.status === 'pending_boss').length,    color: 'bg-blue-50   border-blue-200   text-blue-700'   },
+              { label: 'Pending Payout', count: expenses.filter(e => e.status === 'pending_admin').length,    color: 'bg-blue-50   border-blue-200   text-blue-700'   },
               { label: 'Paid',           count: expenses.filter(e => e.status === 'paid').length,             color: 'bg-green-50  border-green-200  text-green-700'  },
             ].map(({ label, count, color }) => (
               <div key={label} className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl border text-center ${color}`}>
@@ -916,7 +916,7 @@ export default function RMSPage() {
         {/* Toolbar */}
         <div className="flex items-center gap-3 flex-wrap justify-between">
           <div className="flex gap-2 flex-wrap">
-            {['all', 'pending_manager', 'pending_boss', 'paid', 'rejected', 'returned'].map(s => (
+            {['all', 'pending_manager', 'pending_admin', 'paid', 'rejected', 'returned'].map(s => (
               <button type="button" key={s} onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all
                   ${filter === s ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
@@ -995,7 +995,7 @@ export default function RMSPage() {
               <>
                 <span className="text-xs text-orange-600">{selected.size} selected</span>
                 <Button type="button" size="sm" disabled={bulking}
-                  onClick={() => bulkAction(isBoss ? 'paid' : 'pending_boss')}
+                  onClick={() => bulkAction(isAdmin ? 'paid' : 'pending_admin')}
                   className="gap-1.5 bg-green-600 hover:bg-green-700 text-white">
                   {bulking ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                   Approve Selected
@@ -1081,21 +1081,21 @@ export default function RMSPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1.5">
-                            {isManager && !isBoss && exp.status === 'pending_manager' && (
+                            {isManager && !isAdmin && exp.status === 'pending_manager' && (
                               <>
-                                <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_boss')}>Approve</Button>
+                                <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_admin')}>Approve</Button>
                                 <Button type="button" size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 gap-1" onClick={() => handleAction(exp._id, 'returned', 'Please revise and resubmit')}><RotateCcw className="w-3 h-3" />Return</Button>
                                 <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                               </>
                             )}
-                            {isBoss && exp.status === 'pending_boss' && (
+                            {isAdmin && exp.status === 'pending_admin' && (
                               <>
                                 <PaymentProofDialog onConfirm={(proof, method, note) => handleAction(exp._id, 'paid', note, proof, method)} />
                                 <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1" onClick={() => handleAction(exp._id, 'pending_manager', 'Sent back for manager review')}><RotateCcw className="w-3 h-3" />Send Back</Button>
                                 <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                               </>
                             )}
-                            {(!isManager || (exp.status !== 'pending_manager' && exp.status !== 'pending_boss')) && (
+                            {(!isManager || (exp.status !== 'pending_manager' && exp.status !== 'pending_admin')) && (
                               <Link href={`/rms/${exp._id}`}>
                                 <Button type="button" size="sm" variant="outline">View</Button>
                               </Link>
@@ -1157,9 +1157,9 @@ export default function RMSPage() {
                             </p>
                           )}
                         </div>
-                        {(exp.managerNote || exp.bossNote) && (
+                        {(exp.managerNote || exp.adminNote) && (
                           <p className="text-xs text-surface-muted italic mt-1">
-                            Note: {exp.managerNote || exp.bossNote}
+                            Note: {exp.managerNote || exp.adminNote}
                           </p>
                         )}
                         {exp.receipts && exp.receipts.length > 0 && (
@@ -1190,9 +1190,9 @@ export default function RMSPage() {
 
                       {/* Actions — stop propagation so card click doesn't open sheet */}
                       <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                        {isManager && !isBoss && exp.status === 'pending_manager' && (
+                        {isManager && !isAdmin && exp.status === 'pending_manager' && (
                           <>
-                            <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_boss')}>Approve</Button>
+                            <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_admin')}>Approve</Button>
                             <Button type="button" size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 gap-1 text-[11px]"
                               onClick={() => handleAction(exp._id, 'returned', 'Please revise and resubmit')}>
                               <RotateCcw className="w-3 h-3" />Return
@@ -1200,7 +1200,7 @@ export default function RMSPage() {
                             <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                           </>
                         )}
-                        {isBoss && exp.status === 'pending_boss' && (
+                        {isAdmin && exp.status === 'pending_admin' && (
                           <>
                             <PaymentProofDialog onConfirm={(proof, method, note) => handleAction(exp._id, 'paid', note, proof, method)} />
                             <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1 text-[11px]"
@@ -1226,7 +1226,7 @@ export default function RMSPage() {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         isManager={isManager}
-        isBoss={isBoss}
+        isAdmin={isAdmin}
         onRevise={handleRevise}
         onAction={async (id, status, note, proof) => { await handleAction(id, status, note, proof) }}
       />

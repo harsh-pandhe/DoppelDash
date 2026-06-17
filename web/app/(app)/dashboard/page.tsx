@@ -20,7 +20,7 @@ export default async function DashboardPage() {
       <Header title="Dashboard" />
       <RouterAutoRefresh intervalMs={30_000} />
       {role === 'admin'    && <AdminDashboard    firstName={firstName} />}
-      {role === 'manager' && <ManagerDashboard  userId={userId} firstName={firstName} isBoss={false} />}
+      {role === 'manager' && <ManagerDashboard  userId={userId} firstName={firstName} isAdmin={false} />}
       {role === 'employee'&& <EmployeeDashboard userId={userId} firstName={firstName} />}
     </>
   )

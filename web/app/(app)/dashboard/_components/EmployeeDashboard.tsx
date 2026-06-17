@@ -27,7 +27,7 @@ const LEAVE_TYPES = [
 const STATUS_META: Record<string, { label: string; icon: typeof Clock; tone: string }> = {
   pending:          { label: 'Pending',  icon: Clock,        tone: 'bg-status-warning-bg text-status-warning' },
   pending_manager:  { label: 'Pending',  icon: Clock,        tone: 'bg-status-warning-bg text-status-warning' },
-  pending_boss:     { label: 'Pending',  icon: Clock,        tone: 'bg-status-info-bg text-status-info' },
+  pending_admin:     { label: 'Pending',  icon: Clock,        tone: 'bg-status-info-bg text-status-info' },
   approved:         { label: 'Approved', icon: CheckCircle2, tone: 'bg-status-success-bg text-status-success' },
   paid:             { label: 'Paid',     icon: CheckCircle2, tone: 'bg-status-success-bg text-status-success' },
   rejected:         { label: 'Rejected', icon: XCircle,      tone: 'bg-status-danger-bg text-status-danger' },
@@ -86,8 +86,8 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
     })),
   ].sort((a, b) => b.ts - a.ts).slice(0, 5)
 
-  // Reimbursements waiting (pending + pending_boss for this user)
-  const pendingReimb = myExpenses.filter(e => e.status === 'pending_manager' || e.status === 'pending_boss')
+  // Reimbursements waiting (pending + pending_admin for this user)
+  const pendingReimb = myExpenses.filter(e => e.status === 'pending_manager' || e.status === 'pending_admin')
   const pendingAmt   = pendingReimb.reduce((s, e) => s + e.amount, 0)
 
   const greeting = (() => {
@@ -223,7 +223,7 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                     <div key={String(e._id)} className="flex items-center justify-between text-xs py-1.5 border-b border-surface-border last:border-0">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-dm-graphite truncate">{e.title}</p>
-                        <p className="text-[10px] text-surface-muted">{timeAgo(e.createdAt as Date)} · {e.status === 'pending_boss' ? 'Awaiting payout' : 'Manager review'}</p>
+                        <p className="text-[10px] text-surface-muted">{timeAgo(e.createdAt as Date)} · {e.status === 'pending_admin' ? 'Awaiting payout' : 'Manager review'}</p>
                       </div>
                       <span className="font-mono font-bold text-dm-graphite tabular-nums flex-shrink-0">
                         ₹{e.amount.toLocaleString('en-IN')}

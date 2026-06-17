@@ -1,6 +1,14 @@
-# DoppelDash — Master Roadmap (2026-06-13)
+# DoppelDash — Master Roadmap (2026-06-18)
 
 Single source of truth. All prior phase plans deleted.
+
+## Status
+- ✅ Phases 1–8 shipped
+- ✅ Phase 9 (UI/UX overhaul) — commit 97ddf10
+- ✅ Phase 10A (boss→admin) + 10B (mail access) — commit d2f45ca
+- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11E (travel chain), 11F (reimbursement chain)
+- ⏳ Remaining: 11C (scan-card OCR), 11D (campaign section), 11G (mass mail), 12 (admin panel), 13 (audit hardening)
+- ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
 
@@ -75,32 +83,29 @@ Standard to apply to every dialog:
 
 ## Phase 10 — Role & Access
 
-### 10A Rename boss → admin (everywhere)
-- [ ] `web/lib/auth.ts` and any role comparison
-- [ ] All `api/**/route.ts` files: `role !== 'boss'` → `role !== 'admin'`
-- [ ] `Sidebar.tsx`: `roles: ['boss']` → `roles: ['admin']`; `ROLE_COLOR` key
-- [ ] Seed script: `role: 'boss'` → `role: 'admin'`
-- [ ] UI: "Boss" label → "Admin" in Users panel, audit log, profile, everywhere
+### 10A Rename boss → admin (everywhere) ✅ DONE (2026-06-16, commit d2f45ca)
+- [x] `UserRole` type + Mongo enum `'boss'`→`'admin'`
+- [x] All role comparisons swept (api + pages)
+- [x] `Sidebar.tsx` `ROLE_COLOR`; settings/users/directory labels → Admin; `BossDashboard`→`AdminDashboard`
+- [x] Seed writes `role:'admin'`
+- [x] UI "Boss" → "Admin" everywhere
+- NOTE: `pending_boss`/`bossNote`/`boss_only` left then; status enums renamed in 11E/11F.
 
-### 10B Mail Access Control
-- Compose/send mass mail: `admin` + `manager` by default
-- Admin can grant access to specific employees (toggle in Users panel)
-- Store `mailAccess: boolean` on User model (default false for employee)
-- Sidebar: show Mail section only if `role !== 'employee' || user.mailAccess`
+### 10B Mail Access Control ✅ DONE (2026-06-16, commit d2f45ca)
+- [x] Mass mail: `admin` + `manager` by default
+- [x] Admin grants per-employee access (toggle in Users panel, audited)
+- [x] `mailAccess: boolean` on User model (default false)
+- [x] Sidebar hides Mail unless `role !== 'employee' || user.mailAccess`; server guards on `/api/crm/campaign` + `/mail`
 
 ---
 
 ## Phase 11 — Feature Fixes
 
-### 11A LMS: Month-Filtered Cards
-- Calendar month selector on LMS page → filter cards to only show leaves in that month
-- Wire `from`/`to` params: `from = first day of selected month`, `to = last day`
-- Default: current month on load
+### 11A LMS: Month-Filtered Cards ✅ DONE (2026-06-16)
+- `<input type=month>` selector (default current month) → `?from=&to=` on `/api/lms`; "All" clears filter.
 
-### 11B LMS: Earned Leave Cap
-- Max 4 earned leaves per single application
-- Frontend: disable submit + show error if `type === 'earned' && days > 4`
-- API POST: reject with 400 if cap exceeded
+### 11B LMS: Earned Leave Cap ✅ DONE (2026-06-16)
+- Max 4 earned/application: frontend disables submit + inline warn; API POST 400.
 
 ### 11C Scan Card: Image Upload + OCR + Storage
 - UI: single file upload input (JPG/PNG), no camera overlay
@@ -115,20 +120,17 @@ Standard to apply to every dialog:
 - Add `{ href: '/campaign', label: 'Campaign', icon: Megaphone, roles: ['admin','manager'] }` as own section
 - Campaign page = mass email composer only (not scan card)
 
-### 11E Travel: Manager → Admin Approval Flow
-- Status chain: `pending` → `manager_approved` → `admin_approved` / `rejected` / `returned`
-- Manager sees pending requests → can approve (sends to admin) or reject
-- Admin sees `manager_approved` requests → approves (final) or rejects
-- Print button visible to all roles on travel detail page
+### 11E Travel: Manager → Admin Approval Flow ✅ DONE (2026-06-18)
+- Status chain (impl naming): `pending_manager` → `pending_admin` → `approved` / `rejected`; manager can return to employee. Server state machine in `api/travel/[id]/route.ts` (`VALID_TRANSITIONS`), admin-only final approval guard.
+- Manager forwards to admin or rejects; admin approves/rejects `pending_admin`.
+- Every transition audited (actor + timestamp via `writeAudit`, `travel.<status>`).
+- Print button visible to all roles on travel detail page (`window.print()`).
 
-### 11F Reimbursements: Redesigned Expense Log
-Dialog redesign (`max-w-2xl`):
-- Table: columns = Description | Amount | Receipt (upload) | Paid By
-- "Paid By" = dropdown: `Company` / `Personal (me)`
-- Add row button; delete row
-- No AI-find field; just clean manual entry
-- Approval flow: `Employee submits` → `Manager: approve / reject / request revision` → if rejected → Employee revises → `Manager re-approves` → `Admin: marks paid`
-- Every state transition stored in DB with timestamp + actor
+### 11F Reimbursements: Approval Flow ✅ DONE (already built + completed in 10A/11F rename)
+- Table mode log dialog (`max-w-2xl`) with line items + per-item review.
+- Flow: `Employee submits` → `Manager approve(→pending_admin)/reject/return` → employee revises (`returned`→`pending_manager`) → `Admin marks paid`. Server-enforced in `api/rms/[id]/route.ts` (employees can only edit `returned`).
+- Every transition audited with actor + timestamp; status-change emails.
+- Note: status values renamed `pending_boss`→`pending_admin`, `bossNote`→`adminNote` in 11E/11F sweep.
 
 ### 11G Mass Mail Tool
 - Purpose: send Doppelmayr product emails to clients
@@ -181,6 +183,22 @@ Dialog redesign (`max-w-2xl`):
 - WelcomeTour: seen-state already in DB (shipped Phase 7, keep)
 
 ---
+
+## ⚠️ Prod DB Migration (run once after deploying 10A / 11E / 11F)
+Local DB already migrated. Prod still has old role/status values — the renamed Mongo
+enums will reject them. Run in the prod Mongo shell (or via a seed-gated script):
+```js
+// 10A — roles + mail access
+db.users.updateMany({ role: 'boss' }, { $set: { role: 'admin' } })
+db.users.updateMany({ mailAccess: { $exists: false } }, { $set: { mailAccess: false } })
+db.users.updateMany({ role: { $in: ['admin','manager'] } }, { $set: { mailAccess: true } })
+// 11E/11F — status + note field renames
+db.expenses.updateMany({ status: 'pending_boss' }, { $set: { status: 'pending_admin' } })
+db.travelrequests.updateMany({ status: 'pending_boss' }, { $set: { status: 'pending_admin' } })
+db.expenses.updateMany({ bossNote: { $exists: true } }, { $rename: { bossNote: 'adminNote' } })
+db.travelrequests.updateMany({ bossNote: { $exists: true } }, { $rename: { bossNote: 'adminNote' } })
+```
+Without the role step, the admin account loses admin access on prod.
 
 ## Hard Constraints (never re-litigate)
 - Deploy: `git push origin main` only — Netlify auto-build. CLI deploy breaks SSR.

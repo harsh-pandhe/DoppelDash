@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (role === 'employee') {
     updates.status = 'pending_manager'
     delete updates.managerNote
-    delete updates.bossNote
+    delete updates.adminNote
   }
 
   const expense = await Expense.findByIdAndUpdate(params.id, updates, { returnDocument: 'after' })
@@ -57,11 +57,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'expense',
-    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.bossNote },
+    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote },
   })
 
-  // Notify boss(es) when manager approves (pending_boss)
-  if (updates.status === 'pending_boss') {
+  // Notify boss(es) when manager approves (pending_admin)
+  if (updates.status === 'pending_admin') {
     ;(async () => {
       try {
         const users = await listUsers({ limit: 500 })
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         status,
         title:         expense.title,
         amount:        expense.amount,
-        note:          (updates.bossNote || updates.managerNote) as string | undefined,
+        note:          (updates.adminNote || updates.managerNote) as string | undefined,
       })
     })
   }

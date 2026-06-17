@@ -18,14 +18,14 @@ interface Expense {
   travelFrom?: string; travelTo?: string
   startDate: string; endDate?: string
   receipts: string[]; status: string
-  managerNote?: string; bossNote?: string; paymentProof?: string
+  managerNote?: string; adminNote?: string; paymentProof?: string
   approvedBy?: string; paidBy?: string
   createdAt: string; updatedAt: string
 }
 
 const STATUS_META: Record<string, { label: string; variant: 'warning'|'default'|'success'|'destructive'; icon: React.ElementType; pipeline: number; color: string }> = {
   pending_manager: { label: 'Manager Review', variant: 'warning',     icon: Clock,        pipeline: 1, color: 'text-yellow-600 bg-yellow-50 border-yellow-200' },
-  pending_boss:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2, color: 'text-blue-600   bg-blue-50   border-blue-200'   },
+  pending_admin:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2, color: 'text-blue-600   bg-blue-50   border-blue-200'   },
   paid:            { label: 'Paid',            variant: 'success',    icon: CheckCircle2, pipeline: 3, color: 'text-green-600  bg-green-50  border-green-200'  },
   rejected:        { label: 'Rejected',        variant: 'destructive',icon: XCircle,      pipeline: 0, color: 'text-red-600    bg-red-50    border-red-200'    },
 }
@@ -168,7 +168,7 @@ export default function ExpenseDetailPage() {
   const toast    = useToast()
   const role     = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
-  const isBoss    = role === 'admin'
+  const isAdmin    = role === 'admin'
 
   const [expense, setExpense] = useState<Expense | null>(null)
   const [loading, setLoading] = useState(true)
@@ -197,7 +197,7 @@ export default function ExpenseDetailPage() {
   const action = async (status: string, note?: string, paymentProof?: string) => {
     setActing(true)
     const body: Record<string, string> = { status }
-    if (note) body[isBoss ? 'bossNote' : 'managerNote'] = note
+    if (note) body[isAdmin ? 'adminNote' : 'managerNote'] = note
     if (paymentProof) body.paymentProof = paymentProof
     if (status === 'paid') body.paidBy = user?.id || ''
     const res = await fetch(`/api/rms/${id}`, {
@@ -206,7 +206,7 @@ export default function ExpenseDetailPage() {
     })
     if (res.ok) {
       setExpense(await res.json())
-      const msg: Record<string, string> = { pending_boss: 'Approved — forwarded for payout', paid: 'Marked as paid', rejected: 'Expense rejected' }
+      const msg: Record<string, string> = { pending_admin: 'Approved — forwarded for payout', paid: 'Marked as paid', rejected: 'Expense rejected' }
       toast(msg[status] || 'Updated', status === 'rejected' ? 'error' : 'success')
     } else {
       toast('Action failed', 'error')
@@ -261,7 +261,7 @@ export default function ExpenseDetailPage() {
           <div className="flex-1">
             <p className="font-bold text-sm">{s.label}</p>
             {expense.managerNote && <p className="text-xs mt-0.5">Manager note: {expense.managerNote}</p>}
-            {expense.bossNote    && <p className="text-xs mt-0.5">Finance note: {expense.bossNote}</p>}
+            {expense.adminNote    && <p className="text-xs mt-0.5">Finance note: {expense.adminNote}</p>}
           </div>
           <Badge variant={s.variant} className="flex-shrink-0">{s.label}</Badge>
         </div>
@@ -373,7 +373,7 @@ export default function ExpenseDetailPage() {
         )}
 
         {/* Status update */}
-        {(isManager || isBoss) && (
+        {(isManager || isAdmin) && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -386,14 +386,14 @@ export default function ExpenseDetailPage() {
                   <span className="text-xs font-semibold uppercase tracking-wide text-surface-muted">New status</span>
                   <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
                     className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
-                    {(isBoss ? [
-                      { value: 'pending_boss', label: 'Pending payout' },
+                    {(isAdmin ? [
+                      { value: 'pending_admin', label: 'Pending payout' },
                       { value: 'paid', label: 'Paid' },
                       { value: 'rejected', label: 'Rejected' },
                       { value: 'returned', label: 'Returned to employee' },
                     ] : [
                       { value: 'pending_manager', label: 'Pending manager' },
-                      { value: 'pending_boss', label: 'Pending payout' },
+                      { value: 'pending_admin', label: 'Pending payout' },
                       { value: 'rejected', label: 'Rejected' },
                       { value: 'returned', label: 'Returned to employee' },
                     ]).map(option => (
@@ -405,7 +405,7 @@ export default function ExpenseDetailPage() {
                   <Button className="gap-2" onClick={() => action(newStatus, statusNote)} disabled={acting || newStatus === expense.status}>
                     <CheckCircle2 className="w-4 h-4" /> Update status
                   </Button>
-                  {newStatus === 'paid' && isBoss && (
+                  {newStatus === 'paid' && isAdmin && (
                     <span className="text-xs text-surface-muted">Proof optional after update.</span>
                   )}
                 </div>
@@ -416,8 +416,8 @@ export default function ExpenseDetailPage() {
                   placeholder="Optional note for the employee or finance team…"
                   className="w-full rounded-xl border border-surface-border px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
               </label>
-              {expense.status === 'paid' && !isBoss && (
-                <p className="text-xs text-surface-muted">Paid expenses can only be changed by finance or a boss account.</p>
+              {expense.status === 'paid' && !isAdmin && (
+                <p className="text-xs text-surface-muted">Paid expenses can only be changed by finance or an admin account.</p>
               )}
             </CardContent>
           </Card>
@@ -477,20 +477,20 @@ export default function ExpenseDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-3 flex-wrap">
-                {/* Manager approves → moves to pending_boss */}
-                {!isBoss && expense.status === 'pending_manager' && (
+                {/* Manager approves → moves to pending_admin */}
+                {!isAdmin && expense.status === 'pending_manager' && (
                   <NoteDialog
                     title="Approve Expense" desc="Expense will be forwarded to finance for payment."
                     confirmLabel="Approve" confirmClass="bg-brand-500 hover:bg-brand-600 text-white"
-                    onConfirm={note => action('pending_boss', note)}>
+                    onConfirm={note => action('pending_admin', note)}>
                     <Button className="gap-2" disabled={acting}>
                       <CheckCircle2 className="w-4 h-4" /> Approve
                     </Button>
                   </NoteDialog>
                 )}
 
-                {/* Boss marks paid */}
-                {isBoss && expense.status === 'pending_boss' && (
+                {/* Admin marks paid */}
+                {isAdmin && expense.status === 'pending_admin' && (
                   <PaymentDialog onConfirm={proof => action('paid', undefined, proof)} />
                 )}
 

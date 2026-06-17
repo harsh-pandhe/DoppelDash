@@ -300,7 +300,7 @@ export default function NewTravelRequestPage() {
             )}
             {priv && advanceReq > 0 && priv.travelAdvance === 0 && (
               <p className="flex items-center gap-1 text-[10px] text-amber-600 font-semibold">
-                <AlertCircle className="w-3 h-3"/>You&apos;re not eligible for advances — request will need boss override
+                <AlertCircle className="w-3 h-3"/>You&apos;re not eligible for advances — request will need admin override
               </p>
             )}
           </div>

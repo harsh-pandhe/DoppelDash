@@ -12,7 +12,7 @@ interface Analytics   {
 }
 
 const LEAVE_STATUS_COLORS: Record<string, string>   = { pending: '#FBBF24', approved: '#22C55E', rejected: '#EF4444' }
-const EXPENSE_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_boss: '#3B82F6', paid: '#22C55E', rejected: '#EF4444' }
+const EXPENSE_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_admin: '#3B82F6', paid: '#22C55E', rejected: '#EF4444' }
 
 export default function DashboardCharts() {
   const [data,    setData]    = useState<Analytics | null>(null)

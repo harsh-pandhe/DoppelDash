@@ -20,7 +20,7 @@ export interface PendingItem {
 
 interface Props {
   items: PendingItem[]
-  isBoss: boolean
+  isAdmin: boolean
 }
 
 const KIND_META = {
@@ -29,7 +29,7 @@ const KIND_META = {
   travel:  { icon: Plane,         label: 'Travel',  color: 'text-sky-600 bg-sky-50' },
 }
 
-export default function ApprovalsQueue({ items, isBoss }: Props) {
+export default function ApprovalsQueue({ items, isAdmin }: Props) {
   const router  = useRouter()
   const toast   = useToast()
   const [acting, setActing] = useState<string | null>(null)
@@ -55,12 +55,12 @@ export default function ApprovalsQueue({ items, isBoss }: Props) {
         body = { status: action === 'approve' ? 'approved' : 'rejected' }
       } else if (item.kind === 'expense') {
         endpoint = `/api/rms/${item.id}`
-        if (action === 'approve') body = { status: isBoss ? 'paid' : 'pending_boss' }
+        if (action === 'approve') body = { status: isAdmin ? 'paid' : 'pending_admin' }
         else if (action === 'return') body = { status: 'returned' }
         else                          body = { status: 'rejected' }
       } else if (item.kind === 'travel') {
         endpoint = `/api/travel/${item.id}`
-        if (action === 'approve') body = { status: isBoss ? 'approved' : 'pending_boss' }
+        if (action === 'approve') body = { status: isAdmin ? 'approved' : 'pending_admin' }
         else                       body = { status: 'rejected' }
       }
       const res = await fetch(endpoint, {
@@ -170,7 +170,7 @@ export default function ApprovalsQueue({ items, isBoss }: Props) {
                     type="button"
                     onClick={() => act(item, 'approve')}
                     disabled={isBusy}
-                    title={isBoss && item.kind === 'expense' ? 'Mark paid' : 'Approve'}
+                    title={isAdmin && item.kind === 'expense' ? 'Mark paid' : 'Approve'}
                     aria-label="Approve"
                     className="w-8 h-8 rounded-md bg-status-success hover:bg-status-success/90 text-white flex items-center justify-center disabled:opacity-50 transition-colors"
                   >

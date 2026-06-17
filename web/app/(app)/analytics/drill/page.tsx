@@ -23,7 +23,7 @@ const STATUS_STYLE: Record<string, string> = {
   paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   pending: 'bg-amber-50 text-amber-700 border-amber-200',
   pending_manager: 'bg-amber-50 text-amber-700 border-amber-200',
-  pending_boss: 'bg-blue-50 text-blue-700 border-blue-200',
+  pending_admin: 'bg-blue-50 text-blue-700 border-blue-200',
   rejected: 'bg-red-50 text-red-700 border-red-200',
   returned: 'bg-orange-50 text-orange-700 border-orange-200',
   cancelled: 'bg-gray-100 text-gray-600 border-gray-200',

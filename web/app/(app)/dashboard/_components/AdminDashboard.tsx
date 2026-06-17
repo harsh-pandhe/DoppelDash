@@ -29,7 +29,7 @@ export default async function AdminDashboard({ firstName }: Props) {
   // ─── Financial pulse ───────────────────────────────────────────────
   const [toPayoutAgg, paidYtdAgg, advanceAgg, travelYtdAgg] = await Promise.all([
     Expense.aggregate([
-      { $match: { status: 'pending_boss' } },
+      { $match: { status: 'pending_admin' } },
       { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]),
     Expense.aggregate([
@@ -37,7 +37,7 @@ export default async function AdminDashboard({ firstName }: Props) {
       { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]),
     TravelRequest.aggregate([
-      { $match: { status: { $in: ['approved', 'pending_boss'] }, advanceRequested: { $gt: 0 } } },
+      { $match: { status: { $in: ['approved', 'pending_admin'] }, advanceRequested: { $gt: 0 } } },
       { $group: { _id: null, total: { $sum: '$advanceRequested' }, count: { $sum: 1 } } },
     ]),
     TravelRequest.aggregate([
@@ -72,22 +72,22 @@ export default async function AdminDashboard({ firstName }: Props) {
   }).length
   const totalUsers  = allUsers.length
 
-  // ─── Escalations (boss-only approvals queue) ───────────────────────
-  const [pendingBossExp, pendingBossTravel, pendingLeaves] = await Promise.all([
-    Expense.find({ status: 'pending_boss' }).sort({ createdAt: -1 }).limit(20).lean(),
-    TravelRequest.find({ status: 'pending_boss' }).sort({ createdAt: -1 }).limit(20).lean(),
+  // ─── Escalations (admin-only approvals queue) ───────────────────────
+  const [pendingAdminExp, pendingAdminTravel, pendingLeaves] = await Promise.all([
+    Expense.find({ status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
+    TravelRequest.find({ status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
     Leave.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(20).lean(),
   ])
 
   const queue: PendingItem[] = [
-    ...pendingBossExp.map(e => ({
+    ...pendingAdminExp.map(e => ({
       id: String(e._id), kind: 'expense' as const, userName: e.userName,
       title: e.title, subtitle: e.reason || '',
       badge: `₹${e.amount.toLocaleString('en-IN')}`,
       meta: `Submitted ${timeAgo(e.createdAt as Date)}`,
       href: '/rms',
     })),
-    ...pendingBossTravel.map(t => ({
+    ...pendingAdminTravel.map(t => ({
       id: String(t._id), kind: 'travel' as const, userName: t.userName,
       title: `${t.destination} — ${t.purpose}`,
       subtitle: `${new Date(t.departureDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} → ${new Date(t.returnDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}`,
@@ -268,7 +268,7 @@ export default async function AdminDashboard({ firstName }: Props) {
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-surface-muted flex items-center gap-1.5">
             <AlertOctagon className="w-3 h-3" />Escalations awaiting boss
           </h2>
-          <ApprovalsQueue items={queue} isBoss={true} />
+          <ApprovalsQueue items={queue} isAdmin={true} />
         </div>
 
         {/* Admin shortcuts + audit feed */}

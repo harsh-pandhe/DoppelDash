@@ -41,8 +41,8 @@ export async function GET() {
       ts: l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt),
     }))
 
-    // Expenses awaiting manager approval (non-boss) or pending_boss (boss)
-    const expStatus = isBoss ? 'pending_boss' : 'pending_manager'
+    // Expenses awaiting manager approval (non-boss) or pending_admin (boss)
+    const expStatus = isBoss ? 'pending_admin' : 'pending_manager'
     const pendingExp = await Expense.find({ status: expStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingExp.forEach(e => items.push({
       id: `exp-${String(e._id)}`, kind: 'expense',
@@ -53,7 +53,7 @@ export async function GET() {
     }))
 
     // Travel requests
-    const trStatus = isBoss ? 'pending_boss' : 'pending_manager'
+    const trStatus = isBoss ? 'pending_admin' : 'pending_manager'
     const pendingTr = await TravelRequest.find({ status: trStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingTr.forEach(t => items.push({
       id: `tr-${String(t._id)}`, kind: 'travel',
@@ -169,7 +169,7 @@ export async function GET() {
 }
 
 // Bulk-approve pending expenses straight from the notifications panel.
-// Manager: pending_manager -> pending_boss. Boss: pending_boss -> paid.
+// Manager: pending_manager -> pending_admin. Boss: pending_admin -> paid.
 export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -182,8 +182,8 @@ export async function POST(req: NextRequest) {
   if (ids.length === 0) return NextResponse.json({ error: 'No expense IDs' }, { status: 400 })
 
   await connectDB()
-  const fromStatus = isBoss ? 'pending_boss' : 'pending_manager'
-  const toStatus   = isBoss ? 'paid' : 'pending_boss'
+  const fromStatus = isBoss ? 'pending_admin' : 'pending_manager'
+  const toStatus   = isBoss ? 'paid' : 'pending_admin'
   const actorName  = user?.fullName || user?.firstName || (isBoss ? 'Boss' : 'Manager')
 
   const expenses = await Expense.find({ _id: { $in: ids }, status: fromStatus })

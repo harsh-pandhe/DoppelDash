@@ -17,7 +17,7 @@ const ACTION_META: Record<string, { gradient: string; dot: string }> = {
   'leave.rejected':       { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
   'expense.paid':         { gradient: 'from-green-400 to-emerald-500',  dot: 'bg-green-500'  },
   'expense.rejected':     { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
-  'expense.pending_boss': { gradient: 'from-blue-400 to-blue-600',      dot: 'bg-blue-500'   },
+  'expense.pending_admin': { gradient: 'from-blue-400 to-blue-600',      dot: 'bg-blue-500'   },
   'user.role_changed':    { gradient: 'from-purple-400 to-violet-600',  dot: 'bg-purple-500' },
   'user.banned':          { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
   'user.unbanned':        { gradient: 'from-green-400 to-emerald-500',  dot: 'bg-green-500'  },
@@ -29,7 +29,7 @@ const ACTION_LABEL_COLORS: Record<string, string> = {
   'leave.rejected':       'bg-red-50 text-red-700 border-red-200',
   'expense.paid':         'bg-green-50 text-green-700 border-green-200',
   'expense.rejected':     'bg-red-50 text-red-700 border-red-200',
-  'expense.pending_boss': 'bg-blue-50 text-blue-700 border-blue-200',
+  'expense.pending_admin': 'bg-blue-50 text-blue-700 border-blue-200',
   'user.role_changed':    'bg-purple-50 text-purple-700 border-purple-200',
   'user.banned':          'bg-red-50 text-red-700 border-red-200',
   'user.unbanned':        'bg-green-50 text-green-700 border-green-200',
@@ -57,8 +57,8 @@ type TypeFilter = typeof TYPE_FILTERS[number]
 const ACTION_OPTIONS = [
   'all',
   'leave.approved', 'leave.rejected', 'leave.withdrawn',
-  'expense.paid', 'expense.rejected', 'expense.pending_boss', 'expense.returned_to_employee', 'expense.resubmitted',
-  'travel.approved', 'travel.rejected', 'travel.pending_boss', 'travel.cancelled',
+  'expense.paid', 'expense.rejected', 'expense.pending_admin', 'expense.returned_to_employee', 'expense.resubmitted',
+  'travel.approved', 'travel.rejected', 'travel.pending_admin', 'travel.cancelled',
   'user.role_changed', 'user.banned', 'user.unbanned', 'user.permissions_changed', 'user.privileges_changed', 'user.reporting_manager_changed',
   'balance.updated',
 ] as const

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
-export type TravelRequestStatus = 'pending_manager' | 'pending_boss' | 'approved' | 'rejected' | 'cancelled'
+export type TravelRequestStatus = 'pending_manager' | 'pending_admin' | 'approved' | 'rejected' | 'cancelled'
 export type TravelMode = 'train' | 'flight' | 'bus' | 'taxi' | 'own_vehicle' | 'other'
 
 export interface ITravelLeg {
@@ -37,7 +37,7 @@ export interface ITravelRequest extends Document {
 
   status: TravelRequestStatus
   managerNote?: string
-  bossNote?: string
+  adminNote?: string
   approvedBy?: string
   approvedAt?: Date
   rejectedBy?: string
@@ -83,9 +83,9 @@ const TravelRequestSchema = new Schema<ITravelRequest>(
       estimatedCost: { type: Number },
     },
 
-    status:     { type: String, enum: ['pending_manager','pending_boss','approved','rejected','cancelled'], default: 'pending_manager' },
+    status:     { type: String, enum: ['pending_manager','pending_admin','approved','rejected','cancelled'], default: 'pending_manager' },
     managerNote: { type: String },
-    bossNote:    { type: String },
+    adminNote:    { type: String },
     approvedBy:  { type: String },
     approvedAt:  { type: Date },
     rejectedBy:  { type: String },

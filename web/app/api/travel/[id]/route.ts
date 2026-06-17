@@ -31,15 +31,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   await connectDB()
   const body = await req.json()
-  const { status, managerNote, bossNote } = body
+  const { status, managerNote, adminNote } = body
 
   const tr = await TravelRequest.findById(params.id)
   if (!tr) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // State machine
   const VALID_TRANSITIONS: Record<string, string[]> = {
-    pending_manager: ['pending_boss', 'approved', 'rejected'],
-    pending_boss:    ['approved', 'rejected', 'pending_manager'],
+    pending_manager: ['pending_admin', 'approved', 'rejected'],
+    pending_admin:    ['approved', 'rejected', 'pending_manager'],
     approved:        [],
     rejected:        [],
     cancelled:       [],
@@ -47,14 +47,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!VALID_TRANSITIONS[tr.status]?.includes(status)) {
     return NextResponse.json({ error: `Cannot move from ${tr.status} to ${status}` }, { status: 409 })
   }
-  // Boss-only actions on pending_boss
-  if (tr.status === 'pending_boss' && (status === 'approved' || status === 'rejected') && role !== 'admin') {
+  // Boss-only actions on pending_admin
+  if (tr.status === 'pending_admin' && (status === 'approved' || status === 'rejected') && role !== 'admin') {
     return NextResponse.json({ error: 'Only the boss can approve at this stage' }, { status: 403 })
   }
 
   tr.status = status
   if (managerNote !== undefined) tr.managerNote = managerNote
-  if (bossNote    !== undefined) tr.bossNote    = bossNote
+  if (adminNote    !== undefined) tr.adminNote    = adminNote
   if (status === 'approved') { tr.approvedBy = userId; tr.approvedAt = new Date() }
   if (status === 'rejected') { tr.rejectedBy = userId; tr.rejectedAt = new Date() }
   await tr.save()
@@ -65,11 +65,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'travel_request',
-    metadata:        { employeeName: tr.userName, destination: tr.destination, amount: tr.estimatedTotal, note: managerNote || bossNote },
+    metadata:        { employeeName: tr.userName, destination: tr.destination, amount: tr.estimatedTotal, note: managerNote || adminNote },
   })
 
   // Notifications (fire-and-forget)
-  if (status === 'pending_boss') {
+  if (status === 'pending_admin') {
     ;(async () => {
       try {
         const users = await listUsers({ limit: 500 })
@@ -101,7 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         departureDate: tr.departureDate,
         returnDate:    tr.returnDate,
         estimatedTotal:tr.estimatedTotal,
-        note:          managerNote || bossNote,
+        note:          managerNote || adminNote,
       })
     })
   }

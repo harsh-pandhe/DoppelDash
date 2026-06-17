@@ -13,15 +13,15 @@ import TeamPanel from './TeamPanel'
 interface Props {
   userId:    string
   firstName: string
-  isBoss:    boolean
+  isAdmin:    boolean
 }
 
-export default async function ManagerDashboard({ firstName, isBoss }: Props) {
+export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
   await connectDB()
 
   // ─── Approvals queue (3 kinds aggregated) ──────────────────────────
-  const expenseStatusToReview = isBoss ? 'pending_boss' : 'pending_manager'
-  const travelStatusToReview  = isBoss ? 'pending_boss' : 'pending_manager'
+  const expenseStatusToReview = isAdmin ? 'pending_admin' : 'pending_manager'
+  const travelStatusToReview  = isAdmin ? 'pending_admin' : 'pending_manager'
 
   const [pendingLeaves, pendingExpenses, pendingTravel] = await Promise.all([
     Leave.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(50).lean(),
@@ -74,7 +74,7 @@ export default async function ManagerDashboard({ firstName, isBoss }: Props) {
     role:       u.role,
     department: empMap.get(String(u._id))?.department || 'General',
     onboardingComplete: empMap.get(String(u._id))?.onboardingComplete ?? true,
-  })).filter(m => m.role !== 'manager' || isBoss)   // managers see employees, boss sees both
+  })).filter(m => m.role !== 'manager' || isAdmin)   // managers see employees, boss sees both
 
   // ─── On leave today ─────────────────────────────────────────────────
   const today  = new Date(); today.setHours(0, 0, 0, 0)
@@ -147,7 +147,7 @@ export default async function ManagerDashboard({ firstName, isBoss }: Props) {
 
         {/* LEFT — Approvals queue */}
         <div className="space-y-6">
-          <ApprovalsQueue items={queue} isBoss={isBoss} />
+          <ApprovalsQueue items={queue} isAdmin={isAdmin} />
 
           {/* Stats strip */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

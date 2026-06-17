@@ -18,14 +18,14 @@ interface TravelRequest {
   purpose: string; destination: string
   departureDate: string; returnDate: string
   estimatedTotal: number; advanceRequested: number
-  status: string; managerNote?: string; bossNote?: string
+  status: string; managerNote?: string; adminNote?: string
   expenseId?: string
   createdAt: string
 }
 
 const STATUS_CFG: Record<string, { label: string; icon: React.ElementType; ring: string; text: string; dot: string }> = {
   pending_manager: { label: 'Manager Review', icon: Clock,        ring: 'ring-yellow-200 bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-400' },
-  pending_boss:    { label: 'Boss Approval',  icon: Clock,        ring: 'ring-blue-200 bg-blue-50',     text: 'text-blue-700',   dot: 'bg-blue-400'   },
+  pending_admin:    { label: 'Admin Approval',  icon: Clock,        ring: 'ring-blue-200 bg-blue-50',     text: 'text-blue-700',   dot: 'bg-blue-400'   },
   approved:        { label: 'Approved',       icon: CheckCircle2, ring: 'ring-green-200 bg-green-50',   text: 'text-green-700',  dot: 'bg-green-500'  },
   rejected:        { label: 'Rejected',       icon: XCircle,      ring: 'ring-red-200 bg-red-50',       text: 'text-red-700',    dot: 'bg-red-400'    },
   cancelled:       { label: 'Cancelled',      icon: XCircle,      ring: 'ring-gray-200 bg-gray-50',     text: 'text-gray-500',   dot: 'bg-gray-400'   },
@@ -40,7 +40,7 @@ export default function TravelPage() {
   const router   = useRouter()
   const role     = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
-  const isBoss    = role === 'admin'
+  const isAdmin    = role === 'admin'
 
   const [requests, setRequests] = useState<TravelRequest[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -70,13 +70,13 @@ export default function TravelPage() {
 
   const act = async (id: string, status: string, note?: string) => {
     setActing(id)
-    const noteKey = isBoss ? 'bossNote' : 'managerNote'
+    const noteKey = isAdmin ? 'adminNote' : 'managerNote'
     await fetch(`/api/travel/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, [noteKey]: note }),
     })
-    toast(status === 'approved' ? 'Travel approved' : status === 'rejected' ? 'Travel rejected' : 'Sent for boss approval', status === 'rejected' ? 'error' : 'success')
+    toast(status === 'approved' ? 'Travel approved' : status === 'rejected' ? 'Travel rejected' : 'Sent for admin approval', status === 'rejected' ? 'error' : 'success')
     setActing(null)
     fetchRequests()
   }
@@ -101,12 +101,12 @@ export default function TravelPage() {
     fetchRequests()
   }
 
-  const FILTERS = ['all', 'pending_manager', 'pending_boss', 'approved', 'rejected']
+  const FILTERS = ['all', 'pending_manager', 'pending_admin', 'approved', 'rejected']
   const filtered = filter === 'all' ? requests : requests.filter(r => r.status === filter)
 
   const pendingCount = requests.filter(r =>
-    (isManager && !isBoss && r.status === 'pending_manager') ||
-    (isBoss && r.status === 'pending_boss')
+    (isManager && !isAdmin && r.status === 'pending_manager') ||
+    (isAdmin && r.status === 'pending_admin')
   ).length
 
   return (
@@ -161,8 +161,8 @@ export default function TravelPage() {
             {filtered.map(r => {
               const s = STATUS_CFG[r.status] || STATUS_CFG.pending_manager
               const SIcon = s.icon
-              const canManagerApprove = !isBoss && isManager && r.status === 'pending_manager'
-              const canBossApprove    = isBoss && r.status === 'pending_boss'
+              const canManagerApprove = !isAdmin && isManager && r.status === 'pending_manager'
+              const canAdminApprove    = isAdmin && r.status === 'pending_admin'
               const canCancel         = r.userId === user?.id && r.status === 'pending_manager'
               const tripFinished      = new Date(r.returnDate) <= new Date()
               const canCreateExpense  = r.userId === user?.id && r.status === 'approved' && tripFinished && !r.expenseId
@@ -202,16 +202,16 @@ export default function TravelPage() {
                     <span className="ml-auto">{timeAgo(r.createdAt)}</span>
                   </div>
 
-                  {(r.managerNote || r.bossNote) && (
+                  {(r.managerNote || r.adminNote) && (
                     <p className="text-xs text-surface-muted italic border-t border-surface-border pt-2">
-                      &ldquo;{r.managerNote || r.bossNote}&rdquo;
+                      &ldquo;{r.managerNote || r.adminNote}&rdquo;
                     </p>
                   )}
 
                   {/* Action buttons */}
                   <div className="pt-1 border-t border-surface-border">
                     <div className="flex flex-wrap gap-2 items-center justify-between">
-                      {(canManagerApprove || canBossApprove || canCancel || canCreateExpense || r.expenseId) ? (
+                      {(canManagerApprove || canAdminApprove || canCancel || canCreateExpense || r.expenseId) ? (
                         <div className="flex flex-wrap gap-2">
                           {canCreateExpense && (
                             <Button size="sm" className="gap-1.5 bg-brand-600 hover:bg-brand-700"
@@ -230,9 +230,9 @@ export default function TravelPage() {
                           {canManagerApprove && (
                             <>
                               <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700"
-                                onClick={() => act(r._id, 'pending_boss')} disabled={acting === r._id}>
+                                onClick={() => act(r._id, 'pending_admin')} disabled={acting === r._id}>
                                 {acting === r._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                                Forward to Boss
+                                Forward to Admin
                               </Button>
                               <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
                                 onClick={() => act(r._id, 'approved')} disabled={acting === r._id}>
@@ -244,7 +244,7 @@ export default function TravelPage() {
                               </Button>
                             </>
                           )}
-                          {canBossApprove && (
+                          {canAdminApprove && (
                             <>
                               <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700"
                                 onClick={() => act(r._id, 'approved')} disabled={acting === r._id}>

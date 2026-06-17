@@ -59,8 +59,8 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
 
   const baseMatch: Record<string, unknown> = { createdAt: { $gte: rangeStart, $lte: rangeEnd }, ...ownerFilter }
   const LEAVE_STATUSES  = new Set(['pending', 'approved', 'rejected'])
-  const EXP_STATUSES    = new Set(['pending_manager', 'pending_boss', 'paid', 'rejected', 'returned'])
-  const TRAVEL_STATUSES = new Set(['pending_manager', 'pending_boss', 'approved', 'rejected', 'cancelled'])
+  const EXP_STATUSES    = new Set(['pending_manager', 'pending_admin', 'paid', 'rejected', 'returned'])
+  const TRAVEL_STATUSES = new Set(['pending_manager', 'pending_admin', 'approved', 'rejected', 'cancelled'])
   const leaveMatch  = statusQS && LEAVE_STATUSES.has(statusQS)  ? { ...baseMatch, status: statusQS } : baseMatch
   const expMatch    = statusQS && EXP_STATUSES.has(statusQS)    ? { ...baseMatch, status: statusQS } : baseMatch
   const travelMatch = statusQS && TRAVEL_STATUSES.has(statusQS) ? { ...baseMatch, status: statusQS } : baseMatch
@@ -85,8 +85,8 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     isManager ? Contact.countDocuments({}) : Contact.countDocuments({ createdBy: userId }),
     isManager ? Contact.countDocuments({ email: { $exists: true, $ne: '' } }) : Contact.countDocuments({ createdBy: userId, email: { $exists: true, $ne: '' } }),
     Leave.countDocuments({ status: 'pending', ...ownerFilter }),
-    Expense.countDocuments({ status: { $in: ['pending_manager', 'pending_boss'] }, ...ownerFilter }),
-    TravelRequest.countDocuments({ status: { $in: ['pending_manager', 'pending_boss'] }, ...ownerFilter }),
+    Expense.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
+    TravelRequest.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
     isManager ? AuditLog.find({}).sort({ createdAt: -1 }).limit(10).lean() : Promise.resolve([]),
   ])
 
@@ -104,7 +104,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
   const totalExpenseCount = expenseByMonth.reduce((s, m) => s + m.count, 0)
   const approvedLeaves    = leaveStatus.find((s: { _id: string; count: number }) => s._id === 'approved')?.count || 0
   const paidExpense       = expenseAmountAgg[0]?.total || 0
-  const pendingPayout     = expenseStatus.find((s: { _id: string; total?: number }) => s._id === 'pending_boss')?.total || 0
+  const pendingPayout     = expenseStatus.find((s: { _id: string; total?: number }) => s._id === 'pending_admin')?.total || 0
   const travelApproved    = travelStatus.find((s: { _id: string; count: number }) => s._id === 'approved')?.count || 0
   const announcementCount = await Announcement.countDocuments({})
 

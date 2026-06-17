@@ -53,6 +53,15 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 10 + 11 (partial) — Role, Access & Approval Flows (2026-06-18)
+- **10A** Global `boss` → `admin` role rename — `UserRole` type + Mongo enum, ~70 role comparisons across API routes + pages, `BossDashboard` → `AdminDashboard`, sidebar/settings/users/directory labels. Local DB migrated.
+- **10B** Mail access control — new `User.mailAccess` field (admins/managers always allowed; employees need it granted). Sidebar hides Compose Mail/Drafts without access; per-employee toggle in the admin Users panel (audited); server guards on `/api/crm/campaign` and the `/mail` page.
+- **11A** LMS month filter — `<input type=month>` (defaults to current month) filters leave cards via `?from=&to=`; "All" clears.
+- **11B** Earned-leave cap — max 4 earned days per application; frontend disables submit + warns, API returns 400.
+- **11E** Travel approval chain — `pending_manager` → `pending_admin` → `approved`/`rejected` with manager-return; server state machine + admin-only final approval; every transition audited; print button for all roles on the detail page.
+- **11F** Reimbursement approval flow — completed the `submit → manager approve/reject/return → admin marks paid` chain (employees can only edit `returned`); status values renamed `pending_boss`→`pending_admin`, `bossNote`→`adminNote`; every transition audited.
+- ⚠️ **Prod DB migration required** after deploy — see `web/ROADMAP.md` for the exact `updateMany` commands.
+
 #### Phase 9 — Global UI/UX Overhaul (2026-06-16)
 - **9A** Standardized dialogs — new reusable `Modal`/`ModalHeader`/`ModalBody`/`ModalFooter` (`components/ui/modal.tsx`): consistent width presets, `max-h-[90vh]` overflow, Escape + backdrop close (suppressible for destructive confirms), pinned footer. Migrated all 10 raw Radix dialogs across RMS, CRM, Announcements, Analytics, Reports.
 - **9B** Responsive polish — CRM contacts table now falls back to a card list below `md`; RMS expense line-items stack on mobile; Reports summary tables scroll horizontally in-container. No page-level horizontal scroll at 375px.

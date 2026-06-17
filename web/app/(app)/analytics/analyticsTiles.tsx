@@ -92,8 +92,8 @@ export function tileById(id: TileId): TileDef | undefined {
 
 /* ════════════ Style maps ════════════ */
 const LEAVE_STATUS_COLORS: Record<string, string> = { pending: '#FBBF24', approved: '#0a7d3b', rejected: '#c83838' }
-const EXPENSE_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_boss: '#0057A8', paid: '#0a7d3b', rejected: '#c83838', returned: '#F97316' }
-const TRAVEL_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_boss: '#0057A8', approved: '#0a7d3b', rejected: '#c83838', cancelled: '#94A3B8' }
+const EXPENSE_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_admin: '#0057A8', paid: '#0a7d3b', rejected: '#c83838', returned: '#F97316' }
+const TRAVEL_STATUS_COLORS: Record<string, string> = { pending_manager: '#FBBF24', pending_admin: '#0057A8', approved: '#0a7d3b', rejected: '#c83838', cancelled: '#94A3B8' }
 const LEAVE_TYPE_COLORS: Record<string, string> = { casual: '#3B82F6', sick: '#EF4444', medical: '#EF4444', earned: '#22C55E', privilege: '#A855F7', restricted: '#F97316', lwp: '#6B7280' }
 
 export const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`

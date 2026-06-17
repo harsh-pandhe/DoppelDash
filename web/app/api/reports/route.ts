@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           totalRequests: { $sum: 1 },
           totalAmount:   { $sum: '$amount' },
           paid:          { $sum: { $cond: [{ $eq: ['$status','paid'] }, '$amount', 0] } },
-          pending:       { $sum: { $cond: [{ $in: ['$status', ['pending_manager','pending_boss']] }, '$amount', 0] } },
+          pending:       { $sum: { $cond: [{ $in: ['$status', ['pending_manager','pending_admin']] }, '$amount', 0] } },
         } },
       { $sort: { totalAmount: -1 } },
     ]),

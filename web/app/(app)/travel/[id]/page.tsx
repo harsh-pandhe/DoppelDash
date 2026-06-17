@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
-import { CheckCircle2, XCircle, ChevronLeft, MapPin, CalendarDays, IndianRupee, Loader2, RotateCcw } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, MapPin, CalendarDays, IndianRupee, Loader2, RotateCcw, Printer } from 'lucide-react'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,7 @@ interface TravelRequest {
   advanceRequested: number
   status: string
   managerNote?: string
-  bossNote?: string
+  adminNote?: string
   createdAt: string
   approvedAt?: string
   rejectedAt?: string
@@ -30,7 +30,7 @@ interface TravelRequest {
 
 const STATUS_CFG: Record<string, { label: string; ring: string; text: string; badge: 'default' | 'warning' | 'success' | 'destructive' }> = {
   pending_manager: { label: 'Manager Review', ring: 'ring-yellow-200 bg-yellow-50', text: 'text-yellow-700', badge: 'warning' },
-  pending_boss:    { label: 'Boss Approval',  ring: 'ring-blue-200 bg-blue-50',   text: 'text-blue-700',   badge: 'default' },
+  pending_admin:    { label: 'Admin Approval',  ring: 'ring-blue-200 bg-blue-50',   text: 'text-blue-700',   badge: 'default' },
   approved:        { label: 'Approved',       ring: 'ring-green-200 bg-green-50',  text: 'text-green-700',  badge: 'success' },
   rejected:        { label: 'Rejected',       ring: 'ring-red-200 bg-red-50',      text: 'text-red-700',    badge: 'destructive' },
   cancelled:       { label: 'Cancelled',      ring: 'ring-gray-200 bg-gray-50',    text: 'text-gray-500',   badge: 'default' },
@@ -43,7 +43,7 @@ export default function TravelRequestDetailPage() {
   const toast = useToast()
   const role = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
-  const isBoss = role === 'admin'
+  const isAdmin = role === 'admin'
 
   const [request, setRequest] = useState<TravelRequest | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,7 +71,7 @@ export default function TravelRequestDetailPage() {
     setActing(true)
     const body: Record<string, string> = { status }
     if (noteValue?.trim()) {
-      body[isBoss ? 'bossNote' : 'managerNote'] = noteValue.trim()
+      body[isAdmin ? 'adminNote' : 'managerNote'] = noteValue.trim()
     }
     const res = await fetch(`/api/travel/${id}`, {
       method: 'PATCH',
@@ -88,7 +88,7 @@ export default function TravelRequestDetailPage() {
     const msg: Record<string, string> = {
       approved:        'Travel approved',
       rejected:        'Travel rejected',
-      pending_boss:    'Forwarded to boss',
+      pending_admin:    'Forwarded to boss',
       pending_manager: 'Sent back to manager',
     }
     toast(msg[status] || 'Updated', ['rejected', 'pending_manager'].includes(status) ? 'info' : 'success')
@@ -124,17 +124,23 @@ export default function TravelRequestDetailPage() {
 
   if (!request) return null
   const status = STATUS_CFG[request.status] || STATUS_CFG.pending_manager
-  const canManagerApprove = !isBoss && isManager && request.status === 'pending_manager'
-  const canBossApprove = isBoss && request.status === 'pending_boss'
+  const canManagerApprove = !isAdmin && isManager && request.status === 'pending_manager'
+  const canAdminApprove = isAdmin && request.status === 'pending_admin'
   const canCancel = request.userId === user?.id && request.status === 'pending_manager'
 
   return (
     <>
       <Header title="Travel Request" />
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto space-y-5 bg-surface-2">
-        <Link href="/travel" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
-          <ChevronLeft className="w-4 h-4" /> Back to Travel Requests
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href="/travel" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Back to Travel Requests
+          </Link>
+          {/* 11E: print available to all roles */}
+          <Button size="sm" variant="outline" className="gap-2 print:hidden" onClick={() => window.print()}>
+            <Printer className="w-4 h-4" /> Print
+          </Button>
+        </div>
 
         <div className="rounded-3xl border border-surface-border bg-white p-6 space-y-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -180,22 +186,22 @@ export default function TravelRequestDetailPage() {
             </div>
           </div>
 
-          {(request.managerNote || request.bossNote) && (
+          {(request.managerNote || request.adminNote) && (
             <div className="rounded-2xl border border-surface-border bg-surface p-4 space-y-2">
               {request.managerNote && <div><p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Manager note</p><p className="mt-1 text-sm text-slate-700">{request.managerNote}</p></div>}
-              {request.bossNote && <div><p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Boss note</p><p className="mt-1 text-sm text-slate-700">{request.bossNote}</p></div>}
+              {request.adminNote && <div><p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Admin note</p><p className="mt-1 text-sm text-slate-700">{request.adminNote}</p></div>}
             </div>
           )}
 
-          {(canManagerApprove || canBossApprove || canCancel) && (
+          {(canManagerApprove || canAdminApprove || canCancel) && (
             <div className="border-t border-surface-border pt-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-3">Actions</p>
               <div className="flex flex-wrap gap-2">
                 {canManagerApprove && (
                   <>
                     <Button size="sm" className="gap-2 bg-[#0057A8] hover:bg-[#004d97]"
-                      onClick={() => openNoteDialog('pending_boss', 'Forward to boss', 'Forward', 'success')} disabled={acting}>
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Forward to Boss
+                      onClick={() => openNoteDialog('pending_admin', 'Forward to boss', 'Forward', 'success')} disabled={acting}>
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Forward to Admin
                     </Button>
                     <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700"
                       onClick={() => openNoteDialog('approved', 'Approve directly', 'Approve', 'success')} disabled={acting}>
@@ -207,7 +213,7 @@ export default function TravelRequestDetailPage() {
                     </Button>
                   </>
                 )}
-                {canBossApprove && (
+                {canAdminApprove && (
                   <>
                     <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700"
                       onClick={() => openNoteDialog('approved', 'Final approval', 'Approve', 'success')} disabled={acting}>
