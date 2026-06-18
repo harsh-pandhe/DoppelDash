@@ -266,7 +266,7 @@ export default async function AdminDashboard({ firstName }: Props) {
         {/* Escalations queue */}
         <div className="space-y-4">
           <h2 className="text-[10px] font-bold uppercase tracking-widest text-surface-muted flex items-center gap-1.5">
-            <AlertOctagon className="w-3 h-3" />Escalations awaiting boss
+            <AlertOctagon className="w-3 h-3" />Escalations awaiting admin
           </h2>
           <ApprovalsQueue items={queue} isAdmin={true} />
         </div>

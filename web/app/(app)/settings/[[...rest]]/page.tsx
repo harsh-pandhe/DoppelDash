@@ -310,7 +310,7 @@ function OrgProfileCard({ isBoss }: { isBoss: boolean }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
-        {!isBoss && <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Only boss can edit.</p>}
+        {!isBoss && <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Only admin can edit.</p>}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2 space-y-1.5">
             <Label>Name</Label>
@@ -388,7 +388,7 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </div>
-            <p className="text-[10px] text-surface-muted">Role can only be changed by the boss in User Management.</p>
+            <p className="text-[10px] text-surface-muted">Role can only be changed by an admin in User Management.</p>
           </CardContent>
         </Card>
 

@@ -204,7 +204,7 @@ export default function ProfilePage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-brand-500" /> Work info
-              <span className="text-[10px] font-normal text-surface-muted ml-2">Set by boss / manager · contact admin to change</span>
+              <span className="text-[10px] font-normal text-surface-muted ml-2">Set by admin / manager · contact admin to change</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -362,7 +362,7 @@ export default function ProfilePage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
                 <Shield className="w-4 h-4 text-brand-500" /> Travel & expense privileges
-                <span className="text-[10px] font-normal text-surface-muted ml-2">Managed by boss</span>
+                <span className="text-[10px] font-normal text-surface-muted ml-2">Managed by admin</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
