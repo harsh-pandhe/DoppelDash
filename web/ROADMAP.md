@@ -6,8 +6,8 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phases 1–8 shipped
 - ✅ Phase 9 (UI/UX overhaul) — commit 97ddf10
 - ✅ Phase 10A (boss→admin) + 10B (mail access) — commit d2f45ca
-- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11E (travel chain), 11F (reimbursement chain)
-- ⏳ Remaining: 11C (scan-card OCR), 11D (campaign section), 11G (mass mail), 12 (admin panel), 13 (audit hardening)
+- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR + gallery), 11E (travel chain), 11F (reimbursement chain)
+- ⏳ Remaining: 11D (campaign section), 11G (mass mail), 12 (admin panel), 13 (audit hardening)
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
@@ -107,13 +107,14 @@ Standard to apply to every dialog:
 ### 11B LMS: Earned Leave Cap ✅ DONE (2026-06-16)
 - Max 4 earned/application: frontend disables submit + inline warn; API POST 400.
 
-### 11C Scan Card: Image Upload + OCR + Storage
-- UI: single file upload input (JPG/PNG), no camera overlay
-- Server: upload image to Cloudinary → get URL
-- OCR: call OCR.space API (`https://api.ocr.space/parse/url`) with Cloudinary URL — free tier, serverside, no binary
-- Parse extracted text into fields (name, company, phone, email, designation)
-- Store in `ScannedCard` model: `{ imageUrl, rawText, parsedFields, uploadedBy, createdAt }`
-- UI: gallery of stored scanned cards for reference; click to view/edit parsed fields + import to CRM
+### 11C Scan Card: Image Upload + OCR + Storage ✅ DONE (2026-06-18)
+- Upload-only (camera overlay removed from `ScanCardDialog`); JPG/PNG.
+- OCR: existing serverside Gemini-vision (Ollama fallback) in `/api/crm/ocr` — already "serverside, no binary", kept instead of OCR.space.
+- Image storage: compressed **base64 data-URI** in the `ScannedCard` doc — works on Netlify (the `/api/upload` local-FS path is broken there, and no Cloudinary creds yet). Card is saved immediately on upload, OCR result patched in after (fast UX, no waiting on slow OCR).
+- `ScannedCard` model: `{ uploadedBy, uploadedByName, imageData, ocrSource, parsedFields, contactId?, createdAt }`.
+- API: `GET/POST /api/crm/scanned-cards`, `PATCH/DELETE /api/crm/scanned-cards/[id]`.
+- Gallery `/crm/scanned`: thumbnails + parsed fields, Import-to-CRM (links `contactId`), delete, "Imported" badge; linked from CRM header ("Cards" button).
+- Verified live (Playwright): upload→store→OCR→form→gallery→import→delete, 0 console errors.
 
 ### 11D Campaign: Own Sidebar Section
 - Move Campaign out of CRM

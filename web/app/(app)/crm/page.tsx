@@ -4,7 +4,7 @@ import {
   Plus, Search, Phone, Mail, Building2, Trash2, Pencil, Download,
   Tag, Users, Megaphone, Upload, Loader2, CheckCircle2, AlertCircle,
   LayoutGrid, List, Table2, Globe, Lock, Users2, Eye,
-  Palette, X, ScanLine,
+  Palette, X, ScanLine, Images,
 } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
@@ -622,6 +622,7 @@ export default function CRMPage() {
             <ScanCardDialog trigger={
               <Button type="button" variant="outline" size="sm" className="gap-2"><ScanLine className="w-4 h-4"/>Scan Card</Button>
             } />
+            <Link href="/crm/scanned"><Button type="button" variant="outline" size="sm" className="gap-2"><Images className="w-4 h-4"/>Cards</Button></Link>
             <Link href="/crm/campaigns"><Button type="button" variant="outline" size="sm" className="gap-2"><Megaphone className="w-4 h-4"/>Campaign</Button></Link>
             <Link href="/crm/new"><Button className="gap-2"><Plus className="w-4 h-4"/>Add Contact</Button></Link>
           </div>

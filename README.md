@@ -53,6 +53,11 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 11C — Scan Card OCR + Gallery (2026-06-18)
+- Business-card scanning is now **upload-only** (camera overlay removed); serverside AI OCR (Gemini vision, Ollama fallback) auto-fills contact fields.
+- Every scan is **stored** in a new `ScannedCard` model (image kept as compressed base64 data-URI — works on Netlify; no Cloudinary needed). Card saves instantly on upload; OCR result is patched in after so the UI never waits on slow OCR.
+- New **Card Gallery** at `/crm/scanned` (linked from the Contacts header) — view stored cards, import any into CRM (links the contact), or delete. APIs: `GET/POST /api/crm/scanned-cards`, `PATCH/DELETE /api/crm/scanned-cards/[id]`.
+
 #### Phase 10 + 11 (partial) — Role, Access & Approval Flows (2026-06-18)
 - **10A** Global `boss` → `admin` role rename — `UserRole` type + Mongo enum, ~70 role comparisons across API routes + pages, `BossDashboard` → `AdminDashboard`, sidebar/settings/users/directory labels. Local DB migrated.
 - **10B** Mail access control — new `User.mailAccess` field (admins/managers always allowed; employees need it granted). Sidebar hides Compose Mail/Drafts without access; per-employee toggle in the admin Users panel (audited); server guards on `/api/crm/campaign` and the `/mail` page.

@@ -1,7 +1,7 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Save, ScanLine, AlertCircle, CheckCircle2, Camera, Upload, RotateCcw, Sparkles, XCircle } from 'lucide-react'
+import { Loader2, Save, ScanLine, AlertCircle, CheckCircle2, Upload, RotateCcw, Sparkles, XCircle } from 'lucide-react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,58 +51,26 @@ const EMPTY_FORM = { name: '', email: '', phone: '', company: '', designation: '
 export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode }) {
   const router    = useRouter()
   const toast     = useToast()
-  const videoRef  = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
 
   const [open,         setOpen]         = useState(false)
   const [step,         setStep]         = useState<'pick' | 'preview' | 'form'>('pick')
   const [, setScanning] = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [imagePreview, setImagePreview] = useState('')
-  const [ocrSource,    setOcrSource]    = useState<'gemma' | 'fallback' | null>(null)
+  const [ocrSource,    setOcrSource]    = useState<'gemini' | 'ollama' | 'fallback' | null>(null)
   const [existingId,   setExistingId]   = useState<string | null>(null)
-  const [cameraOn,     setCameraOn]     = useState(false)
+  const [scannedCardId, setScannedCardId] = useState<string | null>(null)
   const [error,        setError]        = useState('')
   const [form, setForm] = useState<Record<string, string>>(EMPTY_FORM)
 
-  const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach(t => t.stop())
-    streamRef.current = null; setCameraOn(false)
-  }, [])
-
   const reset = useCallback(() => {
-    stopCamera(); setStep('pick'); setImagePreview(''); setOcrSource(null)
-    setExistingId(null); setError(''); setForm(EMPTY_FORM)
-  }, [stopCamera])
+    setStep('pick'); setImagePreview(''); setOcrSource(null)
+    setExistingId(null); setScannedCardId(null); setError(''); setForm(EMPTY_FORM)
+  }, [])
 
   const handleClose = (o: boolean) => {
     if (!o) { reset() }
     setOpen(o)
-  }
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      streamRef.current = stream
-      if (videoRef.current) videoRef.current.srcObject = stream
-      setCameraOn(true); setError('')
-    } catch (err) {
-      const msg = err instanceof DOMException && err.name === 'NotAllowedError'
-        ? 'Camera permission denied. Click the camera icon in the address bar and select "Allow".'
-        : 'Camera unavailable. Use "Upload Image" instead.'
-      setError(msg)
-    }
-  }
-
-  const captureFromCamera = () => {
-    if (!videoRef.current) return
-    const canvas = document.createElement('canvas')
-    canvas.width  = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
-    canvas.getContext('2d')!.drawImage(videoRef.current, 0, 0)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.9)
-    stopCamera(); setImagePreview(dataUrl)
-    runOCR(dataUrl.split(',')[1], 'image/jpeg')
   }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,25 +78,64 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
     if (!file) return
     setError('')
     const { base64, mimeType } = await compressImage(file)
-    setImagePreview(`data:${mimeType};base64,${base64}`)
-    runOCR(base64, mimeType)
+    const dataUri = `data:${mimeType};base64,${base64}`
+    setImagePreview(dataUri)
+    runOCR(base64, mimeType, dataUri)
   }
 
-  const runOCR = async (base64: string, mimeType: string) => {
+  const runOCR = async (base64: string, mimeType: string, dataUri: string) => {
     setScanning(true); setStep('preview')
+
+    // 11C: store the card image IMMEDIATELY (don't make the gallery wait on slow OCR).
+    // OCR result is patched in once it returns.
+    let cardId: string | null = null
+    try {
+      const res = await fetch('/api/crm/scanned-cards', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageData: dataUri, ocrSource: 'fallback', parsedFields: {} }),
+      })
+      if (res.ok) { const card = await res.json(); cardId = card._id; setScannedCardId(card._id) }
+    } catch { /* gallery save is best-effort */ }
+
+    let parsed: Record<string, string | null> = {}
+    let source: 'gemini' | 'ollama' | 'fallback' = 'fallback'
     try {
       const res  = await fetch('/api/crm/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64, mimeType }) })
       if (!res.ok) throw new Error()
       const data   = await res.json()
-      const parsed = data.parsed as Record<string, string | null>
+      parsed = data.parsed as Record<string, string | null>
+      source = data.source
       const updated: Record<string, string> = { ...EMPTY_FORM }
       for (const key of Object.keys(updated)) { if (parsed[key]) updated[key] = parsed[key] as string }
       setForm(updated); setOcrSource(data.source); setExistingId(data.existingId || null); setStep('form')
     } catch { setError('AI extraction failed — fill in manually.'); setStep('form') }
     finally { setScanning(false) }
+
+    // patch OCR result onto the stored card
+    if (cardId) {
+      const clean: Record<string, string> = {}
+      for (const [k, v] of Object.entries(parsed)) { if (v) clean[k] = v }
+      try {
+        await fetch(`/api/crm/scanned-cards/${cardId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parsedFields: clean, ocrSource: source }),
+        })
+      } catch { /* best-effort */ }
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+
+  // Link the saved ScannedCard to the contact it became (best-effort)
+  const linkCard = async (contactId: string) => {
+    if (!scannedCardId) return
+    try {
+      await fetch(`/api/crm/scanned-cards/${scannedCardId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contactId, parsedFields: form }),
+      })
+    } catch { /* best-effort */ }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,10 +144,13 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
     try {
       if (existingId) {
         await fetch(`/api/crm/${existingId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+        await linkCard(existingId)
         toast('Contact updated — duplicate merged', 'info')
         setOpen(false); router.push(`/crm/${existingId}`)
       } else {
-        await fetch('/api/crm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+        const res = await fetch('/api/crm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+        const created = res.ok ? await res.json().catch(() => null) : null
+        if (created?._id) await linkCard(created._id)
         toast('Contact saved from scan', 'success')
         setOpen(false); router.push('/crm')
       }
@@ -180,7 +190,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
                 </div>
                 <div>
                   <Dialog.Title className="text-base font-extrabold text-white">Scan Business Card</Dialog.Title>
-                  <Dialog.Description className="text-brand-200 text-xs mt-0.5">Gemma AI extracts contact details automatically.</Dialog.Description>
+                  <Dialog.Description className="text-brand-200 text-xs mt-0.5">AI extracts contact details automatically.</Dialog.Description>
                 </div>
               </div>
               <Dialog.Close asChild>
@@ -207,54 +217,23 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
 
           <div className="p-5 space-y-4">
 
-            {/* Step 1: Pick */}
+            {/* Step 1: Upload (camera removed in 11C — upload-only) */}
             {step === 'pick' && (
               <>
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                {!cameraOn ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button type="button" onClick={startCamera}
-                      className="group flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-surface-border bg-white hover:border-brand-400 hover:bg-brand-50 transition-all text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Camera className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">Use Camera</p>
-                        <p className="text-xs text-surface-muted">Live scan</p>
-                      </div>
-                    </button>
-                    <label className="group flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-surface-border bg-white hover:border-purple-400 hover:bg-purple-50 transition-all text-center cursor-pointer">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Upload className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">Upload Image</p>
-                        <p className="text-xs text-surface-muted">From gallery</p>
-                      </div>
-                      <input type="file" accept="image/*" className="hidden" aria-label="Upload business card image" onChange={handleFileUpload} />
-                    </label>
+                <label className="group flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-surface-border bg-white hover:border-brand-400 hover:bg-brand-50 transition-all text-center cursor-pointer">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Upload className="w-7 h-7 text-white" />
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-brand-400 bg-black">
-                      <video ref={videoRef} autoPlay playsInline muted className="w-full max-h-52 object-cover" />
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="border-2 border-white/60 rounded-xl w-4/5 h-3/5 flex items-center justify-center">
-                          <p className="text-white/60 text-xs font-medium bg-black/30 px-2 py-1 rounded-lg">Align card within frame</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button type="button" className="flex-1 gap-2 bg-gradient-to-r from-brand-500 to-brand-600" onClick={captureFromCamera}>
-                        <Camera className="w-4 h-4" /> Capture
-                      </Button>
-                      <Button type="button" variant="outline" onClick={stopCamera}>Cancel</Button>
-                    </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">Upload business card</p>
+                    <p className="text-xs text-surface-muted mt-0.5">JPG or PNG · tap to choose a photo from your device</p>
                   </div>
-                )}
+                  <input type="file" accept="image/jpeg,image/png,image/*" className="hidden" aria-label="Upload business card image" onChange={handleFileUpload} />
+                </label>
                 <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface border border-surface-border">
                   <Sparkles className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-600"><span className="font-semibold text-gray-900">Gemma AI</span> reads the card and auto-fills all contact details. Review before saving.</p>
+                  <p className="text-xs text-gray-600"><span className="font-semibold text-gray-900">AI</span> reads the card and auto-fills all contact details. Every scan is saved to your card gallery. Review before importing.</p>
                 </div>
               </>
             )}
@@ -271,7 +250,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
                     <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">Gemma AI is reading the card…</p>
+                    <p className="font-bold text-gray-900 text-sm">AI is reading the card…</p>
                     <p className="text-xs text-surface-muted mt-0.5">Extracting name, email, phone, company…</p>
                   </div>
                 </div>
@@ -285,7 +264,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imagePreview} alt="Card" className="w-full max-h-28 object-contain bg-surface rounded-xl border border-surface-border" />
                 )}
-                {ocrSource === 'gemma' && (
+                {(ocrSource === 'gemini' || ocrSource === 'ollama') && (
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200">
                     <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center flex-shrink-0"><Sparkles className="w-3.5 h-3.5 text-white" /></div>
                     <p className="text-xs font-semibold text-emerald-700">AI extracted details — review below</p>
