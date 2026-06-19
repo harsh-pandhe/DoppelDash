@@ -1,9 +1,11 @@
 'use client'
 // Phase C + F: Segmented CRM campaigns + AI content suite
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Send, Sparkles, Users, Loader2, CheckCircle2, Eye } from 'lucide-react'
+import { ArrowLeft, Send, Sparkles, Users, Loader2, CheckCircle2, Eye, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
+import { useUser } from '@/lib/useUser'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +19,10 @@ interface PreviewContact { _id: string; name: string; email: string; company?: s
 
 export default function CampaignsPage() {
   const toast = useToast()
+  const { user } = useUser()
+  const role = user?.role || 'employee'
+  // 10B/11D: campaign sender = admin + manager by default; employees only if granted mailAccess
+  const hasMailAccess = role === 'admin' || role === 'manager' || user?.mailAccess === true
 
   const [tag,       setTag]       = useState('')
   const [subject,   setSubject]   = useState('')
@@ -145,6 +151,22 @@ Output only the email body text, no subject line, no greeting like "Dear", start
       toast(`Campaign sent to ${data.sent} contact(s)`, 'success')
     } catch { toast('Send failed', 'error') }
     finally { setSending(false) }
+  }
+
+  if (user && !hasMailAccess) {
+    return (
+      <>
+        <Header title="Email Campaign" />
+        <main className="flex-1 p-5 lg:p-8 flex items-center justify-center">
+          <EmptyState
+            icon={AlertTriangle}
+            title="Mail access not granted"
+            description="Email campaigns are available to managers and admins. Ask your administrator to grant you access."
+            action={{ label: 'Back to Contacts', href: '/crm' }}
+          />
+        </main>
+      </>
+    )
   }
 
   return (

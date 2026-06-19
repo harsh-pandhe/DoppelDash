@@ -6,8 +6,8 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phases 1–8 shipped
 - ✅ Phase 9 (UI/UX overhaul) — commit 97ddf10
 - ✅ Phase 10A (boss→admin) + 10B (mail access) — commit d2f45ca
-- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR + gallery), 11E (travel chain), 11F (reimbursement chain)
-- ⏳ Remaining: 11D (campaign section), 11G (mass mail), 12 (admin panel), 13 (audit hardening)
+- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR + gallery), 11D (campaign sidebar), 11E (travel chain), 11F (reimbursement chain)
+- ⏳ Remaining: 11G (mass mail), 12 (admin panel), 13 (audit hardening)
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
@@ -116,10 +116,11 @@ Standard to apply to every dialog:
 - Gallery `/crm/scanned`: thumbnails + parsed fields, Import-to-CRM (links `contactId`), delete, "Imported" badge; linked from CRM header ("Cards" button).
 - Verified live (Playwright): upload→store→OCR→form→gallery→import→delete, 0 console errors.
 
-### 11D Campaign: Own Sidebar Section
-- Move Campaign out of CRM
-- Add `{ href: '/campaign', label: 'Campaign', icon: Megaphone, roles: ['admin','manager'] }` as own section
-- Campaign page = mass email composer only (not scan card)
+### 11D Campaign: Own Sidebar Section ✅ DONE (2026-06-20)
+- Campaign promoted to a top-level **Communications** sidebar item (`Megaphone` icon) → `/crm/campaigns` (route kept; not physically moved to avoid breaking links).
+- Gated like other mail items: `roles:['employee','manager','admin']` + `requiresMailAccess` → managers/admins always, employees only if granted (10B).
+- Page now has a client-side mailAccess guard (EmptyState "Mail access not granted") matching `/mail`; send API `/api/crm/campaign` already 10B-gated.
+- Already a mass-email composer only (no scan card).
 
 ### 11E Travel: Manager → Admin Approval Flow ✅ DONE (2026-06-18)
 - Status chain (impl naming): `pending_manager` → `pending_admin` → `approved` / `rejected`; manager can return to employee. Server state machine in `api/travel/[id]/route.ts` (`VALID_TRANSITIONS`), admin-only final approval guard.

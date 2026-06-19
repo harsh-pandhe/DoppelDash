@@ -35,8 +35,9 @@ const SECTIONS = [
   {
     label: 'Communications',
     items: [
-      { href: '/mail',        label: 'Compose Mail', icon: Mail,     roles: ['employee','manager','admin'], requiresMailAccess: true },
-      { href: '/mail/drafts', label: 'Drafts',       icon: FileEdit, roles: ['employee','manager','admin'], requiresMailAccess: true },
+      { href: '/mail',           label: 'Compose Mail', icon: Mail,      roles: ['employee','manager','admin'], requiresMailAccess: true },
+      { href: '/mail/drafts',    label: 'Drafts',       icon: FileEdit,  roles: ['employee','manager','admin'], requiresMailAccess: true },
+      { href: '/crm/campaigns',  label: 'Campaign',     icon: Megaphone, roles: ['employee','manager','admin'], requiresMailAccess: true },
     ],
   },
   {

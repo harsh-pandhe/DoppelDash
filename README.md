@@ -53,6 +53,9 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 11D — Campaign Sidebar Section (2026-06-20)
+- Email Campaign is now a top-level **Communications** item in the sidebar (was buried under Contacts). Gated by mail access (managers/admins always; employees if granted via 10B); the page shows a "Mail access not granted" state otherwise.
+
 #### Phase 11C — Scan Card OCR + Gallery (2026-06-18)
 - Business-card scanning is now **upload-only** (camera overlay removed); serverside AI OCR (Gemini vision, Ollama fallback) auto-fills contact fields.
 - Every scan is **stored** in a new `ScannedCard` model (image kept as compressed base64 data-URI — works on Netlify; no Cloudinary needed). Card saves instantly on upload; OCR result is patched in after so the UI never waits on slow OCR.
