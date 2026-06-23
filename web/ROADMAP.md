@@ -45,10 +45,13 @@ Root causes:
 Done:
 - **MongoDB indexes added:** `Leave(userId,startDate)` + `Leave(status)`, `Expense(userId,status)`, `TravelRequest(userId,status)`. `AuditLog(createdAt)` + `AuditLog(targetType,createdAt)` already existed. All models had `userId` single-field index already.
 
-Deferred (carry to Phase 9C / next session):
-- **Cache-Control NOT added.** Risk: 43 GET routes, most are auth-scoped per-user — blanket `s-maxage` shared-cache would leak one user's data to another via CDN. Needs per-route audit (public vs private) before applying. DO NOT blanket-apply.
-- App-wide AbortController on all client fetches (only LMS done).
-- `loading.tsx` per route segment skeletons.
+Done (later phases):
+- `loading.tsx` per route segment skeletons — shipped in Phase 9C (20 segments).
+
+**Cache-Control: audited 2026-06-24 → intentionally NOT applied (WON'T DO).**
+- Audit result: **41 of 44 GET routes are auth-scoped (per-user data)**. A blanket `s-maxage` shared-cache would leak one user's data to another via the CDN. The 3 public routes (`analytics/shared/[token]`, `crm/[id]/share`, `cron/*`) are token-gated or scheduled — negligible caching upside, real risk if mis-scoped.
+- Conclusion: this is a correctness hazard, not an optimization. Leaving it off is the right call. Revisit only with explicit per-route `private`/`public` headers, never a blanket policy.
+- Remaining minor: app-wide AbortController on client fetches (LMS + scanned + audit done; others poll harmlessly). Low priority.
 
 ---
 

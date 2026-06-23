@@ -272,6 +272,7 @@ export default function AuditPage() {
           <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
             {logs.map((log, i) => {
               const meta = ACTION_META[log.action] || { gradient: 'from-gray-400 to-gray-500', dot: 'bg-gray-400' }
+              const md = log.metadata || {}
               const labelColor = ACTION_LABEL_COLORS[log.action] || 'bg-gray-50 text-gray-700 border-gray-200'
               const isLast = i === logs.length - 1
               const initials = (log.performedByName || 'Unknown').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -299,12 +300,12 @@ export default function AuditPage() {
                     <p className="text-xs text-gray-700 mt-1">
                       <strong className="font-semibold">{log.performedByName}</strong>
                       <span className="text-surface-muted"> · {log.targetType}</span>
-                      {log.metadata.employeeName ? <span> → {String(log.metadata.employeeName)}</span> : null}
-                      {log.metadata.newRole ? <span> → <span className="font-semibold">{String(log.metadata.newRole)}</span></span> : null}
+                      {md.employeeName ? <span> → {String(md.employeeName)}</span> : null}
+                      {md.newRole ? <span> → <span className="font-semibold">{String(md.newRole)}</span></span> : null}
                     </p>
-                    {Object.keys(log.metadata).length > 0 && (
+                    {Object.keys(md).length > 0 && (
                       <p className="text-[10px] text-surface-muted mt-0.5 truncate">
-                        {Object.entries(log.metadata).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                        {Object.entries(md).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(' · ')}
                       </p>
                     )}
                   </div>
