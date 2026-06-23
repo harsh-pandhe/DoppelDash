@@ -12,28 +12,72 @@ interface AuditEntry {
   targetId: string; targetType: string; metadata: Record<string, unknown>; createdAt: string
 }
 
+const GREEN = { gradient: 'from-green-400 to-emerald-500', dot: 'bg-green-500'  }
+const RED   = { gradient: 'from-red-400 to-rose-500',      dot: 'bg-red-500'    }
+const BLUE  = { gradient: 'from-blue-400 to-blue-600',     dot: 'bg-blue-500'   }
+const AMBER = { gradient: 'from-orange-400 to-amber-500',  dot: 'bg-orange-500' }
+const PURPLE= { gradient: 'from-purple-400 to-violet-600', dot: 'bg-purple-500' }
+
 const ACTION_META: Record<string, { gradient: string; dot: string }> = {
-  'leave.approved':       { gradient: 'from-green-400 to-emerald-500',  dot: 'bg-green-500'  },
-  'leave.rejected':       { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
-  'expense.paid':         { gradient: 'from-green-400 to-emerald-500',  dot: 'bg-green-500'  },
-  'expense.rejected':     { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
-  'expense.pending_admin': { gradient: 'from-blue-400 to-blue-600',      dot: 'bg-blue-500'   },
-  'user.role_changed':    { gradient: 'from-purple-400 to-violet-600',  dot: 'bg-purple-500' },
-  'user.banned':          { gradient: 'from-red-400 to-rose-500',       dot: 'bg-red-500'    },
-  'user.unbanned':        { gradient: 'from-green-400 to-emerald-500',  dot: 'bg-green-500'  },
-  'balance.updated':      { gradient: 'from-orange-400 to-amber-500',   dot: 'bg-orange-500' },
+  'leave.approved':        GREEN,
+  'leave.rejected':        RED,
+  'leave.withdrawn':       RED,
+  'expense.paid':          GREEN,
+  'expense.rejected':      RED,
+  'expense.pending_admin': BLUE,
+  'expense.pending_manager':      AMBER,
+  'expense.returned_to_employee': AMBER,
+  'expense.returned_to_manager':  AMBER,
+  'expense.resubmitted':   BLUE,
+  'expense.withdrawn':     RED,
+  'expense.deleted':       RED,
+  'travel.approved':       GREEN,
+  'travel.rejected':       RED,
+  'travel.pending_admin':  BLUE,
+  'travel.pending_manager': AMBER,
+  'travel.cancelled':      RED,
+  'user.role_changed':            PURPLE,
+  'user.mail_access_changed':     PURPLE,
+  'user.permissions_changed':     PURPLE,
+  'user.privileges_changed':      PURPLE,
+  'user.reporting_manager_changed': PURPLE,
+  'user.banned':           RED,
+  'user.unbanned':         GREEN,
+  'balance.updated':       AMBER,
 }
 
+const G = 'bg-green-50 text-green-700 border-green-200'
+const R = 'bg-red-50 text-red-700 border-red-200'
+const B = 'bg-blue-50 text-blue-700 border-blue-200'
+const A = 'bg-orange-50 text-orange-700 border-orange-200'
+const P = 'bg-purple-50 text-purple-700 border-purple-200'
+
 const ACTION_LABEL_COLORS: Record<string, string> = {
-  'leave.approved':       'bg-green-50 text-green-700 border-green-200',
-  'leave.rejected':       'bg-red-50 text-red-700 border-red-200',
-  'expense.paid':         'bg-green-50 text-green-700 border-green-200',
-  'expense.rejected':     'bg-red-50 text-red-700 border-red-200',
-  'expense.pending_admin': 'bg-blue-50 text-blue-700 border-blue-200',
-  'user.role_changed':    'bg-purple-50 text-purple-700 border-purple-200',
-  'user.banned':          'bg-red-50 text-red-700 border-red-200',
-  'user.unbanned':        'bg-green-50 text-green-700 border-green-200',
-  'balance.updated':      'bg-orange-50 text-orange-700 border-orange-200',
+  'leave.approved':        G,
+  'leave.rejected':        R,
+  'leave.withdrawn':       R,
+  'expense.paid':          G,
+  'expense.rejected':      R,
+  'expense.pending_admin': B,
+  'expense.pending_manager':      A,
+  'expense.returned_to_employee': A,
+  'expense.returned_to_manager':  A,
+  'expense.resubmitted':   B,
+  'expense.withdrawn':     R,
+  'expense.deleted':       R,
+  'travel.approved':       G,
+  'travel.rejected':       R,
+  'travel.pending_admin':  B,
+  'travel.pending_manager': A,
+  'travel.cancelled':      R,
+  'user.role_changed':            P,
+  'user.mail_access_changed':     P,
+  'user.permissions_changed':     P,
+  'user.privileges_changed':      P,
+  'user.reporting_manager_changed': P,
+  'user.banned':           R,
+  'user.unbanned':         G,
+  'balance.updated':       A,
 }
 
 const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-purple-400 to-violet-600','from-orange-400 to-red-500','from-emerald-400 to-green-600','from-pink-400 to-rose-500','from-cyan-400 to-teal-600']
@@ -51,7 +95,7 @@ function exportCSV(logs: AuditEntry[]) {
   a.href = URL.createObjectURL(blob); a.download = `audit-${Date.now()}.csv`; a.click()
 }
 
-const TYPE_FILTERS = ['all', 'leave', 'expense', 'user', 'balance'] as const
+const TYPE_FILTERS = ['all', 'leave', 'expense', 'travel', 'user', 'balance'] as const
 type TypeFilter = typeof TYPE_FILTERS[number]
 
 const ACTION_OPTIONS = [
@@ -63,9 +107,14 @@ const ACTION_OPTIONS = [
   'balance.updated',
 ] as const
 
+const PAGE_SIZE = 50
+
 export default function AuditPage() {
   const [logs,       setLogs]       = useState<AuditEntry[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [total,      setTotal]      = useState(0)
+  const [hasMore,    setHasMore]    = useState(false)
   const [typeFilterRaw, setTypeFilterRaw] = useUrlState('type', 'all')
   const typeFilter    = typeFilterRaw as TypeFilter
   const setTypeFilter = (v: TypeFilter) => setTypeFilterRaw(v)
@@ -82,19 +131,36 @@ export default function AuditPage() {
     return () => clearTimeout(t)
   }, [q])
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true)
+  const buildParams = useCallback((skip: number) => {
     const params = new URLSearchParams()
     if (typeFilter !== 'all')   params.set('type', typeFilter)
     if (actionFilter !== 'all') params.set('action', actionFilter)
     if (debQ.trim())            params.set('q', debQ.trim())
     if (from)                   params.set('from', from)
     if (to)                     params.set('to',   to)
-    const res  = await fetch(`/api/admin/audit?${params}`)
-    const data = await res.json()
-    setLogs(Array.isArray(data) ? data : [])
-    setLoading(false)
+    params.set('limit', String(PAGE_SIZE))
+    params.set('skip',  String(skip))
+    return params
   }, [typeFilter, actionFilter, debQ, from, to])
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true)
+    const res  = await fetch(`/api/admin/audit?${buildParams(0)}`)
+    const data = await res.json()
+    setLogs(Array.isArray(data?.logs) ? data.logs : [])
+    setTotal(data?.total || 0)
+    setHasMore(!!data?.hasMore)
+    setLoading(false)
+  }, [buildParams])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    const res  = await fetch(`/api/admin/audit?${buildParams(logs.length)}`)
+    const data = await res.json()
+    setLogs(prev => [...prev, ...(Array.isArray(data?.logs) ? data.logs : [])])
+    setHasMore(!!data?.hasMore)
+    setLoadingMore(false)
+  }
 
   const clearAll = () => { setQ(''); setFrom(''); setTo(''); setActionFilter('all'); setTypeFilter('all') }
   const hasFilters = !!(q || from || to || actionFilter !== 'all' || typeFilter !== 'all')
@@ -115,7 +181,7 @@ export default function AuditPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">Audit Log</p>
-              <p className="text-xs text-surface-muted">{logs.length} entr{logs.length !== 1 ? 'ies' : 'y'} found</p>
+              <p className="text-xs text-surface-muted">Showing {logs.length} of {total} entr{total !== 1 ? 'ies' : 'y'}</p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -242,6 +308,14 @@ export default function AuditPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {!loading && hasMore && (
+          <div className="flex justify-center pt-2">
+            <Button variant="outline" onClick={loadMore} disabled={loadingMore} className="gap-2">
+              {loadingMore ? 'Loading…' : `Load more (${total - logs.length} older)`}
+            </Button>
           </div>
         )}
       </main>

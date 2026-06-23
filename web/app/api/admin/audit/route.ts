@@ -16,10 +16,12 @@ export async function GET(req: NextRequest) {
   const q          = searchParams.get('q')           // free-text search across action + performedByName
   const from       = searchParams.get('from')
   const to         = searchParams.get('to')
-  const limit      = Math.min(Number(searchParams.get('limit') || 100), 500)
+  const limit      = Math.min(Number(searchParams.get('limit') || 50), 200)
+  const skip       = Math.max(Number(searchParams.get('skip') || 0), 0)
 
   const match: Record<string, unknown> = {}
-  if (targetType) match.targetType = targetType
+  // UI filter 'travel' maps to the travel_request targetType
+  if (targetType) match.targetType = targetType === 'travel' ? 'travel_request' : targetType
   if (action)     match.action     = action
   if (performer)  match.performedBy = performer
   if (q) {
@@ -32,6 +34,9 @@ export async function GET(req: NextRequest) {
     if (to)   (match.createdAt as Record<string, Date>).$lte = new Date(to + 'T23:59:59')
   }
 
-  const logs = await AuditLog.find(match).sort({ createdAt: -1 }).limit(limit).lean()
-  return NextResponse.json(logs)
+  const [logs, total] = await Promise.all([
+    AuditLog.find(match).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    AuditLog.countDocuments(match),
+  ])
+  return NextResponse.json({ logs, total, hasMore: skip + logs.length < total })
 }

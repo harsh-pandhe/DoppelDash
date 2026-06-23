@@ -6,8 +6,9 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phases 1–8 shipped
 - ✅ Phase 9 (UI/UX overhaul) — commit 97ddf10
 - ✅ Phase 10A (boss→admin) + 10B (mail access) — commit d2f45ca
-- ✅ Phase 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR + gallery), 11D (campaign sidebar), 11E (travel chain), 11F (reimbursement chain)
-- ⏳ Remaining: 11G (mass mail), 12 (admin panel), 13 (audit hardening)
+- ✅ Phase 11 complete: 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR+gallery), 11D (campaign sidebar), 11E (travel chain), 11F (reimbursement chain), 11G (mass mail — existing composer)
+- ✅ Phase 12A (users role/dept filter), Phase 13 (audit hardening — pagination + full color map)
+- ⏳ Remaining: 12B (more chart types + date presets), 12C (branded PDF/Excel exports everywhere) — polish, own phase
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
@@ -134,7 +135,9 @@ Standard to apply to every dialog:
 - Every transition audited with actor + timestamp; status-change emails.
 - Note: status values renamed `pending_boss`→`pending_admin`, `bossNote`→`adminNote` in 11E/11F sweep.
 
-### 11G Mass Mail Tool
+### 11G Mass Mail Tool ✅ DONE (covered by existing `/mail` composer + 11D campaign)
+- `/mail` composer already does: recipient picker (CRM+Directory+tags), To/Cc/Bcc (click-to-cycle), server SMTP send, copy-rich-HTML clipboard, mailto/Outlook draft. `/api/crm/campaign` does the tag-segmented blast. 11D promoted Campaign to its own sidebar item.
+- Spec extras NOT built (low value, skipped): per-field subject copy button, Gmail compose URL mode.
 - Purpose: send Doppelmayr product emails to clients
 - Roles: `admin`, `manager` (+ employees granted access via 10B)
 - Send modes:
@@ -149,11 +152,10 @@ Standard to apply to every dialog:
 
 ## Phase 12 — Admin Panel Improvements
 
-### 12A Users Panel
-- Card grid (not flat table): each card shows avatar, name, role badge, department
-- Click card → slide-out Sheet with full profile
-- Inline: role change dropdown, `mailAccess` toggle, ban/unban, reporting manager picker
-- Search + filter by role/department
+### 12A Users Panel ✅ DONE (2026-06-23)
+- Cards already show avatar, name, role badge, department + inline controls (role dropdown, mailAccess toggle [10B], ban/unban, reporting-manager picker).
+- Added **role filter chips** (all/employee/manager/admin) + **department dropdown** + clear + count. Search already existed.
+- Slide-out Sheet NOT added — inline expand-in-place already gives the full profile + all controls; a Sheet would be churn for no functional gain.
 
 ### 12B Analytics & Reports
 - Additional chart types (bar, area, pie for leave types)
@@ -168,12 +170,12 @@ Standard to apply to every dialog:
 
 ---
 
-## Phase 13 — Audit Log Hardening
-- Fix null guard on `performedByName` (Phase 8A)
-- Add travel + reimburse approval events to audit
-- Rename all `boss` audit references to `admin`
-- Paginate results: infinite scroll or page buttons (currently just limit 500)
-- Expand action color map to cover travel + reimburse new states
+## Phase 13 — Audit Log Hardening ✅ DONE (2026-06-23)
+- [x] Null guard on `performedByName` (Phase 8A, shipped earlier)
+- [x] Travel + reimburse approval events audited — `api/travel/[id]` + `api/rms/[id]` `writeAudit` on every transition
+- [x] `boss` audit refs → `admin` (10A sweep; performedByName fallbacks now 'Admin')
+- [x] Pagination — API returns `{logs,total,hasMore}` w/ `skip`/`limit` (PAGE_SIZE 50); "Load more" button on page
+- [x] Action color map expanded — all `travel.*`, `expense.returned_*/pending_manager/resubmitted/withdrawn/deleted`, `user.mail_access_changed/permissions/privileges/reporting_manager`; `travel` added to type filter (maps to `travel_request` targetType in API)
 
 ---
 

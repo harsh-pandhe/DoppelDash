@@ -53,6 +53,11 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 12A + 13 — Admin Panel & Audit Hardening (2026-06-23)
+- **12A** Users panel: role filter chips (all/employee/manager/admin) + department dropdown + result count, on top of the existing search.
+- **13** Audit log: **pagination** (API returns `{logs,total,hasMore}` with skip/limit; "Load more" button) and a fully expanded action color map — all travel states, expense return/resubmit/withdraw/delete, and the new user `mail_access_changed`/permissions/privileges/reporting-manager events; `travel` added as a type filter. Travel + reimbursement transitions were already audited; `boss` audit refs renamed to `admin`.
+- **11G** confirmed complete — the `/mail` composer (recipient picker, To/Cc/Bcc, SMTP send, copy-rich-HTML) plus the Campaign blast already cover the mass-mail spec.
+
 #### Phase 11D — Campaign Sidebar Section (2026-06-20)
 - Email Campaign is now a top-level **Communications** item in the sidebar (was buried under Contacts). Gated by mail access (managers/admins always; employees if granted via 10B); the page shows a "Mail access not granted" state otherwise.
 

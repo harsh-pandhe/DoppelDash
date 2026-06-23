@@ -607,6 +607,8 @@ export default function AdminUsersPage() {
   const [users,   setUsers]   = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
+  const [roleFilter, setRoleFilter] = useState<'all' | 'employee' | 'manager' | 'admin'>('all')
+  const [deptFilter, setDeptFilter] = useState('all')
   const [seeding, setSeeding] = useState(false)
   const toast = useToast()
 
@@ -633,9 +635,17 @@ export default function AdminUsersPage() {
   useEffect(() => { fetchUsers() }, [fetchUsers])
   useAutoRefresh(fetchUsers, { intervalMs: 30_000 })
 
-  const filtered = search.trim()
-    ? users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
-    : users
+  const departments = Array.from(new Set(users.map(u => u.employee?.department).filter((d): d is string => !!d))).sort()
+
+  const filtered = users.filter(u => {
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false
+    if (deptFilter !== 'all' && u.employee?.department !== deptFilter) return false
+    if (search.trim()) {
+      const s = search.toLowerCase()
+      if (!u.name.toLowerCase().includes(s) && !u.email.toLowerCase().includes(s)) return false
+    }
+    return true
+  })
 
   return (
     <>
@@ -669,10 +679,35 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {/* 12A: role + department filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(['all', 'employee', 'manager', 'admin'] as const).map(r => (
+            <button type="button" key={r} onClick={() => setRoleFilter(r)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize transition-all
+                ${roleFilter === r ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+              {r === 'all' ? 'All roles' : r}
+            </button>
+          ))}
+          {departments.length > 0 && (
+            <select aria-label="Filter by department" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
+              className="h-7 px-2 ml-1 rounded-lg border border-surface-border text-[11px] font-semibold text-gray-700 focus:outline-none focus:border-brand-500">
+              <option value="all">All departments</option>
+              {departments.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          )}
+          {(roleFilter !== 'all' || deptFilter !== 'all') && (
+            <button type="button" onClick={() => { setRoleFilter('all'); setDeptFilter('all') }}
+              className="text-[11px] font-semibold text-surface-muted hover:text-gray-700 px-2 py-1">
+              Clear
+            </button>
+          )}
+          <span className="text-[11px] text-surface-muted ml-auto">{filtered.length} shown</span>
+        </div>
+
         {loading ? (
           <div className="space-y-3">{[...Array(5)].map((_,i) => <div key={i} className="h-32 rounded-2xl bg-surface-border animate-pulse" />)}</div>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-surface-muted py-8 text-center">No users match &quot;{search}&quot;</p>
+          <p className="text-sm text-surface-muted py-8 text-center">No users match the current filters.</p>
         ) : (
           <div className="space-y-3">
             {filtered.map(u => <UserCard key={u.id} u={u} allUsers={users} onUpdate={fetchUsers} isBoss={isBoss} />)}
