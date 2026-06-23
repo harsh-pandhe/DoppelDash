@@ -138,6 +138,12 @@ Output only the email body text, no subject line, no greeting like "Dear", start
     const bodyText = body.replace(/<[^>]*>/g, '').trim()
     if (!subject.trim() || !bodyText) { toast('Subject and body required', 'error'); return }
     if (preview.length === 0) { toast('No contacts to send to', 'error'); return }
+    // Typed-confirmation guard — real emails go out; require typing the recipient count.
+    const typed = window.prompt(
+      `You are about to send a REAL email to ${preview.length} contact(s). This cannot be undone.\n\nType the number ${preview.length} to confirm:`
+    )
+    if (typed === null) return
+    if (typed.trim() !== String(preview.length)) { toast('Confirmation did not match — send cancelled', 'info'); return }
     setSending(true); setResult(null)
     try {
       const res = await fetch('/api/crm/campaign', {

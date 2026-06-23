@@ -74,9 +74,10 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
     firstName: '', lastName: '', email: '',
     newRole: 'employee' as 'employee' | 'manager',
     department: '', designation: '', employeeType: 'full_time', joiningDate: '',
+    skipWelcomeEmail: false,
   })
 
-  const reset = () => { setForm({ firstName:'',lastName:'',email:'',newRole:'employee',department:'',designation:'',employeeType:'full_time',joiningDate:'' }); setCreated(null) }
+  const reset = () => { setForm({ firstName:'',lastName:'',email:'',newRole:'employee',department:'',designation:'',employeeType:'full_time',joiningDate:'',skipWelcomeEmail:false }); setCreated(null) }
 
   const submit = async () => {
     if (!form.firstName || !form.lastName || !form.email) { toast('Name and email required', 'error'); return }
@@ -194,9 +195,19 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
                 </div>
               </div>
 
+              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-surface-border bg-surface cursor-pointer">
+                <input type="checkbox" checked={form.skipWelcomeEmail}
+                  onChange={e => setForm(f => ({ ...f, skipWelcomeEmail: e.target.checked }))}
+                  className="accent-brand-500 w-4 h-4 mt-0.5" />
+                <span className="text-xs text-gray-600">
+                  <span className="font-semibold text-gray-900">Silent add — don&apos;t email the user</span><br />
+                  No welcome email is sent. Copy the temporary password below and share it yourself. Use this when onboarding real staff in bulk.
+                </span>
+              </label>
+
               <Button className="w-full gap-2" onClick={submit} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Create Account
+                {form.skipWelcomeEmail ? 'Create (no email)' : 'Create Account'}
               </Button>
             </div>
           )}

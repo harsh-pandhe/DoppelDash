@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  const { firstName, lastName, email, newRole, department, designation, employeeType, joiningDate, privileges } = body
+  const { firstName, lastName, email, newRole, department, designation, employeeType, joiningDate, privileges, skipWelcomeEmail } = body
 
   if (!firstName || !lastName || !email || !newRole) {
     return NextResponse.json({ error: 'firstName, lastName, email, newRole required' }, { status: 400 })
@@ -132,26 +132,33 @@ export async function POST(req: NextRequest) {
     { upsert: true }
   )
 
-  // Send welcome email with credentials
-  try {
-    await sendEmail(
-      email,
-      'Welcome to DoppelDash — Your Login Details',
-      `<div style="font-family:sans-serif;max-width:500px">
-        <h2>Welcome to DoppelDash, ${firstName}!</h2>
-        <p>Your account has been created. Use these credentials to sign in:</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Temporary Password:</strong> <code style="font-size:18px;letter-spacing:2px;background:#f3f4f6;padding:4px 8px;border-radius:4px">${tempPassword}</code></p>
-        <p>You will be asked to set a new password on first login.</p>
-        <p><a href="${process.env.NEXT_PUBLIC_APP_URL || ''}/sign-in">Sign in to DoppelDash →</a></p>
-      </div>`
-    )
-  } catch { /* best-effort */ }
+  // Send welcome email with credentials — unless silent add requested.
+  // skipWelcomeEmail lets an admin create real users (e.g. onboarding a directory)
+  // without firing real emails; the temp password is returned in the response instead.
+  let emailSent = false
+  if (!skipWelcomeEmail) {
+    try {
+      await sendEmail(
+        email,
+        'Welcome to DoppelDash — Your Login Details',
+        `<div style="font-family:sans-serif;max-width:500px">
+          <h2>Welcome to DoppelDash, ${firstName}!</h2>
+          <p>Your account has been created. Use these credentials to sign in:</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Temporary Password:</strong> <code style="font-size:18px;letter-spacing:2px;background:#f3f4f6;padding:4px 8px;border-radius:4px">${tempPassword}</code></p>
+          <p>You will be asked to set a new password on first login.</p>
+          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || ''}/sign-in">Sign in to DoppelDash →</a></p>
+        </div>`
+      )
+      emailSent = true
+    } catch { /* best-effort */ }
+  }
 
   return NextResponse.json({
     success:     true,
     userId:      newUid,
     employeeId:  emp.employeeId,
     tempPassword,
+    emailSent,
   })
 }
