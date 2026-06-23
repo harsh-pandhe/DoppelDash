@@ -19,6 +19,7 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { useUrlState } from '@/lib/useUrlState'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
+import { brandedCSV, fmtDate } from '@/lib/export'
 
 interface ExpenseLineItem {
   _id?: string; description: string; amount: number; date: string
@@ -753,19 +754,17 @@ function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
 }
 
 function exportCSV(expenses: Expense[]) {
-  const headers = ['Title', 'Reason', 'Amount (₹)', 'Date', 'Status', 'Employee', 'Manager Note', 'Admin Note']
-  const rows = expenses.map(e => [
-    `"${e.title}"`, `"${e.reason}"`, e.amount,
-    new Date(e.startDate).toLocaleDateString('en-IN'),
-    e.status, `"${e.userName}"`,
-    `"${e.managerNote || ''}"`, `"${e.adminNote || ''}"`,
-  ])
-  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href = url; a.download = `expenses-${Date.now()}.csv`; a.click()
-  URL.revokeObjectURL(url)
+  brandedCSV({
+    title: 'Reimbursements',
+    subtitle: `${expenses.length} expenses`,
+    head: ['Title', 'Reason', 'Amount (Rs.)', 'Date', 'Status', 'Employee', 'Manager Note', 'Admin Note'],
+    rows: expenses.map(e => [
+      e.title, e.reason, e.amount,
+      fmtDate(e.startDate), e.status, e.userName,
+      e.managerNote || '', e.adminNote || '',
+    ]),
+    filename: `expenses-${fmtDate()}.csv`,
+  })
 }
 
 export default function RMSPage() {

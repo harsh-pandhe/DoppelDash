@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ListSkeleton } from '@/components/ui/skeleton'
 import { useUrlState } from '@/lib/useUrlState'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
+import { brandedCSV, fmtDate } from '@/lib/export'
 
 interface AuditEntry {
   _id: string; action: string; performedBy: string; performedByName: string
@@ -84,15 +85,17 @@ const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-purple-400 to-viol
 function avatarGradient(name: string) { return AVATAR_GRADIENTS[(name || 'A').charCodeAt(0) % AVATAR_GRADIENTS.length] }
 
 function exportCSV(logs: AuditEntry[]) {
-  const rows = logs.map(l => [
-    `"${l.action}"`, `"${l.performedByName}"`, `"${l.targetType}"`, `"${l.targetId}"`,
-    `"${JSON.stringify(l.metadata).replace(/"/g, "'")}"`,
-    new Date(l.createdAt).toLocaleString('en-IN'),
-  ])
-  const csv  = [['Action','Performed By','Type','Target ID','Metadata','Date'].join(','), ...rows.map(r => r.join(','))].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const a    = document.createElement('a')
-  a.href = URL.createObjectURL(blob); a.download = `audit-${Date.now()}.csv`; a.click()
+  brandedCSV({
+    title: 'Audit Log',
+    subtitle: `${logs.length} entries`,
+    head: ['Action', 'Performed By', 'Type', 'Target ID', 'Metadata', 'Date'],
+    rows: logs.map(l => [
+      l.action, l.performedByName, l.targetType, l.targetId,
+      JSON.stringify(l.metadata).replace(/"/g, "'"),
+      fmtDate(l.createdAt),
+    ]),
+    filename: `audit-${fmtDate()}.csv`,
+  })
 }
 
 const TYPE_FILTERS = ['all', 'leave', 'expense', 'travel', 'user', 'balance'] as const

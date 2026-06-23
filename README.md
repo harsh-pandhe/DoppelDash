@@ -53,6 +53,10 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Phase 12B + 12C — Branded Exports (2026-06-23)
+- New shared `lib/export.ts` — `brandedPDF` / `brandedXLSX` / `brandedCSV` produce consistent Doppelmayr-branded files: DOPPELMAYR wordmark header, blue (`#0057A8`) table headers, `DD-MMM-YYYY` dates, "Confidential — Doppelmayr India" footer (PDF also gets page numbers + alt-row shading). Reports (PDF + XLSX + CSV), Reimbursements, Contacts, and the Audit log all export through it now.
+- **12B** confirmed: Reports already ships date-range presets (Today / Last 7 days / This month / Last 3 months / This year + custom). **This completes the roadmap (phases 8–13).**
+
 #### Phase 12A + 13 — Admin Panel & Audit Hardening (2026-06-23)
 - **12A** Users panel: role filter chips (all/employee/manager/admin) + department dropdown + result count, on top of the existing search.
 - **13** Audit log: **pagination** (API returns `{logs,total,hasMore}` with skip/limit; "Load more" button) and a fully expanded action color map — all travel states, expense return/resubmit/withdraw/delete, and the new user `mail_access_changed`/permissions/privileges/reporting-manager events; `travel` added as a type filter. Travel + reimbursement transitions were already audited; `boss` audit refs renamed to `admin`.

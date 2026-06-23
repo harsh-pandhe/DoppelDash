@@ -20,6 +20,7 @@ import { SortableTH } from '@/components/ui/sortable-th'
 import { useTableSort } from '@/lib/useTableSort'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 import ScanCardDialog from '@/components/ScanCardDialog'
+import { brandedCSV, fmtDate } from '@/lib/export'
 import Papa from 'papaparse'
 
 interface ColorLabel { color: string; label: string }
@@ -298,16 +299,16 @@ function DeleteDialog({ name, onConfirm }: { name: string; onConfirm: () => void
 }
 
 function exportCSV(contacts: Contact[]) {
-  const headers = ['Name','Email','Phone','Company','Designation','Tags','Visibility','ColorLabel']
-  const rows = contacts.map(c => [
-    `"${c.name}"`,`"${c.email||''}"`,`"${c.phone||''}"`,
-    `"${c.company||''}"`,`"${c.designation||''}"`,
-    `"${(c.tags||[]).join('; ')}"`,`"${c.visibility||'private'}"`,`"${c.colorLabel?.label||''}"`,
-  ])
-  const csv = [headers.join(','),...rows.map(r=>r.join(','))].join('\n')
-  const a   = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}))
-  a.download = `contacts-${Date.now()}.csv`; a.click()
+  brandedCSV({
+    title: 'Contacts',
+    subtitle: `${contacts.length} contacts`,
+    head: ['Name','Email','Phone','Company','Designation','Tags','Visibility','ColorLabel'],
+    rows: contacts.map(c => [
+      c.name, c.email||'', c.phone||'', c.company||'', c.designation||'',
+      (c.tags||[]).join('; '), c.visibility||'private', c.colorLabel?.label||'',
+    ]),
+    filename: `contacts-${fmtDate()}.csv`,
+  })
 }
 
 /* ─── Page ─────────────────────────────────────────────────────────────────── */

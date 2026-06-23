@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorState } from '@/components/ui/error-state'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal'
 import { SortableTileGrid } from '@/components/SortableTileGrid'
+import { brandedPDF, brandedXLSX, brandedCSV, fmtDate } from '@/lib/export'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Types
@@ -137,75 +138,50 @@ const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
    Exporters
    ══════════════════════════════════════════════════════════════════════════ */
 
-function downloadBlob(content: string | Blob, filename: string, mime: string) {
-  const blob = typeof content === 'string' ? new Blob([content], { type: mime }) : content
-  const a    = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = filename
-  a.click()
-}
-
 function exportLeaveCSV(data: LeaveRow[]) {
-  const rows = data.map(r => [`"${r._id.userName}"`, r.totalRequests, r.totalDays, r.approved, r.rejected])
-  const csv  = [['Employee','Requests','Days Taken','Approved','Rejected'].join(','), ...rows.map(r => r.join(','))].join('\n')
-  downloadBlob(csv, `leave-report-${Date.now()}.csv`, 'text/csv')
+  brandedCSV({
+    title: 'Leave Report', subtitle: 'By employee',
+    head: ['Employee','Requests','Days Taken','Approved','Rejected'],
+    rows: data.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved, r.rejected]),
+    filename: `leave-report-${fmtDate()}.csv`,
+  })
 }
 function exportExpenseCSV(data: ExpenseRow[]) {
-  const rows = data.map(r => [`"${r._id.userName}"`, r.totalRequests, r.totalAmount, r.paid, r.pending])
-  const csv  = [['Employee','Requests','Total (₹)','Paid (₹)','Pending (₹)'].join(','), ...rows.map(r => r.join(','))].join('\n')
-  downloadBlob(csv, `expense-report-${Date.now()}.csv`, 'text/csv')
+  brandedCSV({
+    title: 'Expense Report', subtitle: 'By employee',
+    head: ['Employee','Requests','Total (Rs.)','Paid (Rs.)','Pending (Rs.)'],
+    rows: data.map(r => [r._id.userName, r.totalRequests, r.totalAmount, r.paid, r.pending]),
+    filename: `expense-report-${fmtDate()}.csv`,
+  })
 }
 function exportTravelCSV(data: TravelRow[]) {
-  const rows = data.map(r => [`"${r._id.userName}"`, r.totalRequests, r.totalEstimate, r.approved])
-  const csv  = [['Employee','Requests','Estimated (₹)','Approved'].join(','), ...rows.map(r => r.join(','))].join('\n')
-  downloadBlob(csv, `travel-report-${Date.now()}.csv`, 'text/csv')
-}
-
-async function exportXLSX(rows: (string | number)[][], header: string[], sheet: string, filename: string) {
-  const { utils, writeFile } = await import('xlsx')
-  const ws = utils.aoa_to_sheet([header, ...rows])
-  const wb = utils.book_new(); utils.book_append_sheet(wb, ws, sheet)
-  writeFile(wb, filename)
+  brandedCSV({
+    title: 'Travel Report', subtitle: 'By employee',
+    head: ['Employee','Requests','Estimated (Rs.)','Approved'],
+    rows: data.map(r => [r._id.userName, r.totalRequests, r.totalEstimate, r.approved]),
+    filename: `travel-report-${fmtDate()}.csv`,
+  })
 }
 
 async function exportFullPDF(d: ReportData, dateLabel: string) {
-  const { default: jsPDF } = await import('jspdf')
-  const { default: autoTable } = await import('jspdf-autotable')
-  const doc = new jsPDF()
-  doc.setFontSize(16); doc.setFont('helvetica', 'bold')
-  doc.text('DoppelDash — Report', 14, 20)
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal')
-  doc.text(`Doppelmayr India  |  ${dateLabel}  |  Generated ${new Date().toLocaleDateString('en-IN')}`, 14, 27)
-  let y = 36
-  doc.setFontSize(11); doc.setFont('helvetica', 'bold')
-  doc.text('Leave summary', 14, y); y += 4
-  autoTable(doc, {
-    startY: y,
-    head: [['Employee','Requests','Days','Approved','Rejected']],
-    body: d.leaveSummary.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved, r.rejected]),
-    styles: { fontSize: 9 }, headStyles: { fillColor: [0, 87, 168] },
-  })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
-  doc.setFontSize(11); doc.setFont('helvetica', 'bold')
-  doc.text('Expense summary', 14, y); y += 4
-  autoTable(doc, {
-    startY: y,
-    head: [['Employee','Requests','Total','Paid','Pending']],
-    body: d.expenseSummary.map(r => [r._id.userName, r.totalRequests, `Rs.${r.totalAmount.toLocaleString('en-IN')}`, `Rs.${r.paid.toLocaleString('en-IN')}`, `Rs.${r.pending.toLocaleString('en-IN')}`]),
-    styles: { fontSize: 9 }, headStyles: { fillColor: [0, 87, 168] },
-  })
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10
-  if (d.travelSummary.length) {
-    doc.setFontSize(11); doc.setFont('helvetica', 'bold')
-    doc.text('Travel summary', 14, y); y += 4
-    autoTable(doc, {
-      startY: y,
-      head: [['Employee','Requests','Estimated','Approved']],
-      body: d.travelSummary.map(r => [r._id.userName, r.totalRequests, `Rs.${r.totalEstimate.toLocaleString('en-IN')}`, r.approved]),
-      styles: { fontSize: 9 }, headStyles: { fillColor: [0, 87, 168] },
-    })
-  }
-  doc.save(`doppeldash-report-${Date.now()}.pdf`)
+  const sections = [
+    {
+      title: 'Leave summary',
+      head: ['Employee','Requests','Days','Approved','Rejected'],
+      rows: d.leaveSummary.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved, r.rejected]),
+    },
+    {
+      title: 'Expense summary',
+      head: ['Employee','Requests','Total','Paid','Pending'],
+      rows: d.expenseSummary.map(r => [r._id.userName, r.totalRequests, `Rs.${r.totalAmount.toLocaleString('en-IN')}`, `Rs.${r.paid.toLocaleString('en-IN')}`, `Rs.${r.pending.toLocaleString('en-IN')}`]),
+    },
+    ...(d.travelSummary.length ? [{
+      title: 'Travel summary',
+      head: ['Employee','Requests','Estimated','Approved'],
+      rows: d.travelSummary.map(r => [r._id.userName, r.totalRequests, `Rs.${r.totalEstimate.toLocaleString('en-IN')}`, r.approved]),
+    }] : []),
+  ]
+  await brandedPDF({ title: 'Management Report', subtitle: dateLabel, sections, filename: `doppeldash-report-${fmtDate()}.pdf` })
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -610,10 +586,12 @@ function AvatarCell({ name }: { name: string }) {
 }
 
 function LeaveSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: LeaveRow[]; dateLabel: string }) {
-  const xlsx = () => exportXLSX(
-    rows.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved, r.rejected]),
-    ['Employee','Requests','Days','Approved','Rejected'], 'Leave Report', `leave-report-${Date.now()}.xlsx`
-  )
+  const xlsx = () => brandedXLSX({
+    title: 'Leave Report', subtitle: dateLabel,
+    head: ['Employee','Requests','Days','Approved','Rejected'],
+    rows: rows.map(r => [r._id.userName, r.totalRequests, r.totalDays, r.approved, r.rejected]),
+    sheet: 'Leave', filename: `leave-report-${fmtDate()}.xlsx`,
+  })
   return (
     <TileShell def={def} actions={rows.length > 0 ? (
       <>
@@ -656,10 +634,12 @@ function LeaveSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: LeaveR
 }
 
 function ExpenseSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: ExpenseRow[]; dateLabel: string }) {
-  const xlsx = () => exportXLSX(
-    rows.map(r => [r._id.userName, r.totalRequests, r.totalAmount, r.paid, r.pending]),
-    ['Employee','Requests','Total','Paid','Pending'], 'Expense Report', `expense-report-${Date.now()}.xlsx`
-  )
+  const xlsx = () => brandedXLSX({
+    title: 'Expense Report', subtitle: dateLabel,
+    head: ['Employee','Requests','Total','Paid','Pending'],
+    rows: rows.map(r => [r._id.userName, r.totalRequests, r.totalAmount, r.paid, r.pending]),
+    sheet: 'Expense', filename: `expense-report-${fmtDate()}.xlsx`,
+  })
   return (
     <TileShell def={def} actions={rows.length > 0 ? (
       <>
@@ -702,10 +682,12 @@ function ExpenseSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: Expe
 }
 
 function TravelSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: TravelRow[]; dateLabel: string }) {
-  const xlsx = () => exportXLSX(
-    rows.map(r => [r._id.userName, r.totalRequests, r.totalEstimate, r.approved]),
-    ['Employee','Requests','Estimated','Approved'], 'Travel Report', `travel-report-${Date.now()}.xlsx`
-  )
+  const xlsx = () => brandedXLSX({
+    title: 'Travel Report', subtitle: dateLabel,
+    head: ['Employee','Requests','Estimated','Approved'],
+    rows: rows.map(r => [r._id.userName, r.totalRequests, r.totalEstimate, r.approved]),
+    sheet: 'Travel', filename: `travel-report-${fmtDate()}.xlsx`,
+  })
   return (
     <TileShell def={def} actions={rows.length > 0 ? (
       <>

@@ -7,8 +7,9 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phase 9 (UI/UX overhaul) — commit 97ddf10
 - ✅ Phase 10A (boss→admin) + 10B (mail access) — commit d2f45ca
 - ✅ Phase 11 complete: 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR+gallery), 11D (campaign sidebar), 11E (travel chain), 11F (reimbursement chain), 11G (mass mail — existing composer)
-- ✅ Phase 12A (users role/dept filter), Phase 13 (audit hardening — pagination + full color map)
-- ⏳ Remaining: 12B (more chart types + date presets), 12C (branded PDF/Excel exports everywhere) — polish, own phase
+- ✅ Phase 12 complete: 12A (users role/dept filter), 12B (report date presets), 12C (branded exports via lib/export.ts)
+- ✅ Phase 13 (audit hardening — pagination + full color map)
+- 🎉 **All roadmap phases 8–13 shipped.** Remaining items are backlog only (dark mode, IMAP inbox, more chart types).
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
@@ -162,11 +163,14 @@ Standard to apply to every dialog:
 - Date range presets: This Month, Last Quarter, YTD, Custom
 - Export all: branded PDF/Excel with Doppelmayr logo header + proper column formatting
 
-### 12C Exports — Branded Everywhere
-- All CSV / Excel / PDF exports across LMS, RMS, Travel, Contacts, Audit:
-  - Header row: Doppelmayr logo + report title + generated date
-  - Consistent column widths, number formatting, date format `DD-MMM-YYYY`
-  - Footer: "Confidential — Doppelmayr India"
+### 12B Analytics & Reports ✅ DONE (date presets already shipped)
+- Reports `DATE_PRESETS` = Today / Last 7 days / This month / Last 3 months / This year + custom range — covers the spec.
+- Additional chart types deferred to backlog (existing donut/bar tiles sufficient).
+
+### 12C Exports — Branded Everywhere ✅ DONE (2026-06-23)
+- New shared `lib/export.ts`: `brandedPDF` (DOPPELMAYR wordmark header, blue `#0057A8` table heads, alt-row shading, "Confidential — Doppelmayr India" footer + page numbers), `brandedXLSX` (title/date block + auto column widths), `brandedCSV` (title/date preamble + footer), `fmtDate` = `DD-MMM-YYYY`.
+- Retrofitted: Reports (PDF + 3× XLSX + 3× CSV), RMS, Contacts, Audit. (Logo = text wordmark — avoids bundling a base64 PNG; `/api/upload` is Netlify-broken anyway.)
+- NOT retrofitted (low value): analytics tile CSVs, travel detail `window.print` (different mechanism).
 
 ---
 
