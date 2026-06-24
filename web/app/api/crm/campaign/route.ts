@@ -4,14 +4,21 @@ import Contact from '@/models/Contact'
 import { getUser } from '@/lib/auth'
 import { getUserTransporter } from '@/lib/userEmail'
 import { sendMail } from '@/lib/mailer'
+import CampaignLog from '@/models/CampaignLog'
 
-// GET — preview contacts that would receive the campaign
+// GET — preview contacts for a tag, OR ?history=1 for the caller's sent-campaign log
 export async function GET(req: NextRequest) {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const url   = new URL(req.url)
+  const url = new URL(req.url)
+
+  if (url.searchParams.get('history')) {
+    const logs = await CampaignLog.find({ sentBy: userId }).sort({ createdAt: -1 }).limit(50).lean()
+    return NextResponse.json({ history: logs })
+  }
+
   const tag   = url.searchParams.get('tag') || ''
   const query = tag ? { createdBy: userId, tags: tag, email: { $exists: true, $ne: '' } }
                     : { createdBy: userId, email: { $exists: true, $ne: '' } }
@@ -36,6 +43,8 @@ export async function POST(req: NextRequest) {
     // Communications module: explicit recipient list + pre-built rich HTML body
     recipients?: { name?: string; email: string; company?: string }[]
     isHtml?: boolean
+    // Test send: deliver one copy to this address with sample personalization
+    testEmail?: string; sampleName?: string; sampleCompany?: string
   }
 
   if (!body.subject?.trim() || !body.bodyTemplate?.trim()) {
@@ -43,7 +52,10 @@ export async function POST(req: NextRequest) {
   }
 
   let contacts: { name?: string; email?: string; company?: string }[]
-  if (body.recipients?.length) {
+  // Test send — deliver a single copy to the requester's own address, sample-personalized.
+  if (body.testEmail && typeof body.testEmail === 'string') {
+    contacts = [{ name: body.sampleName || 'there', email: body.testEmail, company: body.sampleCompany || 'your team' }]
+  } else if (body.recipients?.length) {
     contacts = body.recipients.filter(r => typeof r.email === 'string' && r.email.includes('@'))
   } else {
     let query: Record<string, unknown> = { createdBy: userId, email: { $exists: true, $ne: '' } }
@@ -89,5 +101,16 @@ export async function POST(req: NextRequest) {
     })
   )
 
-  return NextResponse.json({ sent, failed, total: contacts.length, channel })
+  // Log non-test campaigns for history
+  if (!body.testEmail) {
+    try {
+      await CampaignLog.create({
+        sentBy: userId, sentByName: user?.fullName || user?.firstName || 'User',
+        subject: body.subject, tag: body.tag,
+        recipientCount: contacts.length, sent, failed, channel,
+      })
+    } catch { /* best-effort */ }
+  }
+
+  return NextResponse.json({ sent, failed, total: contacts.length, channel, test: !!body.testEmail })
 }

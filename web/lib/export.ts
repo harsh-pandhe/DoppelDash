@@ -46,25 +46,33 @@ export async function brandedPDF(opts: {
 }) {
   const { default: jsPDF } = await import('jspdf')
   const { default: autoTable } = await import('jspdf-autotable')
+  const { DOPPELMAYR_LOGO_PNG, DOPPELMAYR_LOGO_WH } = await import('./brandLogo')
   const doc = new jsPDF()
   const pageW = doc.internal.pageSize.getWidth()
 
-  // ── Header ──
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(18)
-  doc.setTextColor(...BRAND_BLUE)
-  doc.text('DOPPELMAYR', 14, 18)
+  // ── Header: official Doppelmayr logo (falls back to text wordmark) ──
+  const logoW = 34
+  const logoH = logoW * (DOPPELMAYR_LOGO_WH.h / DOPPELMAYR_LOGO_WH.w)
+  try {
+    doc.addImage(DOPPELMAYR_LOGO_PNG, 'PNG', 14, 10, logoW, logoH)
+  } catch {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...BRAND_BLUE)
+    doc.text('DOPPELMAYR', 14, 18)
+  }
+  // right-aligned company line
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...MUTED)
-  doc.text('India', 14 + doc.getTextWidth('DOPPELMAYR') + 2, 18)
+  doc.text('Doppelmayr India Pvt Ltd', pageW - 14, 14, { align: 'right' })
+  doc.text('www.doppelmayr.com', pageW - 14, 19, { align: 'right' })
 
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...GRAPHITE)
-  doc.text(opts.title, 14, 28)
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...GRAPHITE)
+  doc.text(opts.title, 14, 32)
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTED)
   const meta = [opts.subtitle, `Generated ${fmtDate()}`].filter(Boolean).join('  ·  ')
-  doc.text(meta, 14, 34)
-  doc.setDrawColor(...BRAND_BLUE); doc.setLineWidth(0.5)
-  doc.line(14, 37, pageW - 14, 37)
+  doc.text(meta, 14, 38)
+  doc.setDrawColor(...BRAND_BLUE); doc.setLineWidth(0.6)
+  doc.line(14, 41, pageW - 14, 41)
 
-  let y = 44
+  let y = 48
   for (const s of opts.sections) {
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...GRAPHITE)
     doc.text(s.title, 14, y); y += 3
