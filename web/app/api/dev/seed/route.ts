@@ -25,7 +25,7 @@ import { encrypt, encryptBankDetails } from '@/lib/encrypt'
  *   POST /api/dev/seed?secret=<DEV_SEED_SECRET>     (header `x-seed-secret` also accepted)
  *
  * Default password for every seeded account: `Pass1234!`
- * Boss email: harsh.pandhe@doppelmayr.com
+ * Admin email: harshpandhehome@gmail.com (testable inbox for OTP)
  */
 
 const DEFAULT_PASSWORD = 'Pass1234!'
@@ -36,6 +36,36 @@ const D     = (offsetDays: number) => {
   const d = new Date(today); d.setDate(d.getDate() + offsetDays); d.setHours(9, 0, 0, 0); return d
 }
 const dob = (y: number, m: number, d: number) => new Date(y, m - 1, d)
+
+/**
+ * Fake receipt as a base64 SVG data-URI — renders anywhere, Netlify-safe
+ * (no Cloudinary / no local-FS upload). Used to populate seeded expenses so
+ * the receipt viewer + print sheet have real images to show.
+ */
+const fakeReceipt = (vendor: string, amount: number, dateStr: string) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="420" viewBox="0 0 320 420">
+    <rect width="320" height="420" fill="#ffffff"/>
+    <rect x="0" y="0" width="320" height="56" fill="#0057A8"/>
+    <text x="20" y="36" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff">${vendor}</text>
+    <text x="20" y="92" font-family="Arial" font-size="12" fill="#555">TAX INVOICE / RECEIPT</text>
+    <line x1="20" y1="104" x2="300" y2="104" stroke="#ddd"/>
+    <text x="20" y="136" font-family="Arial" font-size="13" fill="#222">Date: ${dateStr}</text>
+    <text x="20" y="160" font-family="Arial" font-size="13" fill="#222">GSTIN: 27AABCD1234E1Z5</text>
+    <line x1="20" y1="180" x2="300" y2="180" stroke="#eee"/>
+    <text x="20" y="210" font-family="Arial" font-size="13" fill="#222">Description</text>
+    <text x="240" y="210" font-family="Arial" font-size="13" fill="#222">Amount</text>
+    <text x="20" y="240" font-family="Arial" font-size="13" fill="#444">Service charge</text>
+    <text x="220" y="240" font-family="Arial" font-size="13" fill="#444">Rs. ${(amount * 0.82).toFixed(0)}</text>
+    <text x="20" y="266" font-family="Arial" font-size="13" fill="#444">GST 18%</text>
+    <text x="220" y="266" font-family="Arial" font-size="13" fill="#444">Rs. ${(amount * 0.18).toFixed(0)}</text>
+    <line x1="20" y1="286" x2="300" y2="286" stroke="#ddd"/>
+    <text x="20" y="316" font-family="Arial" font-size="16" font-weight="bold" fill="#0057A8">TOTAL</text>
+    <text x="200" y="316" font-family="Arial" font-size="16" font-weight="bold" fill="#0057A8">Rs. ${amount.toLocaleString('en-IN')}</text>
+    <text x="20" y="368" font-family="Arial" font-size="11" fill="#888">Thank you for your business.</text>
+    <text x="20" y="392" font-family="Arial" font-size="10" fill="#aaa">Paid via Corporate Card • Auth #${Math.floor(Math.random()*900000+100000)}</text>
+  </svg>`
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
+}
 
 export async function POST(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
@@ -71,9 +101,9 @@ export async function POST(req: NextRequest) {
   /* ─── 2) Users ────────────────────────────────────────────────────── */
   const hash = await User.hashPassword(DEFAULT_PASSWORD)
 
-  // 1 boss
+  // 1 admin — uses the testable gmail inbox so OTP login works as admin
   const boss = await User.create({
-    email:              'harsh.pandhe@doppelmayr.com',
+    email:              'harshpandhehome@gmail.com',
     passwordHash:       hash,
     role:               'admin',
     firstName:          'Harsh',
@@ -102,7 +132,7 @@ export async function POST(req: NextRequest) {
 
   // 6 employees
   const empSeeds = [
-    { f: 'Aarav',   l: 'Sharma',   email: 'harshpandhehome@gmail.com',     dept: 'Engineering',  desig: 'Senior Engineer',   mgr: managerA, dob: dob(1991, 4, 17), join: dob(2021, 6, 15), city: 'Mumbai',     state: 'Maharashtra' },
+    { f: 'Aarav',   l: 'Sharma',   email: 'harsh.pandhe@doppelmayr.com',   dept: 'Engineering',  desig: 'Senior Engineer',   mgr: managerA, dob: dob(1991, 4, 17), join: dob(2021, 6, 15), city: 'Mumbai',     state: 'Maharashtra' },
     { f: 'Diya',    l: 'Menon',    email: 'diya.menon@doppelmayr.com',     dept: 'Engineering',  desig: 'Project Engineer',  mgr: managerA, dob: dob(1994, 11, 8), join: dob(2022, 1, 10), city: 'Navi Mumbai',state: 'Maharashtra' },
     { f: 'Vikram',  l: 'Singh',    email: 'vikram.singh@doppelmayr.com',   dept: 'Operations',   desig: 'Operations Lead',   mgr: managerB, dob: dob(1988, 7, 22), join: dob(2019, 9, 1),  city: 'Pune',       state: 'Maharashtra' },
     { f: 'Sneha',   l: 'Reddy',    email: 'sneha.reddy@doppelmayr.com',    dept: 'Operations',   desig: 'Field Engineer',    mgr: managerB, dob: dob(1996, 3, 3),  join: dob(2023, 2, 20), city: 'Hyderabad',  state: 'Telangana' },
@@ -260,18 +290,36 @@ export async function POST(req: NextRequest) {
     { u: employees[5], title: 'Kolkata client visit',          reason: 'WB Transit feasibility meeting travel.',         amount: 14200,status: 'pending_manager', mgr: managerA, days: -1,  from: 'Mumbai', to: 'Kolkata'  },
     { u: managerA,     title: 'Leadership offsite',            reason: 'Team building offsite in Lonavala.',             amount: 28000,status: 'paid',            mgr: boss,     days: -35, from: 'Mumbai', to: 'Lonavala' },
   ]
-  await Promise.all(expSeeds.map(e => Expense.create({
-    userId: e.u._id.toString(), userName: `${e.u.firstName} ${e.u.lastName}`,
-    title: e.title, reason: e.reason, amount: e.amount,
-    travelFrom: e.from || undefined, travelTo: e.to || undefined,
-    startDate: D(e.days), endDate: e.from ? D(e.days + 1) : undefined,
-    receipts: [],
-    status: e.status,
-    managerNote: (e as { managerNote?: string }).managerNote,
-    approvedBy: ['pending_admin', 'paid'].includes(e.status) ? e.mgr._id.toString() : undefined,
-    paidBy:     e.status === 'paid' ? boss._id.toString() : undefined,
-    createdAt: D(e.days - 1),
-  })))
+  await Promise.all(expSeeds.map((e, idx) => {
+    const dateStr = D(e.days).toLocaleDateString('en-IN')
+    const vendor  = e.title.split(/[—→:]/)[0].trim().slice(0, 22) || 'Vendor'
+    // Every other expense uses table mode with itemised line items + per-item receipts;
+    // the rest are simple with one top-level receipt.
+    const tableMode = idx % 2 === 0
+    const lineItems = tableMode ? [
+      { description: `${vendor} — base charge`, amount: Math.round(e.amount * 0.6), date: D(e.days),
+        category: 'travel', receiptUrl: fakeReceipt(vendor, Math.round(e.amount * 0.6), dateStr),
+        status: e.status === 'paid' ? 'approved' : e.status === 'rejected' ? 'rejected' : 'pending' },
+      { description: `${vendor} — incidentals`, amount: e.amount - Math.round(e.amount * 0.6), date: D(e.days),
+        category: 'misc', receiptUrl: fakeReceipt(vendor + ' (2)', e.amount - Math.round(e.amount * 0.6), dateStr),
+        status: e.status === 'paid' ? 'approved' : 'pending' },
+    ] : []
+    return Expense.create({
+      userId: e.u._id.toString(), userName: `${e.u.firstName} ${e.u.lastName}`,
+      title: e.title, reason: e.reason, amount: e.amount,
+      travelFrom: e.from || undefined, travelTo: e.to || undefined,
+      startDate: D(e.days), endDate: e.from ? D(e.days + 1) : undefined,
+      receipts: tableMode ? [] : [fakeReceipt(vendor, e.amount, dateStr)],
+      lineItems, hasLineItems: tableMode,
+      status: e.status,
+      managerNote: (e as { managerNote?: string }).managerNote,
+      approvedBy: ['pending_admin', 'paid'].includes(e.status) ? e.mgr._id.toString() : undefined,
+      paidBy:     e.status === 'paid' ? boss._id.toString() : undefined,
+      paymentMethod: e.status === 'paid' ? 'bank_transfer' : undefined,
+      paidAt:     e.status === 'paid' ? D(e.days + 5) : undefined,
+      createdAt:  D(e.days - 1),
+    })
+  }))
 
   /* ─── 7) Travel requests ─────────────────────────────────────────── */
   const travelSeeds = [
@@ -303,6 +351,7 @@ export async function POST(req: NextRequest) {
     purpose: t.purpose, destination: t.destination,
     departureDate: D(t.depart), returnDate: D(t.ret),
     legs: [],
+    itineraryDocs: t.est > 50000 ? [fakeReceipt('Flight Itinerary', t.est, D(t.depart).toLocaleDateString('en-IN'))] : [],
     estimatedTotal:   t.est,
     advanceRequested: t.adv,
     status: t.status,
