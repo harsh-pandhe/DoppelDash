@@ -1,11 +1,43 @@
 'use client'
 import {
   ResponsiveContainer, BarChart as RBarChart, Bar,
+  AreaChart as RAreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Cell,
   PieChart, Pie,
 } from 'recharts'
 
 interface BarData { label: string; value: number }
+
+/** Area/trend chart for time-series (e.g. monthly leave/expense). */
+export function AreaChart({
+  data, color = '#0057A8', unit = '',
+}: {
+  data: BarData[]; color?: string; unit?: string
+}) {
+  const chartData = data.map(d => ({ name: d.label, value: d.value }))
+  const fmt = (v: number) => unit ? `${unit}${v.toLocaleString('en-IN')}` : v.toLocaleString('en-IN')
+  const gid = `area-${color.replace('#', '')}`
+  return (
+    <ResponsiveContainer width="100%" height={160}>
+      <RAreaChart data={chartData} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} stroke="#E4E8EF" strokeDasharray="4 3" />
+        <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#8A93A6' }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fontSize: 10, fill: '#8A93A6' }} axisLine={false} tickLine={false} tickFormatter={v => unit ? `${unit}${v >= 1000 ? Math.round(v/1000)+'k' : v}` : String(v)} />
+        <Tooltip
+          formatter={(v) => [fmt(Number(v ?? 0)), 'Value']}
+          contentStyle={{ background: '#fff', border: '1px solid #E4E8EF', borderRadius: 8, fontSize: 12 }}
+        />
+        <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#${gid})`} />
+      </RAreaChart>
+    </ResponsiveContainer>
+  )
+}
 
 export function BarChart({
   data, color = '#0057A8', unit = '',

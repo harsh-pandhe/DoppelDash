@@ -6,7 +6,7 @@ import {
   Plane, Megaphone, AlertCircle, CalendarClock, Receipt, Layers,
   Building, ArrowUpRight, ArrowDownRight,
 } from 'lucide-react'
-import { BarChart, DonutChart } from '@/components/ui/charts'
+import { BarChart, DonutChart, AreaChart } from '@/components/ui/charts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { timeAgo } from '@/lib/timeAgo'
 
@@ -75,8 +75,8 @@ export const TILE_CATALOG: TileDef[] = [
   { id: 'kpi.pendingTravel',   label: 'Travel pending',      description: 'Awaiting approval',            category: 'kpi', defaultSize: 'sm', icon: Plane },
   { id: 'kpi.contacts',        label: 'CRM contacts',        description: 'Total / with email',           category: 'kpi', defaultSize: 'sm', icon: Building },
   { id: 'kpi.announcements',   label: 'Announcements',       description: 'Total posted',                 category: 'kpi', defaultSize: 'sm', icon: Megaphone },
-  { id: 'chart.leaveByMonth',   label: 'Leave requests by month', description: 'Bar chart over selected range', category: 'chart', defaultSize: 'md', icon: TrendingUp },
-  { id: 'chart.expenseByMonth', label: 'Expense ₹ by month',      description: 'Submitted value over range',    category: 'chart', defaultSize: 'md', icon: TrendingUp },
+  { id: 'chart.leaveByMonth',   label: 'Leave requests by month', description: 'Area trend over selected range', category: 'chart', defaultSize: 'md', icon: TrendingUp },
+  { id: 'chart.expenseByMonth', label: 'Expense ₹ by month',      description: 'Area trend over range',          category: 'chart', defaultSize: 'md', icon: TrendingUp },
   { id: 'chart.leaveStatus',    label: 'Leave status breakdown',  description: 'Donut: approved / pending / rejected', category: 'chart', defaultSize: 'md', icon: Layers },
   { id: 'chart.expenseStatus',  label: 'Expense status breakdown',description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
   { id: 'chart.travelStatus',   label: 'Travel status breakdown', description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
@@ -114,9 +114,9 @@ export function TileBody({ def, data, drillBase, readOnly = false }: { def: Tile
     case 'kpi.contacts':       return <KpiTile def={def} value={data.kpis.contactCount} hint={`${data.kpis.contactsWithEmail} with email`} />
     case 'kpi.announcements':  return <KpiTile def={def} value={data.kpis.announcementCount} hint="Total posted" />
     case 'chart.leaveByMonth':
-      return <ChartCard def={def}><BarChart data={data.leaveByMonth.map(m => ({ label: m.label, value: m.count }))} color="#0057A8" /></ChartCard>
+      return <ChartCard def={def}><AreaChart data={data.leaveByMonth.map(m => ({ label: m.label, value: m.count }))} color="#0057A8" /></ChartCard>
     case 'chart.expenseByMonth':
-      return <ChartCard def={def}><BarChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" /></ChartCard>
+      return <ChartCard def={def}><AreaChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" /></ChartCard>
     case 'chart.leaveStatus':
       return <DonutCard def={def} metric={dMetric('leave')} drillBase={drillBase} data={data.leaveStatus.map(s => ({ label: s._id, raw: s._id, value: s.count, color: LEAVE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.expenseStatus':

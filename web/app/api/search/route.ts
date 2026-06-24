@@ -7,7 +7,7 @@ import Announcement from '@/models/Announcement'
 import { getUser } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const q = new URL(req.url).searchParams.get('q')?.trim()
@@ -16,10 +16,20 @@ export async function GET(req: NextRequest) {
   await connectDB()
   const re = new RegExp(q, 'i')
 
+  // Role-aware scope: managers + admins search org-wide; employees see only their own.
+  const isManager = user?.role === 'manager' || user?.role === 'admin'
+  // Contacts: own contacts + (for managers/admins) any not marked private; admins see all.
+  const contactScope = user?.role === 'admin'
+    ? {}
+    : isManager
+      ? { $or: [{ createdBy: userId }, { visibility: { $ne: 'private' } }] }
+      : { createdBy: userId }
+  const ownScope = isManager ? {} : { userId }
+
   const [contacts, leaves, expenses, announcements] = await Promise.all([
-    Contact.find({ createdBy: userId, $or: [{ name: re }, { email: re }, { company: re }, { designation: re }] }, 'name email company designation photo').limit(5).lean(),
-    Leave.find({ userId, $or: [{ userName: re }, { reason: re }, { type: re }] }, 'userName type days status startDate').limit(5).lean(),
-    Expense.find({ userId, $or: [{ title: re }, { reason: re }, { userName: re }] }, 'title amount status startDate userName').limit(5).lean(),
+    Contact.find({ ...contactScope, $and: [{ $or: [{ name: re }, { email: re }, { company: re }, { designation: re }] }] }, 'name email company designation photo').limit(5).lean(),
+    Leave.find({ ...ownScope, $or: [{ userName: re }, { reason: re }, { type: re }] }, 'userName type days status startDate').limit(5).lean(),
+    Expense.find({ ...ownScope, $or: [{ title: re }, { reason: re }, { userName: re }] }, 'title amount status startDate userName').limit(5).lean(),
     Announcement.find({ $or: [{ title: re }, { body: re }] }, 'title priority createdAt').limit(3).lean(),
   ])
 
