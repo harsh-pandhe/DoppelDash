@@ -187,11 +187,14 @@ Standard to apply to every dialog:
 ---
 
 ## Deferred / Backlog
-- Dark mode
-- IMAP inbox
-- CSV bulk import for contacts
-- Role-aware global search
-- WelcomeTour: seen-state already in DB (shipped Phase 7, keep)
+- ✅ Role-aware global search — DONE (2026-06-24, c0f2f4a): managers/admins search org-wide, employees own-only.
+- ✅ Area-trend analytics charts — DONE (c0f2f4a): new `AreaChart`, monthly leave/expense tiles.
+- ✅ CSV bulk import for contacts — already shipped (CSV Import dialog on `/crm`).
+- ⏭️ Users slide-out Sheet (12A extra) — SKIPPED on purpose: inline `UserCard` already exposes every control; a Sheet is churn with no functional gain.
+- **Remaining large features (own project each, not started):**
+  - **Dark mode** — needs a full token/theme pass across every component + persisted preference. Multi-day.
+  - **IMAP inbox** (read incoming mail in-app) — outbound mail already works; inbound = new sync pipeline + UI. Large.
+- WelcomeTour: seen-state already in DB (shipped Phase 7, keep).
 
 ---
 
