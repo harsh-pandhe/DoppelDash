@@ -39,9 +39,9 @@ const TIMELINE_META: Record<string, { icon: React.ElementType; gradient: string;
 }
 
 const AVATAR_GRADIENTS = [
-  'from-brand-400 to-brand-600', 'from-purple-400 to-violet-600',
-  'from-orange-400 to-red-500',  'from-emerald-400 to-green-600',
-  'from-pink-400 to-rose-500',   'from-cyan-400 to-teal-600',
+  'from-brand-400 to-brand-600', 'from-indigo-400 to-indigo-600',
+  'from-sky-400 to-blue-600',    'from-emerald-400 to-teal-600',
+  'from-violet-400 to-purple-600','from-slate-400 to-slate-600',
 ]
 function avatarGradient(name: string | undefined) {
   const firstChar = (name || 'A').trim().charAt(0) || 'A'
@@ -647,8 +647,8 @@ export default function ContactDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Back to CRM
         </Link>
 
-        {/* ── Profile hero ──────────────────────────────────── */}
-        <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${grad} p-6 text-white`}>
+        {/* ── Profile hero (brand-blue banner; avatar keeps a per-name accent) ── */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 p-6 text-white">
           <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
           <div className="absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
           <div className="relative z-10 flex items-start gap-5 flex-wrap">
@@ -657,7 +657,7 @@ export default function ContactDetailPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={contact.photo} alt={contact.name} className="w-20 h-20 rounded-2xl object-cover border-2 border-white/30" />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center border-2 border-white/20">
+                <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center border-2 border-white/25 shadow-lg`}>
                   <span className="text-3xl font-extrabold">{initials}</span>
                 </div>
               )}
@@ -673,7 +673,7 @@ export default function ContactDetailPage() {
               {contact?.tags && contact.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {contact.tags.map(tag => (
-                    <span key={tag} className="text-[11px] font-semibold bg-white/20 px-2.5 py-0.5 rounded-full">{tag}</span>
+                    <span key={tag} className="text-[11px] font-semibold bg-white/25 border border-white/20 text-white px-2.5 py-0.5 rounded-full">{tag}</span>
                   ))}
                 </div>
               )}
