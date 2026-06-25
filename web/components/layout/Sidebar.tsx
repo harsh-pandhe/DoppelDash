@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, CalendarClock, Receipt,
   Settings, ChevronRight, ChevronDown, X, Megaphone,
   BarChart2, Shield, ClipboardList, TrendingUp, Plane,
-  Mail, FileEdit, BookOpen,
+  Mail, FileEdit, BookOpen, Inbox,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +35,7 @@ const SECTIONS = [
   {
     label: 'Communications',
     items: [
+      { href: '/inbox',          label: 'Inbox',        icon: Inbox,     roles: ['employee','manager','admin'], requiresMailAccess: true },
       { href: '/mail',           label: 'Compose Mail', icon: Mail,      roles: ['employee','manager','admin'], requiresMailAccess: true },
       { href: '/mail/drafts',    label: 'Drafts',       icon: FileEdit,  roles: ['employee','manager','admin'], requiresMailAccess: true },
       { href: '/crm/campaigns',  label: 'Campaign',     icon: Megaphone, roles: ['employee','manager','admin'], requiresMailAccess: true },

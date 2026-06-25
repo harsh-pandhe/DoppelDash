@@ -33,7 +33,7 @@ const STATUS_CFG: Record<string, { label: string; ring: string; text: string; ba
   pending_admin:    { label: 'Admin Approval',  ring: 'ring-blue-200 bg-blue-50',   text: 'text-blue-700',   badge: 'default' },
   approved:        { label: 'Approved',       ring: 'ring-green-200 bg-green-50',  text: 'text-green-700',  badge: 'success' },
   rejected:        { label: 'Rejected',       ring: 'ring-red-200 bg-red-50',      text: 'text-red-700',    badge: 'destructive' },
-  cancelled:       { label: 'Cancelled',      ring: 'ring-gray-200 bg-gray-50',    text: 'text-gray-500',   badge: 'default' },
+  cancelled:       { label: 'Cancelled',      ring: 'ring-gray-200 bg-surface-2',    text: 'text-ink-muted',   badge: 'default' },
 }
 
 export default function TravelRequestDetailPage() {
@@ -142,10 +142,10 @@ export default function TravelRequestDetailPage() {
           </Button>
         </div>
 
-        <div className="rounded-3xl border border-surface-border bg-white p-6 space-y-6 shadow-sm">
+        <div className="rounded-3xl border border-surface-border bg-surface-1 p-6 space-y-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-2">
-              <h1 className="text-xl font-bold text-gray-900">{request.purpose}</h1>
+              <h1 className="text-xl font-bold text-ink">{request.purpose}</h1>
               <p className="text-sm text-slate-600">Requested by {request.userName} · {timeAgo(request.createdAt)}</p>
             </div>
             <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold ${status.ring} ${status.text}`}>
@@ -174,15 +174,15 @@ export default function TravelRequestDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div className="rounded-2xl border border-surface-border p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Estimated total</p>
-              <p className="mt-2 font-semibold text-gray-900 flex items-center gap-1"><IndianRupee className="w-4 h-4" />₹{request.estimatedTotal.toLocaleString('en-IN')}</p>
+              <p className="mt-2 font-semibold text-ink flex items-center gap-1"><IndianRupee className="w-4 h-4" />₹{request.estimatedTotal.toLocaleString('en-IN')}</p>
             </div>
             <div className="rounded-2xl border border-surface-border p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Advance requested</p>
-              <p className="mt-2 font-semibold text-gray-900">₹{request.advanceRequested.toLocaleString('en-IN')}</p>
+              <p className="mt-2 font-semibold text-ink">₹{request.advanceRequested.toLocaleString('en-IN')}</p>
             </div>
             <div className="rounded-2xl border border-surface-border p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-surface-muted">Submitted</p>
-              <p className="mt-2 font-semibold text-gray-900">{new Date(request.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</p>
+              <p className="mt-2 font-semibold text-ink">{new Date(request.createdAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</p>
             </div>
           </div>
 
@@ -244,8 +244,8 @@ export default function TravelRequestDetailPage() {
         <Dialog.Root open={!!noteDialog} onOpenChange={(o) => { if (!o) { setNoteDialog(null); setNote('') } }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-              <Dialog.Title className="text-base font-bold text-gray-900 mb-1">{noteDialog?.title || ''}</Dialog.Title>
+            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+              <Dialog.Title className="text-base font-bold text-ink mb-1">{noteDialog?.title || ''}</Dialog.Title>
               <Dialog.Description className="text-sm text-surface-muted mb-4">
                 {noteDialog?.status === 'rejected'
                   ? 'Employee will be notified with your reason.'

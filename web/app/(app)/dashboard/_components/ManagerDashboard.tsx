@@ -116,12 +116,12 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-surface-muted">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-dm-graphite mt-1">
+          <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-ink mt-1">
             {greeting}, <span className="text-dm-orange">{firstName}</span>
           </h1>
-          <p className="text-sm text-dm-graphite-3 mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             {queue.length > 0
-              ? <><strong className="text-dm-graphite">{queue.length}</strong> item{queue.length !== 1 ? 's' : ''} need your decision today.</>
+              ? <><strong className="text-ink">{queue.length}</strong> item{queue.length !== 1 ? 's' : ''} need your decision today.</>
               : 'Inbox clear. Nice work.'}
           </p>
         </div>
@@ -134,7 +134,7 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
             <Link
               key={href}
               href={href}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white border border-surface-border rounded-lg text-xs font-bold text-dm-graphite hover:border-dm-graphite hover:bg-surface-1 transition-colors"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-surface-1 border border-surface-border rounded-lg text-xs font-bold text-ink hover:border-dm-graphite hover:bg-surface-1 transition-colors"
             >
               <Icon className="w-3.5 h-3.5" />{label}
             </Link>
@@ -161,10 +161,10 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
                 <Link
                   key={s.kind}
                   href={s.href}
-                  className="bg-white border border-surface-border rounded-lg p-4 hover:border-dm-graphite hover:shadow-card-hover transition-all group"
+                  className="bg-surface-1 border border-surface-border rounded-lg p-4 hover:border-dm-graphite hover:shadow-card-hover transition-all group"
                 >
-                  <Icon className="w-4 h-4 text-dm-graphite-3 mb-2" />
-                  <p className="text-3xl font-black text-dm-graphite tabular-nums tracking-tighter">{s.count}</p>
+                  <Icon className="w-4 h-4 text-ink-muted mb-2" />
+                  <p className="text-3xl font-black text-ink tabular-nums tracking-tighter">{s.count}</p>
                   <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1 flex items-center gap-1">
                     Pending {s.kind} <ArrowRight className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                   </p>

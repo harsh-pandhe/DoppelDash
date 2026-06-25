@@ -42,7 +42,7 @@ interface UserRow {
 const ROLES = ['employee', 'manager', 'admin'] as const
 
 const ROLE_META: Record<string, { gradient: string; badge: string; icon: React.ElementType }> = {
-  employee: { gradient: 'from-gray-400 to-gray-500',    badge: 'bg-gray-100 text-gray-700',    icon: User      },
+  employee: { gradient: 'from-gray-400 to-gray-500',    badge: 'bg-surface-2 text-ink-muted',    icon: User      },
   manager:  { gradient: 'from-brand-400 to-brand-600',  badge: 'bg-brand-100 text-brand-700',  icon: Briefcase },
   admin:    { gradient: 'from-amber-400 to-orange-500', badge: 'bg-amber-100 text-amber-700',  icon: Shield    },
 }
@@ -99,10 +99,10 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-surface-border px-6 py-4 flex items-center justify-between">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-surface-1 border-b border-surface-border px-6 py-4 flex items-center justify-between">
             <div>
-              <Dialog.Title className="text-base font-bold text-gray-900">Add Team Member</Dialog.Title>
+              <Dialog.Title className="text-base font-bold text-ink">Add Team Member</Dialog.Title>
               <Dialog.Description className="text-xs text-surface-muted">Creates Clerk account + employee record. Temp password shown once.</Dialog.Description>
             </div>
           </div>
@@ -142,7 +142,7 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
                   {(['employee', ...(canCreateManager ? ['manager'] : [])] as const).map(r => (
                     <button key={r} type="button" onClick={() => setForm(f => ({...f, newRole: r as 'employee' | 'manager'}))}
                       className={`flex-1 py-2 rounded-xl text-sm font-bold capitalize border-2 transition-all
-                        ${form.newRole === r ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-surface-border text-gray-500'}`}>
+                        ${form.newRole === r ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-surface-border text-ink-muted'}`}>
                       {r}
                     </button>
                   ))}
@@ -199,8 +199,8 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
                 <input type="checkbox" checked={form.skipWelcomeEmail}
                   onChange={e => setForm(f => ({ ...f, skipWelcomeEmail: e.target.checked }))}
                   className="accent-brand-500 w-4 h-4 mt-0.5" />
-                <span className="text-xs text-gray-600">
-                  <span className="font-semibold text-gray-900">Silent add — don&apos;t email the user</span><br />
+                <span className="text-xs text-ink-muted">
+                  <span className="font-semibold text-ink">Silent add — don&apos;t email the user</span><br />
                   No welcome email is sent. Copy the temporary password below and share it yourself. Use this when onboarding real staff in bulk.
                 </span>
               </label>
@@ -311,7 +311,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
   const emp = u.employee
 
   return (
-    <div className={`bg-white rounded-2xl border overflow-hidden transition-all ${u.banned ? 'opacity-60 border-surface-border' : 'border-surface-border hover:shadow-md'}`}>
+    <div className={`bg-surface-1 rounded-2xl border overflow-hidden transition-all ${u.banned ? 'opacity-60 border-surface-border' : 'border-surface-border hover:shadow-md'}`}>
       <div className={`h-1 bg-gradient-to-r ${roleMeta.gradient}`} />
       <div className="p-5">
         <div className="flex items-start gap-4">
@@ -325,7 +325,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
-              <p className="font-bold text-sm text-gray-900">{u.name}</p>
+              <p className="font-bold text-sm text-ink">{u.name}</p>
               <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${roleMeta.badge}`}>
                 <RoleIcon className="w-2.5 h-2.5" /> {u.role}
               </span>
@@ -588,7 +588,7 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
                   <input type="checkbox" className="mt-0.5 accent-brand-500"
                     checked={perms.includes(p.key)} onChange={() => togglePerm(p.key)} />
                   <div>
-                    <p className="text-xs font-semibold text-gray-900">{p.label}</p>
+                    <p className="text-xs font-semibold text-ink">{p.label}</p>
                     <p className="text-[10px] text-surface-muted">{p.desc}</p>
                   </div>
                 </label>
@@ -669,7 +669,7 @@ export default function AdminUsersPage() {
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">{users.length} Team Member{users.length !== 1 ? 's' : ''}</p>
+              <p className="text-sm font-bold text-ink">{users.length} Team Member{users.length !== 1 ? 's' : ''}</p>
               <p className="text-xs text-surface-muted">Manage roles, balances, and privileges.</p>
             </div>
           </div>
@@ -695,20 +695,20 @@ export default function AdminUsersPage() {
           {(['all', 'employee', 'manager', 'admin'] as const).map(r => (
             <button type="button" key={r} onClick={() => setRoleFilter(r)}
               className={`px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize transition-all
-                ${roleFilter === r ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                ${roleFilter === r ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
               {r === 'all' ? 'All roles' : r}
             </button>
           ))}
           {departments.length > 0 && (
             <select aria-label="Filter by department" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-              className="h-7 px-2 ml-1 rounded-lg border border-surface-border text-[11px] font-semibold text-gray-700 focus:outline-none focus:border-brand-500">
+              className="h-7 px-2 ml-1 rounded-lg border border-surface-border text-[11px] font-semibold text-ink-muted focus:outline-none focus:border-brand-500">
               <option value="all">All departments</option>
               {departments.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           )}
           {(roleFilter !== 'all' || deptFilter !== 'all') && (
             <button type="button" onClick={() => { setRoleFilter('all'); setDeptFilter('all') }}
-              className="text-[11px] font-semibold text-surface-muted hover:text-gray-700 px-2 py-1">
+              className="text-[11px] font-semibold text-surface-muted hover:text-ink-muted px-2 py-1">
               Clear
             </button>
           )}

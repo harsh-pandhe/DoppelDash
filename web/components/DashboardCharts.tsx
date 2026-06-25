@@ -39,7 +39,7 @@ export default function DashboardCharts() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest">Analytics</h3>
+        <h3 className="text-sm font-bold text-ink-muted uppercase tracking-widest">Analytics</h3>
         {/* Date range filter */}
         <div className="flex items-center gap-2 flex-wrap">
           <input type="date" aria-label="Analytics from date" value={from} onChange={e => setFrom(e.target.value)}
@@ -57,7 +57,7 @@ export default function DashboardCharts() {
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
+            <div key={i} className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
               <Skeleton className="h-4 w-1/3" />
               <Skeleton className="h-28 w-full" />
             </div>
@@ -67,7 +67,7 @@ export default function DashboardCharts() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-gray-700">Leave Requests</CardTitle>
+              <CardTitle className="text-sm font-bold text-ink-muted">Leave Requests</CardTitle>
               <p className="text-xs text-surface-muted">{!from && !to ? 'Last 6 months' : 'Selected range'}</p>
             </CardHeader>
             <CardContent className="pt-0">
@@ -77,7 +77,7 @@ export default function DashboardCharts() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-gray-700">Expense Amount (₹)</CardTitle>
+              <CardTitle className="text-sm font-bold text-ink-muted">Expense Amount (₹)</CardTitle>
               <p className="text-xs text-surface-muted">{!from && !to ? 'Last 6 months' : 'Selected range'}</p>
             </CardHeader>
             <CardContent className="pt-0">
@@ -87,7 +87,7 @@ export default function DashboardCharts() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-gray-700">Leave Status Breakdown</CardTitle>
+              <CardTitle className="text-sm font-bold text-ink-muted">Leave Status Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 flex items-center gap-6">
               <DonutChart data={leaveStatusData} size={90} />
@@ -95,8 +95,8 @@ export default function DashboardCharts() {
                 {leaveStatusData.map(s => (
                   <div key={s.label} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                    <span className="text-xs text-gray-600 capitalize">{s.label}</span>
-                    <span className="text-xs font-bold text-gray-900 ml-auto pl-4">{s.value}</span>
+                    <span className="text-xs text-ink-muted capitalize">{s.label}</span>
+                    <span className="text-xs font-bold text-ink ml-auto pl-4">{s.value}</span>
                   </div>
                 ))}
                 {leaveStatusData.length === 0 && <p className="text-xs text-surface-muted">No data yet.</p>}
@@ -106,7 +106,7 @@ export default function DashboardCharts() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-gray-700">Expense Status Breakdown</CardTitle>
+              <CardTitle className="text-sm font-bold text-ink-muted">Expense Status Breakdown</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 flex items-center gap-6">
               <DonutChart data={expenseStatusData} size={90} />
@@ -114,8 +114,8 @@ export default function DashboardCharts() {
                 {expenseStatusData.map(s => (
                   <div key={s.label} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                    <span className="text-xs text-gray-600 capitalize">{s.label}</span>
-                    <span className="text-xs font-bold text-gray-900 ml-auto pl-4">{s.value}</span>
+                    <span className="text-xs text-ink-muted capitalize">{s.label}</span>
+                    <span className="text-xs font-bold text-ink ml-auto pl-4">{s.value}</span>
                   </div>
                 ))}
                 {expenseStatusData.length === 0 && <p className="text-xs text-surface-muted">No data yet.</p>}

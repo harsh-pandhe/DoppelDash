@@ -61,10 +61,10 @@ function InfoTile({ icon: Icon, label, value, wide, href }: { icon: React.Elemen
         <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2 flex items-center gap-1.5">
           <Icon className="w-3 h-3" /> {label}
         </p>
-        <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
+        <p className="text-sm font-semibold text-ink truncate">{value}</p>
       </div>
       <button type="button" onClick={copy} title={copied ? 'Copied' : 'Copy'} aria-label="Copy"
-        className="p-1 rounded-md text-surface-muted hover:text-brand-600 hover:bg-white transition-colors flex-shrink-0">
+        className="p-1 rounded-md text-surface-muted hover:text-brand-600 hover:bg-surface-1 transition-colors flex-shrink-0">
         {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
       </button>
     </div>
@@ -155,13 +155,13 @@ function ReminderCard({ contactId, reminderDate, reminderNote, onSaved }: {
             <label htmlFor={`rd-${contactId}`} className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Date</label>
             <input id={`rd-${contactId}`} type="date" value={date} onChange={e => setDate(e.target.value)}
               min={today0.toISOString().split('T')[0]}
-              className="h-10 w-full sm:w-44 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+              className="h-10 w-full sm:w-44 px-3 rounded-xl border border-surface-border bg-surface-1 text-sm focus:outline-none focus:border-brand-500" />
           </div>
           <div className="space-y-1 min-w-0">
             <label htmlFor={`rn-${contactId}`} className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Note</label>
             <input id={`rn-${contactId}`} type="text" value={note} onChange={e => setNote(e.target.value)}
               placeholder="e.g. Follow up on Q2 proposal"
-              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-surface-1 text-sm focus:outline-none focus:border-brand-500" />
           </div>
         </div>
 
@@ -215,8 +215,8 @@ function AddTimelineDialog({ contactId, onAdded }: { contactId: string; onAdded:
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-4">Log Activity</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-ink mb-4">Log Activity</Dialog.Title>
           <form onSubmit={submit} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Type</Label>
@@ -371,15 +371,15 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-surface-border px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
+          <div className="sticky top-0 bg-surface-1 border-b border-surface-border px-6 py-4 flex items-center justify-between z-10 rounded-t-2xl">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400 to-violet-600 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <div>
-                <Dialog.Title className="text-sm font-bold text-gray-900">AI Message Generator</Dialog.Title>
+                <Dialog.Title className="text-sm font-bold text-ink">AI Message Generator</Dialog.Title>
                 <Dialog.Description className="text-[11px] text-surface-muted">Writing for {contactName}</Dialog.Description>
               </div>
             </div>
@@ -398,7 +398,7 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
                 {Object.entries(MESSAGE_TYPE_LABELS).map(([val, label]) => (
                   <button key={val} type="button" onClick={() => setType(val)}
                     className={`px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition-all border-2
-                      ${type === val ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-surface-border text-gray-600 hover:border-gray-300'}`}>
+                      ${type === val ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-surface-border text-ink-muted hover:border-surface-border'}`}>
                     {label}
                   </button>
                 ))}
@@ -452,18 +452,18 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Subject</label>
                   <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
                     placeholder={generating ? 'Generating…' : 'Subject line'}
-                    className="w-full h-9 px-3 rounded-xl border border-purple-100 bg-purple-50/20 text-sm focus:outline-none focus:border-purple-200 text-gray-800" />
+                    className="w-full h-9 px-3 rounded-xl border border-purple-100 bg-purple-50/20 text-sm focus:outline-none focus:border-purple-200 text-ink" />
                 </div>
                 <div className="flex items-center gap-1 p-1.5 bg-surface rounded-xl border border-surface-border">
                   <button type="button" onClick={() => wrapSelection('**', '**')}
-                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-gray-700 hover:bg-white hover:shadow-sm transition-all" title="Bold">B</button>
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold text-ink-muted hover:bg-surface-1 hover:shadow-sm transition-all" title="Bold">B</button>
                   <button type="button" onClick={() => wrapSelection('_', '_')}
-                    className="px-2.5 py-1 rounded-lg text-xs italic text-gray-700 hover:bg-white hover:shadow-sm transition-all" title="Italic">I</button>
+                    className="px-2.5 py-1 rounded-lg text-xs italic text-ink-muted hover:bg-surface-1 hover:shadow-sm transition-all" title="Italic">I</button>
                   <button type="button" onClick={() => wrapSelection('\n• ', '')}
-                    className="px-2.5 py-1 rounded-lg text-xs text-gray-700 hover:bg-white hover:shadow-sm transition-all" title="Bullet">•</button>
+                    className="px-2.5 py-1 rounded-lg text-xs text-ink-muted hover:bg-surface-1 hover:shadow-sm transition-all" title="Bullet">•</button>
                   <div className="w-px h-4 bg-surface-border mx-1" />
                   <button type="button" onClick={copy}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-gray-600 hover:bg-white hover:shadow-sm transition-all">
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-ink-muted hover:bg-surface-1 hover:shadow-sm transition-all">
                     {copied ? <><Check className="w-3 h-3 text-green-500" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                   </button>
                   {contactEmail && message && !generating && (
@@ -475,7 +475,7 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
                 </div>
                 <textarea id="gen-msg" value={message} onChange={e => setMessage(e.target.value)} rows={9}
                   aria-label="Generated message"
-                  className="w-full rounded-xl border border-purple-100 bg-purple-50/20 px-3.5 py-3 text-sm resize-none focus:outline-none focus:border-purple-200 leading-relaxed text-gray-800" />
+                  className="w-full rounded-xl border border-purple-100 bg-purple-50/20 px-3.5 py-3 text-sm resize-none focus:outline-none focus:border-purple-200 leading-relaxed text-ink" />
                 <p className="text-[10px] text-surface-muted text-right">{charCount} chars · Edit before sending</p>
 
                 {/* Iterative refine — presets + free-text feedback */}
@@ -530,8 +530,8 @@ function ShareQRDialog({ contactId, contactName }: { contactId: string; contactN
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Share Contact Card</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-ink mb-1">Share Contact Card</Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">
             Scan QR or copy link to share {contactName}&apos;s public contact page.
           </Dialog.Description>
@@ -539,7 +539,7 @@ function ShareQRDialog({ contactId, contactName }: { contactId: string; contactN
             <QRCodeSVG value={shareUrl} size={160} marginSize={4} />
           </div>
           <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border mb-4">
-            <p className="text-xs text-gray-600 flex-1 truncate">{shareUrl}</p>
+            <p className="text-xs text-ink-muted flex-1 truncate">{shareUrl}</p>
             <button type="button" onClick={copy} className="flex-shrink-0 text-brand-500 hover:text-brand-700 transition-colors">
               {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
             </button>
@@ -696,10 +696,10 @@ export default function ContactDetailPage() {
             <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
               <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-                <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-                  <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Delete contact</Dialog.Title>
+                <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                  <Dialog.Title className="text-base font-bold text-ink mb-1">Delete contact</Dialog.Title>
                   <Dialog.Description className="text-sm text-surface-muted mb-5">
-                    Permanently delete <strong className="text-gray-900">{contact?.name}</strong>? This cannot be undone.
+                    Permanently delete <strong className="text-ink">{contact?.name}</strong>? This cannot be undone.
                   </Dialog.Description>
                   <div className="flex gap-3 justify-end">
                     <Dialog.Close asChild>
@@ -730,7 +730,7 @@ export default function ContactDetailPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-2 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" /> Notes
                 </p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.notes}</p>
+                <p className="text-sm text-ink-muted whitespace-pre-wrap">{contact.notes}</p>
               </div>
             )}
             <ReminderCard contactId={contact._id} reminderDate={contact.reminderDate} reminderNote={contact.reminderNote} onSaved={fetchContact} />
@@ -739,8 +739,8 @@ export default function ContactDetailPage() {
 
         {/* ── Edit form ─────────────────────────────────────── */}
         {editing && (
-          <div className="bg-white rounded-2xl border border-surface-border p-5">
-            <h3 className="font-bold text-gray-900 mb-4">Edit Contact</h3>
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
+            <h3 className="font-bold text-ink mb-4">Edit Contact</h3>
             {error && <Alert variant="destructive" className="mb-4"><AlertDescription>{error}</AlertDescription></Alert>}
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -761,7 +761,7 @@ export default function ContactDetailPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="gender">Gender</Label>
                   <select id="gender" name="gender" aria-label="Gender" value={form.gender} onChange={handleChange}
-                    className="flex h-10 w-full rounded-xl border border-surface-border bg-white px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                    className="flex h-10 w-full rounded-xl border border-surface-border bg-surface-1 px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
                     <option value="">Prefer not to say</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -784,7 +784,7 @@ export default function ContactDetailPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="notes">Notes</Label>
                 <textarea id="notes" name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="Additional notes…"
-                  className="flex w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none" />
+                  className="flex w-full rounded-xl border border-surface-border bg-surface-1 px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none" />
               </div>
               <FileUploader label="Profile Photo" hint="JPG or PNG · Max 1 file" maxFiles={1} onChange={setPhotoUrls} />
               <div className="flex gap-3 pt-2">
@@ -798,13 +798,13 @@ export default function ContactDetailPage() {
         )}
 
         {/* ── Activity Timeline ─────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+        <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-surface-border">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-brand-500" />
               </div>
-              <span className="font-bold text-sm text-gray-900">Activity Timeline</span>
+              <span className="font-bold text-sm text-ink">Activity Timeline</span>
             </div>
             <AddTimelineDialog contactId={id} onAdded={fetchContact} />
           </div>
@@ -812,7 +812,7 @@ export default function ContactDetailPage() {
           {!contact?.timeline?.length ? (
             <div className="flex flex-col items-center py-10 text-center">
               <Camera className="w-8 h-8 text-brand-200 mb-2" />
-              <p className="text-sm font-medium text-gray-700">No activity logged yet</p>
+              <p className="text-sm font-medium text-ink-muted">No activity logged yet</p>
               <p className="text-xs text-surface-muted mt-0.5">Log a call, meeting, or note to track interactions.</p>
             </div>
           ) : (
@@ -833,7 +833,7 @@ export default function ContactDetailPage() {
                     {/* Content */}
                     <div className={`flex-1 pb-4 ${isLast ? '' : ''}`}>
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <p className="text-sm font-semibold text-gray-900">{entry.title}</p>
+                        <p className="text-sm font-semibold text-ink">{entry.title}</p>
                         {entry.source === 'outlook' && (
                           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">Outlook</span>
                         )}

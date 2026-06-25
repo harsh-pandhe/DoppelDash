@@ -31,7 +31,7 @@ export function AreaChart({
         <YAxis tick={{ fontSize: 10, fill: '#8A93A6' }} axisLine={false} tickLine={false} tickFormatter={v => unit ? `${unit}${v >= 1000 ? Math.round(v/1000)+'k' : v}` : String(v)} />
         <Tooltip
           formatter={(v) => [fmt(Number(v ?? 0)), 'Value']}
-          contentStyle={{ background: '#fff', border: '1px solid #E4E8EF', borderRadius: 8, fontSize: 12 }}
+          contentStyle={{ background: 'var(--tooltip-bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text)' }}
         />
         <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#${gid})`} />
       </RAreaChart>
@@ -55,7 +55,7 @@ export function BarChart({
         <YAxis tick={{ fontSize: 10, fill: '#8A93A6' }} axisLine={false} tickLine={false} tickFormatter={v => unit ? `${unit}${v >= 1000 ? Math.round(v/1000)+'k' : v}` : String(v)} />
         <Tooltip
           formatter={(v) => [fmt(Number(v ?? 0)), 'Value']}
-          contentStyle={{ background: '#fff', border: '1px solid #E4E8EF', borderRadius: 8, fontSize: 12 }}
+          contentStyle={{ background: 'var(--tooltip-bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, color: 'var(--text)' }}
           cursor={{ fill: `${color}14` }}
         />
         <Bar dataKey="value" radius={[4, 4, 0, 0]}>

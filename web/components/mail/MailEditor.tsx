@@ -148,7 +148,7 @@ function ColorPopover({ editor }: { editor: Editor }) {
                   : editor.chain().focus().unsetColor().run()}
                 className="w-8 h-8 rounded-lg border border-surface-border flex items-center justify-center hover:scale-110 transition-transform"
                 style={{ background: c.value || '#ffffff' }}>
-                {!c.value && <X className="w-3.5 h-3.5 text-gray-400" />}
+                {!c.value && <X className="w-3.5 h-3.5 text-ink-muted" />}
               </button>
             </PopoverClose>
           ))}
@@ -180,7 +180,7 @@ function LinkPopover({ editor }: { editor: Editor }) {
         </PopoverTrigger>
       </Tooltip>
       <PopoverContent align="start" className="w-80 p-3 space-y-3">
-        <p className="text-xs font-semibold text-gray-700">Insert link</p>
+        <p className="text-xs font-semibold text-ink-muted">Insert link</p>
         <div className="flex gap-2">
           <input ref={inputRef} type="url" value={url} onChange={e => setUrl(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyLink() } }}
@@ -220,7 +220,7 @@ function SearchReplacePopover({ editor }: { editor: Editor }) {
         </PopoverTrigger>
       </Tooltip>
       <PopoverContent align="start" className="w-80 p-3 space-y-2">
-        <p className="text-xs font-semibold text-gray-700">Search &amp; replace</p>
+        <p className="text-xs font-semibold text-ink-muted">Search &amp; replace</p>
         <input type="text" value={find} onChange={e => { setFind(e.target.value); setResult(null) }}
           placeholder="Find…" aria-label="Find text"
           className="w-full h-8 px-2.5 rounded-lg border border-surface-border text-sm focus:outline-none focus:border-brand-500" />
@@ -260,8 +260,8 @@ function HtmlSnippetDialog({ editor }: { editor: Editor }) {
       </Tooltip>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-5 w-full max-w-lg">
-          <Dialog.Title className="text-sm font-bold text-gray-900 mb-1">Insert HTML snippet</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-5 w-full max-w-lg">
+          <Dialog.Title className="text-sm font-bold text-ink mb-1">Insert HTML snippet</Dialog.Title>
           <Dialog.Description className="text-xs text-surface-muted mb-3">
             Raw HTML with inline styles — e.g. a styled table or button. Inserted at the cursor.
           </Dialog.Description>
@@ -306,17 +306,17 @@ export function DevicePreviewDialog({ getHtml, subject, trigger }: {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-border">
             <div className="min-w-0">
-              <Dialog.Title className="text-sm font-bold text-gray-900">Device preview</Dialog.Title>
+              <Dialog.Title className="text-sm font-bold text-ink">Device preview</Dialog.Title>
               {subject && <p className="text-xs text-surface-muted truncate">Subject: {subject}</p>}
             </div>
             <div className="flex items-center gap-2">
               <div className="flex rounded-xl border border-surface-border overflow-hidden">
                 {([['desktop', Monitor], ['mobile', Smartphone]] as const).map(([d, Icon]) => (
                   <button key={d} type="button" title={d} aria-label={`${d} preview`} onClick={() => setDevice(d)}
-                    className={`p-2 transition-all ${device === d ? 'bg-brand-500 text-white' : 'bg-white text-surface-muted hover:bg-surface'}`}>
+                    className={`p-2 transition-all ${device === d ? 'bg-brand-500 text-white' : 'bg-surface-1 text-surface-muted hover:bg-surface'}`}>
                     <Icon className="w-4 h-4" />
                   </button>
                 ))}
@@ -328,10 +328,10 @@ export function DevicePreviewDialog({ getHtml, subject, trigger }: {
               </Dialog.Close>
             </div>
           </div>
-          <div className="flex-1 overflow-auto bg-gray-100 p-6 flex justify-center min-h-[420px]">
+          <div className="flex-1 overflow-auto bg-surface-2 p-6 flex justify-center min-h-[420px]">
             <iframe title="Email preview" srcDoc={srcDoc} sandbox=""
               style={{ width, maxWidth: '100%' }}
-              className="bg-white rounded-xl shadow-lg border border-surface-border h-[60vh] transition-all duration-300" />
+              className="bg-surface-1 rounded-xl shadow-lg border border-surface-border h-[60vh] transition-all duration-300" />
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -396,13 +396,13 @@ export default function MailEditor({
 
   return (
     <div className={cn(
-      'border border-surface-border rounded-xl overflow-hidden bg-white',
+      'border border-surface-border rounded-xl overflow-hidden bg-surface-1',
       'focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all duration-150',
       disabled && 'opacity-60 pointer-events-none',
       className
     )}>
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-surface-border bg-gray-50/80 flex-wrap">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-surface-border bg-surface-2/80 flex-wrap">
         {btn('bold', Bold, 'Bold', () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
         {btn('italic', Italic, 'Italic', () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'))}
         {btn('underline', UnderlineIcon, 'Underline', () => editor.chain().focus().toggleUnderline().run(), editor.isActive('underline'))}

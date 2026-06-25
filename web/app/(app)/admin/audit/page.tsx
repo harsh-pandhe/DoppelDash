@@ -183,14 +183,14 @@ export default function AuditPage() {
               <ShieldCheck className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Audit Log</p>
+              <p className="text-sm font-bold text-ink">Audit Log</p>
               <p className="text-xs text-surface-muted">Showing {logs.length} of {total} entr{total !== 1 ? 'ies' : 'y'}</p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <button type="button" onClick={() => setShowFilters(f => !f)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all
-                ${showFilters ? 'bg-brand-500 text-white border-brand-500' : 'bg-white border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                ${showFilters ? 'bg-brand-500 text-white border-brand-500' : 'bg-surface-1 border-surface-border text-ink-muted hover:border-brand-400'}`}>
               <Filter className="w-3.5 h-3.5" /> Filters{hasFilters && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400" />}
             </button>
             {logs.length > 0 && (
@@ -206,10 +206,10 @@ export default function AuditPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-muted pointer-events-none" />
           <input type="text" placeholder="Search action or person…" value={q} onChange={e => setQ(e.target.value)}
             aria-label="Search audit log"
-            className="w-full h-10 pl-9 pr-9 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+            className="w-full h-10 pl-9 pr-9 rounded-xl border border-surface-border bg-surface-1 text-sm focus:outline-none focus:border-brand-500" />
           {q && (
             <button type="button" aria-label="Clear search" onClick={() => setQ('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-gray-700">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-ink-muted">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -220,7 +220,7 @@ export default function AuditPage() {
           {TYPE_FILTERS.map(t => (
             <button type="button" key={t} onClick={() => setTypeFilter(t)}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all
-                ${typeFilter === t ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                ${typeFilter === t ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
               {t}
             </button>
           ))}
@@ -228,7 +228,7 @@ export default function AuditPage() {
 
         {/* Detailed filter panel */}
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-white rounded-2xl border border-surface-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-surface-1 rounded-2xl border border-surface-border">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Action</label>
               <select aria-label="Action filter" value={actionFilter} onChange={e => setActionFilter(e.target.value)}
@@ -265,15 +265,15 @@ export default function AuditPage() {
             <div className="w-16 h-16 rounded-2xl bg-surface flex items-center justify-center mb-4">
               <ShieldCheck className="w-8 h-8 text-surface-muted" />
             </div>
-            <p className="font-bold text-gray-900 mb-1">No audit entries</p>
+            <p className="font-bold text-ink mb-1">No audit entries</p>
             <p className="text-sm text-surface-muted">Activity will appear here as actions are taken.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
             {logs.map((log, i) => {
               const meta = ACTION_META[log.action] || { gradient: 'from-gray-400 to-gray-500', dot: 'bg-gray-400' }
               const md = log.metadata || {}
-              const labelColor = ACTION_LABEL_COLORS[log.action] || 'bg-gray-50 text-gray-700 border-gray-200'
+              const labelColor = ACTION_LABEL_COLORS[log.action] || 'bg-surface-2 text-ink-muted border-surface-border'
               const isLast = i === logs.length - 1
               const initials = (log.performedByName || 'Unknown').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
               return (
@@ -297,7 +297,7 @@ export default function AuditPage() {
                         {new Date(log.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
-                    <p className="text-xs text-gray-700 mt-1">
+                    <p className="text-xs text-ink-muted mt-1">
                       <strong className="font-semibold">{log.performedByName}</strong>
                       <span className="text-surface-muted"> · {log.targetType}</span>
                       {md.employeeName ? <span> → {String(md.employeeName)}</span> : null}

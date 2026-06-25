@@ -170,7 +170,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
               <ScanLine className="w-4 h-4 text-white" />
             </div>
-            <span className="text-sm font-semibold text-gray-700 group-hover:text-brand-700 flex-1">Scan Business Card</span>
+            <span className="text-sm font-semibold text-ink-muted group-hover:text-brand-700 flex-1">Scan Business Card</span>
             <span className="text-[10px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">AI</span>
           </button>
         )}
@@ -178,7 +178,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
 
           {/* Header */}
           <div className="relative overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 px-6 py-5 rounded-t-2xl">
@@ -205,7 +205,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
               {STEPS.map((s, i) => (
                 <div key={s} className="flex items-center gap-2">
                   <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full transition-all
-                    ${i === stepIdx ? 'bg-white text-brand-700' : i < stepIdx ? 'bg-white/30 text-white' : 'bg-white/10 text-white/50'}`}>
+                    ${i === stepIdx ? 'bg-surface-1 text-brand-700' : i < stepIdx ? 'bg-white/30 text-white' : 'bg-white/10 text-white/50'}`}>
                     {i < stepIdx ? <CheckCircle2 className="w-3 h-3" /> : <span className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[9px]">{i + 1}</span>}
                     {s}
                   </div>
@@ -221,26 +221,26 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
             {step === 'pick' && (
               <>
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                <label className="group flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-surface-border bg-white hover:border-brand-400 hover:bg-brand-50 transition-all text-center cursor-pointer">
+                <label className="group flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-surface-border bg-surface-1 hover:border-brand-400 hover:bg-brand-50 transition-all text-center cursor-pointer">
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Upload className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">Upload business card</p>
+                    <p className="font-bold text-ink text-sm">Upload business card</p>
                     <p className="text-xs text-surface-muted mt-0.5">JPG or PNG · tap to choose a photo from your device</p>
                   </div>
                   <input type="file" accept="image/jpeg,image/png,image/*" className="hidden" aria-label="Upload business card image" onChange={handleFileUpload} />
                 </label>
                 <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface border border-surface-border">
                   <Sparkles className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-600"><span className="font-semibold text-gray-900">AI</span> reads the card and auto-fills all contact details. Every scan is saved to your card gallery. Review before importing.</p>
+                  <p className="text-xs text-ink-muted"><span className="font-semibold text-ink">AI</span> reads the card and auto-fills all contact details. Every scan is saved to your card gallery. Review before importing.</p>
                 </div>
               </>
             )}
 
             {/* Step 2: Processing */}
             {step === 'preview' && (
-              <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+              <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
                 {imagePreview && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imagePreview} alt="Card" className="w-full max-h-40 object-contain bg-surface border-b border-surface-border" />
@@ -250,7 +250,7 @@ export default function ScanCardDialog({ trigger }: { trigger?: React.ReactNode 
                     <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900 text-sm">AI is reading the card…</p>
+                    <p className="font-bold text-ink text-sm">AI is reading the card…</p>
                     <p className="text-xs text-surface-muted mt-0.5">Extracting name, email, phone, company…</p>
                   </div>
                 </div>

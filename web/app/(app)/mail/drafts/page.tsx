@@ -57,9 +57,9 @@ function VersionHistoryDialog({ draftId, onRestored }: { draftId: string; onRest
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
           <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border">
-            <Dialog.Title className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <Dialog.Title className="text-base font-bold text-ink flex items-center gap-2">
               <History className="w-4 h-4 text-brand-500" /> Version history
             </Dialog.Title>
             <Dialog.Close asChild>
@@ -77,7 +77,7 @@ function VersionHistoryDialog({ draftId, onRestored }: { draftId: string; onRest
               <div key={i} className="rounded-xl border border-surface-border overflow-hidden">
                 <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-surface border-b border-surface-border">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-900 truncate">{v.subject || '(no subject)'}</p>
+                    <p className="text-xs font-bold text-ink truncate">{v.subject || '(no subject)'}</p>
                     <p className="text-[10px] text-surface-muted">{new Date(v.savedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {timeAgo(v.savedAt)}</p>
                   </div>
                   <Button type="button" size="sm" variant="outline" className="gap-1.5 flex-shrink-0"
@@ -130,7 +130,7 @@ export default function MailDraftsPage() {
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl space-y-5 w-full mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
               <FileEdit className="w-5 h-5 text-brand-500" /> Drafts
             </h2>
             <p className="text-xs text-surface-muted mt-0.5">Saved drafts with automatic version history</p>
@@ -152,12 +152,12 @@ export default function MailDraftsPage() {
         ) : (
           <div className="space-y-3">
             {drafts.map(d => (
-              <div key={d._id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-surface-border hover:border-brand-300 transition-colors flex-wrap">
+              <div key={d._id} className="flex items-center gap-4 p-4 rounded-2xl bg-surface-1 border border-surface-border hover:border-brand-300 transition-colors flex-wrap">
                 <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
                   <Mail className="w-5 h-5 text-brand-500" />
                 </div>
                 <div className="flex-1 min-w-[200px]">
-                  <p className="text-sm font-bold text-gray-900 truncate">{d.subject || '(no subject)'}</p>
+                  <p className="text-sm font-bold text-ink truncate">{d.subject || '(no subject)'}</p>
                   <p className="text-xs text-surface-muted flex items-center gap-2 mt-0.5 flex-wrap">
                     <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {d.recipients?.length || 0} recipient{(d.recipients?.length || 0) !== 1 ? 's' : ''}</span>
                     <span>· edited {timeAgo(d.updatedAt)}</span>
@@ -184,8 +184,8 @@ export default function MailDraftsPage() {
         <Dialog.Root open={!!deleteId} onOpenChange={o => { if (!o) setDeleteId(null) }}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-              <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Delete draft?</Dialog.Title>
+            <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+              <Dialog.Title className="text-base font-bold text-ink mb-1">Delete draft?</Dialog.Title>
               <Dialog.Description className="text-sm text-surface-muted mb-5">
                 This deletes the draft and all its version history. This cannot be undone.
               </Dialog.Description>

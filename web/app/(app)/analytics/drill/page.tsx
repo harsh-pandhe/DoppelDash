@@ -26,7 +26,7 @@ const STATUS_STYLE: Record<string, string> = {
   pending_admin: 'bg-blue-50 text-blue-700 border-blue-200',
   rejected: 'bg-red-50 text-red-700 border-red-200',
   returned: 'bg-orange-50 text-orange-700 border-orange-200',
-  cancelled: 'bg-gray-100 text-gray-600 border-gray-200',
+  cancelled: 'bg-surface-2 text-ink-muted border-surface-border',
 }
 const prettyStatus = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'
@@ -85,11 +85,11 @@ function DrillInner() {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             <button type="button" onClick={() => router.back()}
-              className="w-9 h-9 rounded-xl border border-surface-border bg-white flex items-center justify-center hover:border-brand-400 transition-colors flex-shrink-0">
-              <ArrowLeft className="w-4 h-4 text-gray-600" />
+              className="w-9 h-9 rounded-xl border border-surface-border bg-surface-1 flex items-center justify-center hover:border-brand-400 transition-colors flex-shrink-0">
+              <ArrowLeft className="w-4 h-4 text-ink-muted" />
             </button>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">
+              <p className="text-sm font-bold text-ink">
                 {METRIC_LABEL[metric] || metric}
                 {status && <span className="text-brand-600"> · {prettyStatus(status)}</span>}
               </p>
@@ -105,17 +105,17 @@ function DrillInner() {
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3">
             {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
           </div>
         ) : !data || data.rows.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+          <div className="text-center py-20 bg-surface-1 rounded-2xl border border-surface-border">
             <Inbox className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">No matching records</p>
+            <p className="font-semibold text-ink">No matching records</p>
             <p className="text-sm text-surface-muted mt-1">Nothing in this segment for the selected range.</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -130,15 +130,15 @@ function DrillInner() {
                 <tbody>
                   {data.rows.map(r => (
                     <tr key={r.id} className="border-b border-surface-border last:border-0 hover:bg-surface/50 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{r.userName}</td>
-                      <td className="px-4 py-3 text-gray-700 max-w-[260px]">
+                      <td className="px-4 py-3 font-semibold text-ink whitespace-nowrap">{r.userName}</td>
+                      <td className="px-4 py-3 text-ink-muted max-w-[260px]">
                         <p className="font-medium truncate">{r.primary || '—'}</p>
                         {r.detail && <p className="text-xs text-surface-muted truncate">{r.detail}</p>}
                       </td>
-                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap font-medium">{r.value || '—'}</td>
+                      <td className="px-4 py-3 text-ink-muted whitespace-nowrap font-medium">{r.value || '—'}</td>
                       <td className="px-4 py-3 text-surface-muted whitespace-nowrap">{fmtDate(r.date)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[r.status] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[r.status] || 'bg-surface-2 text-ink-muted border-surface-border'}`}>
                           {prettyStatus(r.status)}
                         </span>
                       </td>

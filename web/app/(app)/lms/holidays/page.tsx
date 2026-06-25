@@ -17,7 +17,7 @@ const TYPE_META: Record<string, { badge: string; label: string }> = {
   national:   { badge: 'bg-red-100 text-red-700 border-red-200',      label: 'National'   },
   regional:   { badge: 'bg-blue-100 text-blue-700 border-blue-200',   label: 'Regional'   },
   restricted: { badge: 'bg-orange-100 text-orange-700 border-orange-200', label: 'Restricted' },
-  optional:   { badge: 'bg-gray-100 text-gray-600 border-gray-200',   label: 'Optional'   },
+  optional:   { badge: 'bg-surface-2 text-ink-muted border-surface-border',   label: 'Optional'   },
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -94,7 +94,7 @@ export default function HolidaysPage() {
               className="px-3 h-9 rounded-xl border border-surface-border text-sm font-semibold hover:border-brand-400 transition-colors">
               ← {year-1}
             </button>
-            <span className="text-sm font-extrabold text-gray-900 px-2">{year}</span>
+            <span className="text-sm font-extrabold text-ink px-2">{year}</span>
             <button type="button" onClick={() => setYear(y => y+1)}
               className="px-3 h-9 rounded-xl border border-surface-border text-sm font-semibold hover:border-brand-400 transition-colors">
               {year+1} →
@@ -109,8 +109,8 @@ export default function HolidaysPage() {
 
         {/* Add form */}
         {adding && (
-          <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
-            <h3 className="text-sm font-bold text-gray-700">New Holiday</h3>
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
+            <h3 className="text-sm font-bold text-ink-muted">New Holiday</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="hol-name">Name</Label>
@@ -158,9 +158,9 @@ export default function HolidaysPage() {
             {MONTHS.map((month, mi) => {
               const mHolidays = byMonth[mi] || []
               return (
-                <div key={month} className={`bg-white rounded-2xl border overflow-hidden transition-shadow hover:shadow-md ${mHolidays.length > 0 ? 'border-surface-border' : 'border-surface-border opacity-60'}`}>
+                <div key={month} className={`bg-surface-1 rounded-2xl border overflow-hidden transition-shadow hover:shadow-md ${mHolidays.length > 0 ? 'border-surface-border' : 'border-surface-border opacity-60'}`}>
                   <div className={`px-4 py-2.5 border-b border-surface-border flex items-center justify-between ${mHolidays.length > 0 ? 'bg-gradient-to-r from-[#e8f0fa] to-white' : 'bg-surface'}`}>
-                    <p className="text-sm font-extrabold text-gray-900">{month}</p>
+                    <p className="text-sm font-extrabold text-ink">{month}</p>
                     {mHolidays.length > 0 && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">{mHolidays.length}</span>
                     )}
@@ -174,11 +174,11 @@ export default function HolidaysPage() {
                         return (
                           <div key={h._id} className="px-4 py-2.5 flex items-start gap-3 group">
                             <div className="text-center flex-shrink-0">
-                              <p className="text-lg font-extrabold text-gray-900 leading-none">{new Date(h.date).getDate()}</p>
+                              <p className="text-lg font-extrabold text-ink leading-none">{new Date(h.date).getDate()}</p>
                               <p className="text-[9px] font-bold text-surface-muted uppercase">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(h.date).getDay()]}</p>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-gray-900 truncate">{h.name}</p>
+                              <p className="text-xs font-bold text-ink truncate">{h.name}</p>
                               <span className={`text-[9px] font-bold px-1.5 py-0 rounded-full border ${t.badge}`}>{t.label}</span>
                               {h.description && <p className="text-[9px] text-surface-muted mt-0.5 truncate">{h.description}</p>}
                             </div>

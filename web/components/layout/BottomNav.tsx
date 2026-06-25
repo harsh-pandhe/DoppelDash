@@ -56,7 +56,7 @@ export default function BottomNav() {
             href={href}
             className={cn(
               'relative flex flex-col items-center justify-center gap-0.5 py-2 transition-colors min-h-[56px]',
-              active ? 'text-brand-600' : 'text-surface-muted hover:text-gray-700 active:bg-surface'
+              active ? 'text-brand-600' : 'text-surface-muted hover:text-ink-muted active:bg-surface'
             )}
           >
             <span className="relative">

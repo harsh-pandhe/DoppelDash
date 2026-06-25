@@ -33,7 +33,7 @@ const TYPE_CFG: Record<string, { label: string; pill: string; dot: string; progr
   sick:       { label: 'Sick',       pill: 'bg-red-100    text-red-700',    dot: 'bg-red-400',    progress: 'bg-red-400'    },
   medical:    { label: 'Sick',       pill: 'bg-red-100    text-red-700',    dot: 'bg-red-400',    progress: 'bg-red-400'    }, // legacy compat
   earned:     { label: 'Earned',     pill: 'bg-green-100  text-green-700',  dot: 'bg-green-400',  progress: 'bg-green-400'  },
-  lwp:        { label: 'LWP',        pill: 'bg-gray-100   text-gray-700',   dot: 'bg-gray-400',   progress: 'bg-gray-400'   },
+  lwp:        { label: 'LWP',        pill: 'bg-surface-2   text-ink-muted',   dot: 'bg-gray-400',   progress: 'bg-gray-400'   },
   privilege:  { label: 'Privilege',  pill: 'bg-purple-100 text-purple-700', dot: 'bg-purple-400', progress: 'bg-purple-400' },
   restricted: { label: 'Restricted', pill: 'bg-orange-100 text-orange-700', dot: 'bg-orange-400', progress: 'bg-orange-400' },
 }
@@ -60,7 +60,7 @@ function LeaveCard({ leave, isManager, onSelect }: { leave: Leave; isManager: bo
 
   return (
     <button type="button" onClick={onSelect}
-      className="group w-full text-left bg-white rounded-2xl border border-surface-border p-4 hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col gap-3">
+      className="group w-full text-left bg-surface-1 rounded-2xl border border-surface-border p-4 hover:border-brand-300 hover:shadow-md transition-all duration-200 flex flex-col gap-3">
       {/* Top row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -71,13 +71,13 @@ function LeaveCard({ leave, isManager, onSelect }: { leave: Leave; isManager: bo
       </div>
 
       {/* Reason */}
-      <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">{leave.reason}</p>
+      <p className="text-sm font-semibold text-ink leading-snug line-clamp-2">{leave.reason}</p>
 
       {/* Date range */}
       <div className="flex items-center gap-1.5 text-xs text-surface-muted">
         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
         <span>{start} — {end}</span>
-        <span className="font-bold text-gray-700 ml-auto">{leave.days}d</span>
+        <span className="font-bold text-ink-muted ml-auto">{leave.days}d</span>
       </div>
 
       {/* Manager + docs */}
@@ -159,10 +159,10 @@ function LeaveDetailSheet({
               <div key={step} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1 gap-1">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all
-                    ${done ? 'bg-brand-500 border-brand-500 text-white' : 'bg-white border-surface-border text-surface-muted'}`}>
+                    ${done ? 'bg-brand-500 border-brand-500 text-white' : 'bg-surface-1 border-surface-border text-surface-muted'}`}>
                     {done ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                   </div>
-                  <p className={`text-[10px] font-semibold text-center leading-tight ${done ? 'text-gray-800' : 'text-surface-muted'}`}>{step}</p>
+                  <p className={`text-[10px] font-semibold text-center leading-tight ${done ? 'text-ink' : 'text-surface-muted'}`}>{step}</p>
                 </div>
                 {i < PIPELINE.length - 1 && (
                   <div className={`h-0.5 flex-1 mx-1 rounded ${pipelineStep > i ? 'bg-brand-400' : 'bg-surface-border'}`} />
@@ -204,7 +204,7 @@ function LeaveDetailSheet({
         )}
 
         {!leave.medicalDocs?.length && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 border border-surface-border text-xs text-surface-muted">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-surface-2 border border-surface-border text-xs text-surface-muted">
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             {leave.type === 'medical' ? 'No medical docs — verify with employee.' : 'No supporting documents.'}
           </div>
@@ -231,13 +231,13 @@ function LeaveDetailSheet({
             <p className="text-sm font-semibold text-red-800">Reason for rejection (optional)</p>
             <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3}
               placeholder="Manager note to employee…"
-              className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400" />
+              className="w-full rounded-lg border border-red-200 bg-surface-1 px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400" />
             <div className="flex gap-2">
               <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 gap-1.5" onClick={handleReject} disabled={acting}>
                 {acting ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
                 Confirm Reject
               </Button>
-              <button type="button" onClick={() => setShowReject(false)} className="text-xs text-surface-muted hover:text-gray-700">Cancel</button>
+              <button type="button" onClick={() => setShowReject(false)} className="text-xs text-surface-muted hover:text-ink-muted">Cancel</button>
             </div>
           </div>
         )}
@@ -265,7 +265,7 @@ function InfoTile({ label, value, full }: { label: string; value: string; full?:
   return (
     <div className={`p-3 rounded-xl bg-surface border border-surface-border ${full ? 'col-span-2' : ''}`}>
       <p className="text-[10px] font-bold uppercase tracking-wide text-surface-muted mb-0.5">{label}</p>
-      <p className="text-sm font-semibold text-gray-900">{value}</p>
+      <p className="text-sm font-semibold text-ink">{value}</p>
     </div>
   )
 }
@@ -354,10 +354,10 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-surface-border px-6 py-4 flex items-center justify-between z-10">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-surface-1 border-b border-surface-border px-6 py-4 flex items-center justify-between z-10">
             <div>
-              <Dialog.Title className="text-base font-bold text-gray-900">New Leave Request</Dialog.Title>
+              <Dialog.Title className="text-base font-bold text-ink">New Leave Request</Dialog.Title>
               <Dialog.Description className="text-xs text-surface-muted mt-0.5">Fill in your leave details below.</Dialog.Description>
             </div>
             <Dialog.Close asChild>
@@ -394,7 +394,7 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
                       className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-bold transition-all
                         ${form.type === type
                           ? 'border-brand-400 bg-brand-50 text-brand-700 ring-2 ring-brand-400/20'
-                          : 'border-surface-border text-gray-600 hover:border-gray-300'}`}>
+                          : 'border-surface-border text-ink-muted hover:border-surface-border'}`}>
                       <span className={`w-2.5 h-2.5 rounded-full ${t.dot}`} />
                       <span>{t.label}</span>
                       <span className={`text-[10px] font-semibold ${bal !== null && bal <= 2 ? 'text-red-500' : 'text-surface-muted'}`}>
@@ -413,14 +413,14 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
             <div className="flex items-center gap-4 p-3 rounded-xl border border-surface-border bg-surface/50">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.isHalfDay} onChange={e => setForm(f => ({...f, isHalfDay: e.target.checked}))} className="accent-brand-500 w-4 h-4" />
-                <span className="text-sm font-semibold text-gray-700">Half Day</span>
+                <span className="text-sm font-semibold text-ink-muted">Half Day</span>
               </label>
               {form.isHalfDay && (
                 <div className="flex gap-2">
                   {(['morning', 'afternoon'] as const).map(p => (
                     <button key={p} type="button" onClick={() => setForm(f => ({...f, halfDayPeriod: p}))}
                       className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all
-                        ${form.halfDayPeriod === p ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600'}`}>
+                        ${form.halfDayPeriod === p ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted'}`}>
                       {p}
                     </button>
                   ))}
@@ -528,10 +528,10 @@ function MiniCalendar({ leaves }: { leaves: Leave[] }) {
   const next = () => { if (month === 11) { setYear(y => y + 1); setMonth(0)  } else setMonth(m => m + 1) }
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-border p-4">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border p-4">
       <div className="flex items-center justify-between mb-3">
         <button type="button" aria-label="Previous month" onClick={prev} className="p-1 rounded-lg hover:bg-surface transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-        <p className="text-xs font-bold text-gray-900">{MONTHS[month]} {year}</p>
+        <p className="text-xs font-bold text-ink">{MONTHS[month]} {year}</p>
         <button type="button" aria-label="Next month" onClick={next} className="p-1 rounded-lg hover:bg-surface transition-colors"><ChevronRight className="w-4 h-4" /></button>
       </div>
       <div className="grid grid-cols-7 mb-1">
@@ -557,7 +557,7 @@ function MiniCalendar({ leaves }: { leaves: Leave[] }) {
             : firstLeave.type === 'casual'     ? 'text-blue-900'
             : firstLeave.type === 'medical'    ? 'text-red-900'
                                                : 'text-green-900'
-            : isToday ? 'text-white' : 'text-gray-700'
+            : isToday ? 'text-white' : 'text-ink-muted'
           return (
             <div key={d} className={`flex flex-col items-center justify-center h-7 rounded-md border transition-all
               ${isToday ? 'bg-brand-500 border-brand-500' : dl.length > 0 ? cellBg + ' border' : 'border-transparent'}`}>
@@ -606,20 +606,20 @@ function WorkloadHeatmap() {
   if (!data || data.rows.length === 0) return null
 
   const cellColor = (c: { type: string; half: boolean } | null) => {
-    if (!c) return 'bg-gray-50'
+    if (!c) return 'bg-surface-2'
     const base = TYPE_CFG[c.type]?.dot || 'bg-blue-400'
     return c.half ? `${base} opacity-50` : base
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-3">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 space-y-3">
       <p className="text-xs font-bold uppercase tracking-wide text-surface-muted flex items-center gap-1.5">
         <Users className="w-3.5 h-3.5" /> Team workload · next 14 days
       </p>
       <div className="space-y-1.5 max-h-72 overflow-y-auto scrollbar-thin">
         {data.rows.map(row => (
           <div key={row.userId} className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-gray-700 w-16 truncate flex-shrink-0" title={row.name}>{row.name}</span>
+            <span className="text-[10px] font-semibold text-ink-muted w-16 truncate flex-shrink-0" title={row.name}>{row.name}</span>
             <div className="flex gap-0.5 flex-1">
               {row.cells.map((c, i) => (
                 <span key={i} title={data.days[i] + (c ? ` · ${c.type}` : ' · available')}
@@ -781,7 +781,7 @@ export default function LMSPage() {
         {/* Header row */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900">Leave Requests</h2>
+            <h2 className="text-lg font-extrabold text-ink">Leave Requests</h2>
             <p className="text-sm text-surface-muted mt-0.5">
               {isManager ? `${pending.length} pending approval` : `${leaves.length} total requests`}
             </p>
@@ -807,11 +807,11 @@ export default function LMSPage() {
                 value={month}
                 onChange={e => setMonth(e.target.value)}
                 aria-label="Filter leaves by month"
-                className="h-10 rounded-xl border border-surface-border bg-white px-3 text-sm font-medium text-gray-700 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                className="h-10 rounded-xl border border-surface-border bg-surface-1 px-3 text-sm font-medium text-ink-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
               />
               {month && (
                 <button type="button" onClick={() => setMonth('')}
-                  className="text-xs font-semibold text-surface-muted hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-surface transition-colors"
+                  className="text-xs font-semibold text-surface-muted hover:text-ink-muted px-2 py-1 rounded-lg hover:bg-surface transition-colors"
                   title="Show all months">
                   All
                 </button>
@@ -839,13 +839,13 @@ export default function LMSPage() {
                   const pct     = max > 0 ? Math.min(100, Math.round(used / max * 100)) : 0
                   const remaining = Math.max(0, max - used)
                   return (
-                    <div key={type} className="bg-white rounded-2xl border border-surface-border p-4 space-y-2">
+                    <div key={type} className="bg-surface-1 rounded-2xl border border-surface-border p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-700">{label}</span>
+                        <span className="text-xs font-bold text-ink-muted">{label}</span>
                         <span className="text-[10px] text-surface-muted">{remaining}/{max} left</span>
                       </div>
-                      <Progress value={pct} className="h-1.5 bg-gray-100" indicatorClassName={barClass} />
-                      <p className="text-2xl font-extrabold text-gray-900 tabular-nums">{used} <span className="text-xs font-normal text-surface-muted">used</span></p>
+                      <Progress value={pct} className="h-1.5 bg-surface-2" indicatorClassName={barClass} />
+                      <p className="text-2xl font-extrabold text-ink tabular-nums">{used} <span className="text-xs font-normal text-surface-muted">used</span></p>
                     </div>
                   )
                 })}
@@ -862,7 +862,7 @@ export default function LMSPage() {
                 ].map(({ label, count, color, bg, border }) => (
                   <div key={label} className={`${bg} border ${border} rounded-2xl p-4 text-center`}>
                     <p className={`text-3xl font-extrabold tabular-nums ${color}`}>{count}</p>
-                    <p className="text-xs font-semibold text-gray-600 mt-0.5">{label}</p>
+                    <p className="text-xs font-semibold text-ink-muted mt-0.5">{label}</p>
                   </div>
                 ))}
               </div>
@@ -891,7 +891,7 @@ export default function LMSPage() {
             {isManager && <WorkloadHeatmap />}
 
             {isManager && pending.length > 0 && (
-              <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-3">
+              <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wide text-surface-muted flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" /> Needs attention
                 </p>
@@ -901,7 +901,7 @@ export default function LMSPage() {
                       className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface transition-colors text-left">
                       <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900 truncate">{l.userName}</p>
+                        <p className="text-xs font-semibold text-ink truncate">{l.userName}</p>
                         <p className="text-[10px] text-surface-muted">{l.days}d {l.type}</p>
                       </div>
                     </button>
@@ -911,7 +911,7 @@ export default function LMSPage() {
             )}
 
             {/* Legend */}
-            <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-2">
+            <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 space-y-2">
               <p className="text-xs font-bold uppercase tracking-wide text-surface-muted">Calendar legend</p>
               {[
                 { dot: 'bg-yellow-400', label: 'Pending' },

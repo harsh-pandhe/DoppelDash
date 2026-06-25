@@ -83,16 +83,16 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
 
   if (counts.all === 0) {
     return (
-      <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+      <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
         <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between">
-          <h2 className="text-sm font-bold tracking-tight text-dm-graphite uppercase">Approvals queue</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink uppercase">Approvals queue</h2>
           <span className="text-[10px] font-mono text-surface-muted">0 PENDING</span>
         </div>
         <div className="px-5 py-12 text-center">
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-status-success-bg flex items-center justify-center">
             <Check className="w-6 h-6 text-status-success" />
           </div>
-          <p className="text-base font-bold text-dm-graphite">All caught up</p>
+          <p className="text-base font-bold text-ink">All caught up</p>
           <p className="text-xs text-surface-muted mt-1">No items waiting for your decision.</p>
         </div>
       </div>
@@ -100,11 +100,11 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
   }
 
   return (
-    <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+    <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-sm font-bold tracking-tight text-dm-graphite uppercase">Approvals queue</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink uppercase">Approvals queue</h2>
           <p className="text-xs text-surface-muted mt-0.5">
             {counts.all} item{counts.all !== 1 ? 's' : ''} need your decision
           </p>
@@ -149,17 +149,17 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-surface-muted">{meta.label}</span>
-                    <span className="text-[10px] font-bold text-dm-graphite-3">·</span>
-                    <span className="text-xs font-bold text-dm-graphite truncate">{item.userName}</span>
+                    <span className="text-[10px] font-bold text-ink-muted">·</span>
+                    <span className="text-xs font-bold text-ink truncate">{item.userName}</span>
                     {item.badge && (
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 bg-surface-2 border border-surface-border text-dm-graphite-2 rounded">
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 bg-surface-2 border border-surface-border text-ink-muted rounded">
                         {item.badge}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-dm-graphite mt-0.5 truncate">{item.title}</p>
+                  <p className="text-sm font-semibold text-ink mt-0.5 truncate">{item.title}</p>
                   {item.subtitle && (
-                    <p className="text-xs text-dm-graphite-3 mt-0.5 line-clamp-1">{item.subtitle}</p>
+                    <p className="text-xs text-ink-muted mt-0.5 line-clamp-1">{item.subtitle}</p>
                   )}
                   <p className="text-[10px] font-mono text-surface-muted mt-1">{item.meta}</p>
                 </div>
@@ -200,7 +200,7 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
                   </button>
                   <Link
                     href={item.href}
-                    className="w-8 h-8 rounded-md hover:bg-surface-2 text-surface-muted hover:text-dm-graphite flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-md hover:bg-surface-2 text-surface-muted hover:text-ink flex items-center justify-center transition-colors"
                     title="Open"
                     aria-label="Open detail"
                   >

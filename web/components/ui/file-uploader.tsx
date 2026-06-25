@@ -108,7 +108,7 @@ export default function FileUploader({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className={`text-xs font-semibold uppercase tracking-wide ${variant === 'danger' ? 'text-red-700' : 'text-gray-500'}`}>
+        <label className={`text-xs font-semibold uppercase tracking-wide ${variant === 'danger' ? 'text-red-700' : 'text-ink-muted'}`}>
           {label}{required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
         {files.length > 0 && (
@@ -137,7 +137,7 @@ export default function FileUploader({
             ? <Loader2 className="w-6 h-6 text-brand-400 animate-spin" />
             : <Upload className={`w-6 h-6 ${variant === 'danger' ? 'text-red-400' : 'text-surface-muted'}`} />
           }
-          <p className={`text-sm font-medium ${variant === 'danger' ? 'text-red-700' : 'text-gray-600'}`}>
+          <p className={`text-sm font-medium ${variant === 'danger' ? 'text-red-700' : 'text-ink-muted'}`}>
             {uploading ? 'Compressing & uploading…' : 'Click or drag files here'}
           </p>
           {hint && <p className="text-xs text-surface-muted text-center">{hint}</p>}
@@ -157,7 +157,7 @@ export default function FileUploader({
                 </a>
               ) : (
                 <a href={f.url} target="_blank" rel="noreferrer"
-                  className="w-16 h-16 flex flex-col items-center justify-center rounded-lg border border-surface-border bg-white gap-1 hover:bg-surface transition-colors">
+                  className="w-16 h-16 flex flex-col items-center justify-center rounded-lg border border-surface-border bg-surface-1 gap-1 hover:bg-surface transition-colors">
                   <FileText className="w-6 h-6 text-brand-400" />
                   <span className="text-[9px] text-surface-muted truncate w-14 text-center px-1">{f.name}</span>
                 </a>

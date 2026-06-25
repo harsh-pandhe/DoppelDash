@@ -103,14 +103,14 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
         <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-surface-muted">
           {today.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
-        <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-dm-graphite mt-1">
+        <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-ink mt-1">
           {greeting}, <span className="text-dm-orange">{firstName}</span>
         </h1>
-        <p className="text-sm text-dm-graphite-3 mt-1">
+        <p className="text-sm text-ink-muted mt-1">
           {returnedExpenses.length > 0
             ? <><strong className="text-status-warning">{returnedExpenses.length}</strong> expense{returnedExpenses.length !== 1 ? 's' : ''} need revision.</>
             : pendingReimb.length > 0
-            ? <><strong className="text-dm-graphite">₹{pendingAmt.toLocaleString('en-IN')}</strong> reimbursement{pendingReimb.length !== 1 ? 's' : ''} pending.</>
+            ? <><strong className="text-ink">₹{pendingAmt.toLocaleString('en-IN')}</strong> reimbursement{pendingReimb.length !== 1 ? 's' : ''} pending.</>
             : 'All your requests are settled. Have a productive day.'}
         </p>
       </header>
@@ -128,12 +128,12 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
             <Link
               key={href}
               href={href}
-              className="group bg-white border border-surface-border rounded-lg p-4 hover:border-dm-graphite hover:shadow-card-hover transition-all"
+              className="group bg-surface-1 border border-surface-border rounded-lg p-4 hover:border-dm-graphite hover:shadow-card-hover transition-all"
             >
               <div className="w-9 h-9 rounded-md bg-surface-2 group-hover:bg-dm-orange-50 flex items-center justify-center mb-3 transition-colors">
-                <Icon className="w-4 h-4 text-dm-graphite-3 group-hover:text-dm-orange transition-colors" />
+                <Icon className="w-4 h-4 text-ink-muted group-hover:text-dm-orange transition-colors" />
               </div>
-              <p className="text-sm font-bold text-dm-graphite">{label}</p>
+              <p className="text-sm font-bold text-ink">{label}</p>
               <p className="text-[10px] text-surface-muted mt-0.5">{hint}</p>
             </Link>
           ))}
@@ -149,12 +149,12 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
               <p className="text-sm font-bold text-status-warning">
                 {returnedExpenses.length} expense{returnedExpenses.length !== 1 ? 's' : ''} need revision
               </p>
-              <p className="text-xs text-dm-graphite-2 mt-0.5">Manager sent back for changes. Open and resubmit.</p>
+              <p className="text-xs text-ink-muted mt-0.5">Manager sent back for changes. Open and resubmit.</p>
               <div className="mt-2 space-y-1">
                 {returnedExpenses.map(e => (
                   <Link key={String(e._id)} href="/rms" className="block text-xs text-status-warning hover:underline">
                     → {e.title} · ₹{e.amount.toLocaleString('en-IN')}
-                    {e.managerNote && <span className="text-dm-graphite-3 italic"> — &quot;{e.managerNote.slice(0, 60)}&quot;</span>}
+                    {e.managerNote && <span className="text-ink-muted italic"> — &quot;{e.managerNote.slice(0, 60)}&quot;</span>}
                   </Link>
                 ))}
               </div>
@@ -169,15 +169,15 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
         <div className="space-y-6">
 
           {/* Recent activity */}
-          <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+          <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-dm-graphite">My recent requests</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-ink">My recent requests</h2>
               <span className="text-[10px] font-mono text-surface-muted">LAST {activity.length}</span>
             </div>
             {activity.length === 0 ? (
               <div className="px-5 py-10 text-center">
                 <Calendar className="w-8 h-8 text-surface-muted/50 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-dm-graphite">Nothing submitted yet</p>
+                <p className="text-sm font-semibold text-ink">Nothing submitted yet</p>
                 <p className="text-xs text-surface-muted mt-1">Your leave / expense / travel requests will appear here.</p>
               </div>
             ) : (
@@ -189,8 +189,8 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                   return (
                     <Link key={i} href={a.href} className="block px-5 py-3 hover:bg-surface-2/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <KindIcon className="w-4 h-4 text-dm-graphite-3 flex-shrink-0" />
-                        <p className="text-sm font-semibold text-dm-graphite flex-1 truncate">{a.title}</p>
+                        <KindIcon className="w-4 h-4 text-ink-muted flex-shrink-0" />
+                        <p className="text-sm font-semibold text-ink flex-1 truncate">{a.title}</p>
                         <span className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${meta.tone}`}>
                           <SIcon className="w-2.5 h-2.5" />{meta.label}
                         </span>
@@ -204,15 +204,15 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
 
           {/* Reimbursements pending */}
           {pendingReimb.length > 0 && (
-            <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+            <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-dm-graphite">Reimbursements waiting</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-ink">Reimbursements waiting</h2>
                 <Link href="/rms" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600 flex items-center gap-1">
                   All <ArrowRight className="w-2.5 h-2.5" />
                 </Link>
               </div>
               <div className="px-5 py-4">
-                <p className="text-3xl font-black tracking-tighter text-dm-graphite tabular-nums">
+                <p className="text-3xl font-black tracking-tighter text-ink tabular-nums">
                   ₹{pendingAmt.toLocaleString('en-IN')}
                 </p>
                 <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1">
@@ -222,10 +222,10 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                   {pendingReimb.slice(0, 4).map(e => (
                     <div key={String(e._id)} className="flex items-center justify-between text-xs py-1.5 border-b border-surface-border last:border-0">
                       <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-dm-graphite truncate">{e.title}</p>
+                        <p className="font-semibold text-ink truncate">{e.title}</p>
                         <p className="text-[10px] text-surface-muted">{timeAgo(e.createdAt as Date)} · {e.status === 'pending_admin' ? 'Awaiting payout' : 'Manager review'}</p>
                       </div>
-                      <span className="font-mono font-bold text-dm-graphite tabular-nums flex-shrink-0">
+                      <span className="font-mono font-bold text-ink tabular-nums flex-shrink-0">
                         ₹{e.amount.toLocaleString('en-IN')}
                       </span>
                     </div>
@@ -240,9 +240,9 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
         <div className="space-y-6">
 
           {/* Leave balance gauges */}
-          <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+          <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
             <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-dm-graphite">Leave balance</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-ink">Leave balance</h2>
               <span className="text-[10px] font-mono text-surface-muted">{year}</span>
             </div>
             <div className="px-5 py-4 space-y-3">
@@ -256,10 +256,10 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                     <div className="flex items-center justify-between mb-1">
                       <span className={`text-xs font-bold flex items-center gap-1.5`}>
                         <span className={`w-2 h-2 rounded-full ${t.color}`} />
-                        <span className="text-dm-graphite">{t.label}</span>
+                        <span className="text-ink">{t.label}</span>
                       </span>
                       <span className="text-xs font-mono">
-                        <span className="font-bold text-dm-graphite">{remaining}</span>
+                        <span className="font-bold text-ink">{remaining}</span>
                         <span className="text-surface-muted"> / {total}</span>
                       </span>
                     </div>
@@ -277,9 +277,9 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
 
           {/* Upcoming holidays */}
           {upcomingHolidays.length > 0 && (
-            <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+            <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-dm-graphite">Upcoming holidays</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-ink">Upcoming holidays</h2>
                 <Link href="/lms/holidays" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600">All</Link>
               </div>
               <div className="divide-y divide-surface-border">
@@ -290,10 +290,10 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                     <div key={String(h._id)} className="px-5 py-2.5 flex items-center gap-3">
                       <div className="text-center flex-shrink-0">
                         <p className="text-[9px] font-bold uppercase text-surface-muted leading-none">{d.toLocaleDateString('en-IN', { month: 'short' })}</p>
-                        <p className="text-lg font-black tracking-tighter text-dm-graphite leading-none mt-0.5">{d.getDate()}</p>
+                        <p className="text-lg font-black tracking-tighter text-ink leading-none mt-0.5">{d.getDate()}</p>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-dm-graphite truncate">{h.name}</p>
+                        <p className="text-xs font-semibold text-ink truncate">{h.name}</p>
                         <p className="text-[10px] text-surface-muted capitalize">
                           {daysAway === 0 ? 'Today' : daysAway === 1 ? 'Tomorrow' : `In ${daysAway} days`} · {h.type}
                         </p>
@@ -307,9 +307,9 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
 
           {/* Pinned announcements */}
           {pinnedAnnos.length > 0 && (
-            <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+            <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-dm-graphite flex items-center gap-1.5">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
                   <Pin className="w-3 h-3" />Pinned
                 </h2>
                 <Link href="/announcements" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600">All</Link>
@@ -320,7 +320,7 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
                     <div className="flex items-start gap-2">
                       <Megaphone className="w-3.5 h-3.5 text-dm-orange flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-dm-graphite truncate">{a.title}</p>
+                        <p className="text-xs font-bold text-ink truncate">{a.title}</p>
                         <p className="text-[10px] text-surface-muted line-clamp-1">
                           {(a.body || '').replace(/<[^>]*>/g, ' ').trim().slice(0, 80)}
                         </p>

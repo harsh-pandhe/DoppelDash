@@ -32,7 +32,7 @@ export default function BrandPanel({ subtitle }: { subtitle: string }) {
 
       {/* Logo */}
       <div className="relative z-10">
-        <div className="inline-flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 shadow-lg">
+        <div className="inline-flex items-center gap-3 bg-surface-1 rounded-xl px-4 py-2.5 shadow-lg">
           <DoppelmayrLogo className="h-8 w-auto" />
         </div>
         <p className="text-[11px] font-semibold tracking-[0.18em] text-white/50 uppercase mt-3 ml-0.5">

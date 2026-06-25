@@ -146,9 +146,9 @@ export default function ProfilePage() {
     <>
       <Header title="My Profile" />
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-5xl w-full mx-auto space-y-5 bg-surface-2">
-        <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+        <div className="text-center py-20 bg-surface-1 rounded-2xl border border-surface-border">
           <User className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-          <p className="font-semibold text-gray-900">No employee record yet</p>
+          <p className="font-semibold text-ink">No employee record yet</p>
           <p className="text-sm text-surface-muted mt-1">Your manager will set up your profile shortly.</p>
         </div>
       </main>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                   <span className="text-3xl font-extrabold">{initials}</span>
                 </div>
               )}
-              <label htmlFor="photo-upload" className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white text-[#0057A8] flex items-center justify-center cursor-pointer shadow-md hover:scale-110 transition-transform">
+              <label htmlFor="photo-upload" className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-surface-1 text-[#0057A8] flex items-center justify-center cursor-pointer shadow-md hover:scale-110 transition-transform">
                 <Upload className="w-4 h-4" />
               </label>
               <input id="photo-upload" type="file" accept="image/*" aria-label="Upload profile photo" title="Upload profile photo" className="hidden" onChange={handlePhotoUpload} disabled={saving} />
@@ -202,7 +202,7 @@ export default function ProfilePage() {
         {/* Work info (read-only) */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <CardTitle className="text-sm font-bold text-ink-muted flex items-center gap-2">
               <Briefcase className="w-4 h-4 text-brand-500" /> Work info
               <span className="text-[10px] font-normal text-surface-muted ml-2">Set by admin / manager · contact admin to change</span>
             </CardTitle>
@@ -220,7 +220,7 @@ export default function ProfilePage() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-1 flex items-center gap-1.5">
                     <Briefcase className="w-3 h-3" /> Reports to
                   </p>
-                  <p className="text-sm font-semibold text-gray-900">{emp.reportingManager.name}</p>
+                  <p className="text-sm font-semibold text-ink">{emp.reportingManager.name}</p>
                   <p className="text-xs text-surface-muted">{emp.reportingManager.designation} · <a href={`mailto:${emp.reportingManager.email}`} className="text-brand-600 hover:underline">{emp.reportingManager.email}</a></p>
                 </div>
               ) : (
@@ -315,7 +315,7 @@ export default function ProfilePage() {
                     <Phone className="w-4 h-4 text-brand-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{c.name}</p>
+                    <p className="text-sm font-bold text-ink truncate">{c.name}</p>
                     <p className="text-xs text-surface-muted capitalize">{c.relationship}</p>
                   </div>
                   <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="text-sm font-semibold text-brand-700 hover:underline">{c.phone}</a>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                 )}
               </div>
               {emp.outOfOffice.message && (
-                <p className="text-sm text-gray-700 p-3 rounded-xl bg-surface border border-surface-border italic">&ldquo;{emp.outOfOffice.message}&rdquo;</p>
+                <p className="text-sm text-ink-muted p-3 rounded-xl bg-surface border border-surface-border italic">&ldquo;{emp.outOfOffice.message}&rdquo;</p>
               )}
             </div>
           ) : (
@@ -360,7 +360,7 @@ export default function ProfilePage() {
         {emp.privileges && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-ink-muted flex items-center gap-2">
                 <Shield className="w-4 h-4 text-brand-500" /> Travel & expense privileges
                 <span className="text-[10px] font-normal text-surface-muted ml-2">Managed by admin</span>
               </CardTitle>
@@ -392,7 +392,7 @@ function InfoRow({ label, value, icon: Icon, className }: { label: string; value
       <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-1 flex items-center gap-1.5">
         {Icon && <Icon className="w-3 h-3" />}{label}
       </p>
-      <p className={`text-sm font-semibold text-gray-900 ${className || ''}`}>{value}</p>
+      <p className={`text-sm font-semibold text-ink ${className || ''}`}>{value}</p>
     </div>
   )
 }
@@ -407,7 +407,7 @@ function PrivTile({ label, value, on }: { label: string; value: string; on: bool
   return (
     <div className={`p-3 rounded-xl border ${on ? 'bg-brand-50/50 border-brand-200' : 'bg-surface border-surface-border opacity-70'}`}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">{label}</p>
-      <p className={`text-xs font-bold mt-1 capitalize ${on ? 'text-brand-700' : 'text-gray-500'}`}>{value}</p>
+      <p className={`text-xs font-bold mt-1 capitalize ${on ? 'text-brand-700' : 'text-ink-muted'}`}>{value}</p>
     </div>
   )
 }
@@ -426,7 +426,7 @@ function SectionCard({ title, icon: Icon, subtitle, editing, onEdit, onCancel, c
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <CardTitle className="text-sm font-bold text-ink-muted flex items-center gap-2">
               <Icon className="w-4 h-4 text-brand-500" /> {title}
             </CardTitle>
             {subtitle && <p className="text-xs text-surface-muted mt-1">{subtitle}</p>}
@@ -630,7 +630,7 @@ function OOOForm({ emp, onSave, saving }: { emp: Employee; onSave: (p: Record<st
     <div className="space-y-4">
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="accent-brand-500 w-4 h-4" />
-        <span className="text-sm font-semibold text-gray-700">Enable out-of-office auto-reply</span>
+        <span className="text-sm font-semibold text-ink-muted">Enable out-of-office auto-reply</span>
       </label>
 
       <div className="grid grid-cols-2 gap-3">

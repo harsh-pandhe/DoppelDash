@@ -25,7 +25,7 @@ export function ErrorState({
       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-100 to-rose-200 text-red-500 flex items-center justify-center mb-4 shadow-sm">
         <AlertTriangle className="w-8 h-8" />
       </div>
-      <p className="text-base font-bold text-gray-900 mb-1">{title}</p>
+      <p className="text-base font-bold text-ink mb-1">{title}</p>
       <p className="text-sm text-surface-muted max-w-md mb-5">{description}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="outline" className="gap-2">

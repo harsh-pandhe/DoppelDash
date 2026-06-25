@@ -6,6 +6,7 @@ const config: Config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
@@ -29,16 +30,19 @@ const config: Config = {
           'graphite-2': '#333333',
           'graphite-3': '#666666',
         },
-        // ─── Surface scale (industrial white→light grey) ───
+        // ─── Surface scale (theme-aware via CSS vars; see globals.css :root/.dark) ───
         surface: {
-          DEFAULT: '#f5f5f5',
-          1:       '#ffffff',
-          2:       '#f5f5f5',
-          3:       '#eaeaea',
-          card:    '#ffffff',
-          border:  '#e5e5e5',
-          muted:   '#737373',
+          DEFAULT: 'var(--bg-app)',
+          1:       'var(--bg-card)',
+          2:       'var(--bg-app)',
+          3:       'var(--bg-elev)',
+          card:    'var(--bg-card)',
+          border:  'var(--border)',
+          muted:   'var(--text-muted)',
         },
+        // ─── Theme-aware text tokens (codemod targets) ───
+        ink:       'var(--text)',
+        'ink-muted': 'var(--text-muted)',
         // ─── Status palette (unified) ───
         status: {
           success:      '#0a7d3b',

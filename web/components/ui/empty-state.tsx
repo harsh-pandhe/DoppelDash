@@ -30,7 +30,7 @@ export function EmptyState({
 
   const variantClasses = {
     default: 'bg-gradient-to-br from-brand-100 to-brand-200 text-brand-500',
-    search:  'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400',
+    search:  'bg-gradient-to-br from-gray-100 to-gray-200 text-ink-muted',
     success: 'bg-gradient-to-br from-green-100 to-emerald-200 text-green-500',
   }
 
@@ -49,9 +49,9 @@ export function EmptyState({
 
   const renderSecondary = () => {
     if (!secondaryAction) return null
-    const content = <button type="button" className="text-sm text-surface-muted hover:text-gray-700 underline-offset-2 hover:underline">{secondaryAction.label}</button>
+    const content = <button type="button" className="text-sm text-surface-muted hover:text-ink-muted underline-offset-2 hover:underline">{secondaryAction.label}</button>
     if (secondaryAction.href) return <Link href={secondaryAction.href}>{content}</Link>
-    return <button type="button" onClick={secondaryAction.onClick} className="text-sm text-surface-muted hover:text-gray-700 underline-offset-2 hover:underline">{secondaryAction.label}</button>
+    return <button type="button" onClick={secondaryAction.onClick} className="text-sm text-surface-muted hover:text-ink-muted underline-offset-2 hover:underline">{secondaryAction.label}</button>
   }
 
   return (
@@ -59,7 +59,7 @@ export function EmptyState({
       <div className={`${s.iconBox} ${variantClasses[variant]} flex items-center justify-center mb-4 shadow-sm`}>
         <Icon className={s.iconSize} />
       </div>
-      <p className={`${s.title} text-gray-900 mb-1`}>{title}</p>
+      <p className={`${s.title} text-ink mb-1`}>{title}</p>
       {description && <p className="text-sm text-surface-muted max-w-md mb-5">{description}</p>}
       <div className="flex items-center gap-3">
         {renderAction()}

@@ -127,12 +127,12 @@ export default async function AdminDashboard({ firstName }: Props) {
               {now.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
           </div>
-          <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-dm-graphite">
+          <h1 className="font-display text-3xl lg:text-4xl font-black tracking-tighter text-ink">
             {greeting}, <span className="text-dm-orange">{firstName}</span>
           </h1>
-          <p className="text-sm text-dm-graphite-3 mt-1">
+          <p className="text-sm text-ink-muted mt-1">
             {queue.length > 0
-              ? <><strong className="text-dm-graphite">{queue.length}</strong> item{queue.length !== 1 ? 's' : ''} awaiting your final decision.</>
+              ? <><strong className="text-ink">{queue.length}</strong> item{queue.length !== 1 ? 's' : ''} awaiting your final decision.</>
               : 'All escalations cleared.'}
           </p>
         </div>
@@ -192,14 +192,14 @@ export default async function AdminDashboard({ firstName }: Props) {
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Total members */}
-          <div className="bg-white border border-surface-border rounded-lg p-5">
+          <div className="bg-surface-1 border border-surface-border rounded-lg p-5">
             <div className="flex items-center justify-between mb-3">
-              <Users className="w-4 h-4 text-dm-graphite-3" />
+              <Users className="w-4 h-4 text-ink-muted" />
               <Link href="/admin/users" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600 flex items-center gap-0.5">
                 Manage <ChevronRight className="w-2.5 h-2.5" />
               </Link>
             </div>
-            <p className="text-4xl font-black tracking-tighter text-dm-graphite tabular-nums">{totalUsers}</p>
+            <p className="text-4xl font-black tracking-tighter text-ink tabular-nums">{totalUsers}</p>
             <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1">Total members</p>
             <div className="mt-3 space-y-1.5">
               {[
@@ -209,7 +209,7 @@ export default async function AdminDashboard({ firstName }: Props) {
                 <div key={label as string}>
                   <div className="flex items-center justify-between text-[10px] mb-0.5">
                     <span className="text-surface-muted">{label}</span>
-                    <span className="font-mono font-bold text-dm-graphite">{val}/{max}</span>
+                    <span className="font-mono font-bold text-ink">{val}/{max}</span>
                   </div>
                   <div className="h-1 bg-surface-2 rounded-full overflow-hidden">
                     <div className="h-full bg-dm-orange transition-all" style={{ width: `${(Number(val) / Math.max(1, Number(max))) * 100}%` }} />
@@ -220,14 +220,14 @@ export default async function AdminDashboard({ firstName }: Props) {
           </div>
 
           {/* Onboarding */}
-          <div className="bg-white border border-surface-border rounded-lg p-5">
+          <div className="bg-surface-1 border border-surface-border rounded-lg p-5">
             <div className="flex items-center justify-between mb-3">
-              <UserPlus className="w-4 h-4 text-dm-graphite-3" />
+              <UserPlus className="w-4 h-4 text-ink-muted" />
               {onboardingPending > 0 && <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-status-warning-bg text-status-warning">Action</span>}
             </div>
-            <p className="text-4xl font-black tracking-tighter text-dm-graphite tabular-nums">{onboardingPending}</p>
+            <p className="text-4xl font-black tracking-tighter text-ink tabular-nums">{onboardingPending}</p>
             <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1">Onboarding incomplete</p>
-            <p className="text-xs text-dm-graphite-3 mt-3">
+            <p className="text-xs text-ink-muted mt-3">
               {onboardingPending === 0
                 ? 'All employees fully onboarded.'
                 : `${onboardingPending} new ${onboardingPending === 1 ? 'member' : 'members'} haven't finished profile setup.`}
@@ -240,16 +240,16 @@ export default async function AdminDashboard({ firstName }: Props) {
           </div>
 
           {/* Recent logins (last 7d) */}
-          <div className="bg-white border border-surface-border rounded-lg p-5">
+          <div className="bg-surface-1 border border-surface-border rounded-lg p-5">
             <div className="flex items-center justify-between mb-3">
-              <Clock className="w-4 h-4 text-dm-graphite-3" />
+              <Clock className="w-4 h-4 text-ink-muted" />
               <Link href="/analytics" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600 flex items-center gap-0.5">
                 Analytics <ChevronRight className="w-2.5 h-2.5" />
               </Link>
             </div>
-            <p className="text-4xl font-black tracking-tighter text-dm-graphite tabular-nums">{recentLogins}</p>
+            <p className="text-4xl font-black tracking-tighter text-ink tabular-nums">{recentLogins}</p>
             <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1">Logins last 7 days</p>
-            <p className="text-xs text-dm-graphite-3 mt-3">
+            <p className="text-xs text-ink-muted mt-3">
               {recentLogins >= totalUsers * 0.75
                 ? <><span className="text-status-success font-bold">Healthy engagement.</span> Most of the team has been active recently.</>
                 : recentLogins >= totalUsers * 0.5
@@ -284,19 +284,19 @@ export default async function AdminDashboard({ firstName }: Props) {
               <Link
                 key={href}
                 href={href}
-                className="bg-white border border-surface-border rounded-lg p-3 hover:border-dm-graphite hover:shadow-card-hover transition-all group"
+                className="bg-surface-1 border border-surface-border rounded-lg p-3 hover:border-dm-graphite hover:shadow-card-hover transition-all group"
               >
-                <Icon className="w-4 h-4 text-dm-graphite-3 group-hover:text-dm-orange mb-2 transition-colors" />
-                <p className="text-xs font-bold text-dm-graphite">{label}</p>
+                <Icon className="w-4 h-4 text-ink-muted group-hover:text-dm-orange mb-2 transition-colors" />
+                <p className="text-xs font-bold text-ink">{label}</p>
                 <p className="text-[10px] text-surface-muted mt-0.5">{sub}</p>
               </Link>
             ))}
           </div>
 
           {/* Latest audit feed */}
-          <section className="bg-white border border-surface-border rounded-lg overflow-hidden">
+          <section className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
             <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-dm-graphite">Latest activity</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Latest activity</h3>
               <Link href="/admin/audit" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600">All</Link>
             </div>
             {latestAudit.length === 0 ? (
@@ -310,8 +310,8 @@ export default async function AdminDashboard({ firstName }: Props) {
                     <div key={String(a._id)} className="px-4 py-2.5 flex items-start gap-2.5">
                       <div className={`w-1.5 h-1.5 rounded-full ${tone} mt-1.5 flex-shrink-0`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-dm-graphite-2 truncate">
-                          <strong className="font-bold text-dm-graphite">{a.performedByName}</strong>
+                        <p className="text-[11px] text-ink-muted truncate">
+                          <strong className="font-bold text-ink">{a.performedByName}</strong>
                           <span className="text-surface-muted"> · </span>
                           <span className="font-mono">{a.action}</span>
                           {(a.metadata as Record<string, unknown>)?.employeeName ? (
@@ -341,19 +341,19 @@ function KPI({ label, value, sub, href, tone, icon: Icon, urgent }: {
     orange:  'text-dm-orange',
     success: 'text-status-success',
     warning: 'text-status-warning',
-    neutral: 'text-dm-graphite',
+    neutral: 'text-ink',
   }[tone]
 
   return (
     <Link
       href={href}
-      className={`group bg-white border rounded-lg p-5 hover:shadow-card-hover transition-all relative ${urgent ? 'border-dm-orange' : 'border-surface-border hover:border-dm-graphite'}`}
+      className={`group bg-surface-1 border rounded-lg p-5 hover:shadow-card-hover transition-all relative ${urgent ? 'border-dm-orange' : 'border-surface-border hover:border-dm-graphite'}`}
     >
       {urgent && <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-dm-orange animate-pulse" />}
       <Icon className={`w-4 h-4 mb-3 ${toneColor}`} />
       <p className={`text-3xl font-black tracking-tighter tabular-nums ${toneColor}`}>{value}</p>
       <p className="text-[10px] uppercase tracking-wider font-bold text-surface-muted mt-1">{label}</p>
-      <p className="text-[10px] text-dm-graphite-3 mt-2 flex items-center gap-1">
+      <p className="text-[10px] text-ink-muted mt-2 flex items-center gap-1">
         {sub}
         <ArrowDown className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 -rotate-45 group-hover:translate-x-0.5 transition-all" />
       </p>

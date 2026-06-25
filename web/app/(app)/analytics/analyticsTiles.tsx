@@ -139,7 +139,7 @@ export function KpiTile({ def, value, hint, tone = 'neutral', current, previous,
   tone?: 'neutral' | 'success' | 'warning' | 'danger'
   current?: number; previous?: number; compareLabel?: string
 }) {
-  const valueColor = { neutral: 'text-dm-graphite', success: 'text-emerald-600', warning: 'text-amber-600', danger: 'text-red-600' }[tone]
+  const valueColor = { neutral: 'text-ink', success: 'text-emerald-600', warning: 'text-amber-600', danger: 'text-red-600' }[tone]
   const Icon = def.icon
   let delta: { pct: number; up: boolean } | null = null
   if (typeof current === 'number' && typeof previous === 'number') {
@@ -147,7 +147,7 @@ export function KpiTile({ def, value, hint, tone = 'neutral', current, previous,
     else { const p = ((current - previous) / Math.abs(previous)) * 100; delta = { pct: Math.round(p), up: p >= 0 } }
   }
   return (
-    <div className="bg-white rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
       <div className="flex items-start justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">{def.label}</p>
         <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center flex-shrink-0"><Icon className="w-3.5 h-3.5 text-surface-muted" /></div>
@@ -170,7 +170,7 @@ export function KpiTile({ def, value, hint, tone = 'neutral', current, previous,
 function ChartCard({ def, children }: { def: TileDef; children: React.ReactNode }) {
   return (
     <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-ink-muted">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
       <CardContent className="pt-0">{children}</CardContent>
     </Card>
   )
@@ -192,7 +192,7 @@ function DonutCard({ def, data, metric, drillBase }: {
   return (
     <Card className="rounded-2xl h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle>
+        <CardTitle className="text-sm font-bold text-ink-muted">{def.label}</CardTitle>
         {canDrill && !empty && <p className="text-[11px] text-surface-muted">Click a segment to drill into records</p>}
       </CardHeader>
       <CardContent className="pt-0">
@@ -204,8 +204,8 @@ function DonutCard({ def, data, metric, drillBase }: {
                 <button key={s.label} type="button" disabled={!canDrill} onClick={() => goDrill(s.label)}
                   className={`flex items-center gap-2 w-full text-left ${canDrill ? 'hover:bg-surface/60 rounded-md -mx-1 px-1 py-0.5 cursor-pointer' : 'cursor-default'}`}>
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                  <span className="text-xs text-gray-600 capitalize truncate flex-1">{s.label}</span>
-                  <span className="text-xs font-bold text-gray-900 ml-auto">{s.value}</span>
+                  <span className="text-xs text-ink-muted capitalize truncate flex-1">{s.label}</span>
+                  <span className="text-xs font-bold text-ink ml-auto">{s.value}</span>
                 </button>
               ))}
             </div>
@@ -219,15 +219,15 @@ function DonutCard({ def, data, metric, drillBase }: {
 function TopSpendersCard({ def, data }: { def: TileDef; data: TopSpender[] }) {
   return (
     <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-ink-muted">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
       <CardContent className="pt-0">
         {data.length === 0 ? <p className="text-xs text-surface-muted py-6 text-center">No paid expenses yet.</p> : (
           <ul className="divide-y divide-surface-border">
             {data.map((s, i) => (
               <li key={s.userId} className="py-2.5 flex items-center gap-3">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-gray-200 text-gray-700' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-surface text-surface-muted'}`}>{i + 1}</span>
-                <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-900 truncate">{s.userName}</p><p className="text-[10px] text-surface-muted">{s.count} claim{s.count !== 1 ? 's' : ''}</p></div>
-                <span className="text-sm font-extrabold text-dm-graphite tabular-nums">{inr(s.total)}</span>
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-surface-3 text-ink-muted' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-surface text-surface-muted'}`}>{i + 1}</span>
+                <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-ink truncate">{s.userName}</p><p className="text-[10px] text-surface-muted">{s.count} claim{s.count !== 1 ? 's' : ''}</p></div>
+                <span className="text-sm font-extrabold text-ink tabular-nums">{inr(s.total)}</span>
               </li>
             ))}
           </ul>
@@ -245,7 +245,7 @@ function actionLabel(action: string): string {
 function RecentActivityCard({ def, data }: { def: TileDef; data: RecentAudit[] }) {
   return (
     <Card className="rounded-2xl h-full">
-      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-gray-700">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="text-sm font-bold text-ink-muted">{def.label}</CardTitle><p className="text-xs text-surface-muted">{def.description}</p></CardHeader>
       <CardContent className="pt-0">
         {data.length === 0 ? <p className="text-xs text-surface-muted py-6 text-center">Nothing to show yet.</p> : (
           <ul className="divide-y divide-surface-border">
@@ -259,7 +259,7 @@ function RecentActivityCard({ def, data }: { def: TileDef; data: RecentAudit[] }
                 <li key={i} className="py-2.5 flex items-start gap-3">
                   <Activity className="w-3.5 h-3.5 text-surface-muted flex-shrink-0 mt-1" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900"><strong className="font-semibold">{a.performedByName}</strong><span className="text-gray-600"> · {actionLabel(a.action)}</span>{employeeName && <span className="text-gray-600"> for {employeeName}</span>}</p>
+                    <p className="text-sm text-ink"><strong className="font-semibold">{a.performedByName}</strong><span className="text-ink-muted"> · {actionLabel(a.action)}</span>{employeeName && <span className="text-ink-muted"> for {employeeName}</span>}</p>
                     <p className="text-[10px] text-surface-muted">{dest && <>{dest} · </>}{days !== undefined && <>{days}d · </>}{amount !== undefined && <>{inr(amount)} · </>}{timeAgo(a.createdAt)}</p>
                   </div>
                 </li>

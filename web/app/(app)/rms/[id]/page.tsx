@@ -84,7 +84,7 @@ function ReceiptViewer({ urls }: { urls: string[] }) {
                 <div className="flex items-center justify-center gap-3 mt-4">
                   {urls.map((_, i) => (
                     <button key={i} type="button" aria-label={`View receipt ${i + 1}`} onClick={() => setCurrent(i)}
-                      className={`w-2 h-2 rounded-full transition-all ${i === current ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/70'}`} />
+                      className={`w-2 h-2 rounded-full transition-all ${i === current ? 'bg-surface-1 scale-125' : 'bg-white/40 hover:bg-white/70'}`} />
                   ))}
                 </div>
               )}
@@ -119,8 +119,8 @@ function NoteDialog({ title, desc, confirmLabel, confirmClass, onConfirm, childr
       <Dialog.Trigger asChild>{children}</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">{title}</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-ink mb-1">{title}</Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">{desc}</Dialog.Description>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
             placeholder="Add a note (optional)…"
@@ -145,8 +145,8 @@ function PaymentDialog({ onConfirm }: { onConfirm: (proof: string) => void }) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Confirm Payment</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-ink mb-1">Confirm Payment</Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">Upload bank transfer screenshot or UTR number for audit trail.</Dialog.Description>
           <FileUploader label="Payment Proof" hint="Bank screenshot · Optional" maxFiles={1} onChange={setFiles} />
           <div className="flex gap-3 mt-5 justify-end">
@@ -300,7 +300,7 @@ export default function ExpenseDetailPage() {
           <CardHeader className="pb-2"><CardTitle className="text-base">Expense Details</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-xl font-extrabold text-gray-900">{expense.title}</p>
+              <p className="text-xl font-extrabold text-ink">{expense.title}</p>
               <p className="text-sm text-surface-muted mt-1">{expense.reason}</p>
             </div>
 
@@ -309,14 +309,14 @@ export default function ExpenseDetailPage() {
                 <IndianRupee className="w-5 h-5 text-orange-500 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">Amount</p>
-                  <p className="text-lg font-extrabold text-gray-900">₹{expense.amount.toLocaleString('en-IN')}</p>
+                  <p className="text-lg font-extrabold text-ink">₹{expense.amount.toLocaleString('en-IN')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-surface-border">
                 <Calendar className="w-5 h-5 text-brand-500 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">Date</p>
-                  <p className="text-sm font-bold text-gray-900">{new Date(expense.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-sm font-bold text-ink">{new Date(expense.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                   {expense.endDate && <p className="text-xs text-surface-muted">to {new Date(expense.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>}
                 </div>
               </div>
@@ -327,7 +327,7 @@ export default function ExpenseDetailPage() {
                 <MapPin className="w-5 h-5 text-purple-500 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold mb-0.5">Travel</p>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-ink">
                     {expense.travelFrom} {expense.travelFrom && expense.travelTo && '→'} {expense.travelTo}
                   </p>
                 </div>
@@ -337,7 +337,7 @@ export default function ExpenseDetailPage() {
             {isManager && (
               <div className="pt-1 border-t border-surface-border">
                 <p className="text-xs text-surface-muted font-semibold uppercase tracking-wide mb-1">Submitted by</p>
-                <p className="text-sm font-bold text-gray-900">{expense.userName}</p>
+                <p className="text-sm font-bold text-ink">{expense.userName}</p>
                 <p className="text-xs text-surface-muted">Submitted {new Date(expense.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
             )}
@@ -385,7 +385,7 @@ export default function ExpenseDetailPage() {
                 <label className="space-y-2">
                   <span className="text-xs font-semibold uppercase tracking-wide text-surface-muted">New status</span>
                   <select value={newStatus} onChange={e => setNewStatus(e.target.value)}
-                    className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                    className="w-full rounded-xl border border-surface-border bg-surface-1 px-3.5 py-2 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
                     {(isAdmin ? [
                       { value: 'pending_admin', label: 'Pending payout' },
                       { value: 'paid', label: 'Paid' },
@@ -445,10 +445,10 @@ export default function ExpenseDetailPage() {
               <Dialog.Root open={withdrawOpen} onOpenChange={setWithdrawOpen}>
                 <Dialog.Portal>
                   <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-                  <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-                    <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Withdraw reimbursement?</Dialog.Title>
+                  <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+                    <Dialog.Title className="text-base font-bold text-ink mb-1">Withdraw reimbursement?</Dialog.Title>
                     <Dialog.Description className="text-sm text-surface-muted mb-5">
-                      This removes <strong className="text-gray-900">{expense.title}</strong> for <strong className="text-gray-900">₹{expense.amount.toLocaleString('en-IN')}</strong>. You can submit a new one anytime.
+                      This removes <strong className="text-ink">{expense.title}</strong> for <strong className="text-ink">₹{expense.amount.toLocaleString('en-IN')}</strong>. You can submit a new one anytime.
                     </Dialog.Description>
                     <div className="flex gap-3 justify-end">
                       <Dialog.Close asChild>

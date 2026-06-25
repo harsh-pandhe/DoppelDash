@@ -73,7 +73,7 @@ function LinkPopover({ editor }: { editor: ReturnType<typeof useEditor> }) {
         </PopoverTrigger>
       </Tooltip>
       <PopoverContent align="start" className="w-80 p-3 space-y-3">
-        <p className="text-xs font-semibold text-gray-700">Insert link</p>
+        <p className="text-xs font-semibold text-ink-muted">Insert link</p>
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -136,7 +136,7 @@ export default function RichTextEditor({
   return (
     <div
       className={cn(
-        'border border-surface-border rounded-xl overflow-hidden bg-white',
+        'border border-surface-border rounded-xl overflow-hidden bg-surface-1',
         'focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20',
         'transition-all duration-150',
         disabled && 'opacity-60 pointer-events-none',
@@ -144,7 +144,7 @@ export default function RichTextEditor({
       )}
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-surface-border bg-gray-50/80 flex-wrap">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-surface-border bg-surface-2/80 flex-wrap">
         {TOOLBAR_GROUPS.map((group, gi) => (
           <div key={gi} className="flex items-center gap-0.5">
             {gi > 0 && <Separator orientation="vertical" className="mx-1.5 h-4" />}

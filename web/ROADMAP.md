@@ -9,7 +9,7 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phase 11 complete: 11A (LMS month filter), 11B (earned cap), 11C (scan-card OCR+gallery), 11D (campaign sidebar), 11E (travel chain), 11F (reimbursement chain), 11G (mass mail — existing composer)
 - ✅ Phase 12 complete: 12A (users role/dept filter), 12B (report date presets), 12C (branded exports via lib/export.ts)
 - ✅ Phase 13 (audit hardening — pagination + full color map)
-- 🎉 **All roadmap phases 8–13 shipped.** Remaining items are backlog only (dark mode, IMAP inbox, more chart types).
+- 🎉 **All roadmap phases 8–13 + remaining large features shipped.** Dark mode ✅ + IMAP inbox ✅ done (2026-06-25). Only backlog left = extra chart types (donut/bar already sufficient).
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
 
 ---
@@ -191,9 +191,9 @@ Standard to apply to every dialog:
 - ✅ Area-trend analytics charts — DONE (c0f2f4a): new `AreaChart`, monthly leave/expense tiles.
 - ✅ CSV bulk import for contacts — already shipped (CSV Import dialog on `/crm`).
 - ⏭️ Users slide-out Sheet (12A extra) — SKIPPED on purpose: inline `UserCard` already exposes every control; a Sheet is churn with no functional gain.
-- **Remaining large features (own project each, not started):**
-  - **Dark mode** — needs a full token/theme pass across every component + persisted preference. Multi-day.
-  - **IMAP inbox** (read incoming mail in-app) — outbound mail already works; inbound = new sync pipeline + UI. Large.
+- ✅ **Dark mode — DONE (2026-06-25):** token-based theme. CSS vars (`:root`/`.dark`) drive `surface-*`/`ink`/`ink-muted` tokens; tailwind `darkMode:'class'`. Codemod swept literal `bg-white`/`text-gray-*`/`bg-gray-*`/`text-dm-graphite` across ~75 files. `ThemeToggle` in Header (localStorage + `prefers-color-scheme`), no-flash pre-paint script in `layout.tsx`. Chart tooltips var-driven; `@media print` forces light. Verified 20 pages × both themes, 0 console errors.
+- ✅ **IMAP inbox — DONE (2026-06-25):** poll-on-demand (serverless-safe, no persistent listener). `models/InboxMessage.ts` (unique `mailbox+uid`, idempotent), `lib/imap.ts` `syncInbox()` (imapflow + mailparser; HTML sanitized on ingest via sanitize-html; first-sync bounded to newest 40 UIDs to avoid socket timeout on huge mailboxes). `/api/inbox` (list + `?sync=1`) + `/api/inbox/[id]` (detail + read toggle), gated to mailAccess. `/inbox` UI (list/detail, read-state, Reply→compose) + sidebar nav. Verified live against Gmail. Note: `IMAP_PASS` must be a Gmail **app password** (same value as `SMTP_PASS` works); spaces stripped automatically.
+- ✅ **Sign-in 3D scene (2026-06-25):** full-screen procedural Three.js night cable-car scene (`components/CableCarScene.tsx`) — 8-tower ring, 6 gondolas on a continuous loop, parallax mountains, moon, stars. Fixed camera, `pointer-events-none`, lazy-loaded (three.js out of initial bundle). Sign-in logo = DoppelDash `/icon-192.png`.
 - WelcomeTour: seen-state already in DB (shipped Phase 7, keep).
 
 ---

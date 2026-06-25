@@ -96,7 +96,7 @@ export default function ScannedCardsPage() {
         </div>
 
         <div>
-          <h2 className="text-lg font-extrabold text-gray-900">Card Gallery</h2>
+          <h2 className="text-lg font-extrabold text-ink">Card Gallery</h2>
           <p className="text-sm text-surface-muted mt-0.5">Every business card you scan is stored here for reference. Import any card into Contacts.</p>
         </div>
 
@@ -117,22 +117,22 @@ export default function ScannedCardsPage() {
             {cards.map(card => {
               const f = card.parsedFields || {}
               return (
-                <div key={card._id} className="bg-white rounded-2xl border border-surface-border overflow-hidden flex flex-col">
+                <div key={card._id} className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden flex flex-col">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={card.imageData} alt={f.name || 'Scanned card'} className="w-full h-40 object-contain bg-surface border-b border-surface-border" />
                   <div className="p-4 space-y-2 flex-1 flex flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-bold text-gray-900 text-sm truncate">{f.name || 'Unnamed card'}</p>
+                        <p className="font-bold text-ink text-sm truncate">{f.name || 'Unnamed card'}</p>
                         {f.designation && <p className="text-xs text-surface-muted truncate">{f.designation}</p>}
                       </div>
                       {card.contactId && (
                         <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full flex-shrink-0">Imported</span>
                       )}
                     </div>
-                    {f.company && <p className="text-xs text-gray-600 truncate">{f.company}</p>}
-                    {f.email && <p className="text-xs text-gray-600 truncate">{f.email}</p>}
-                    {f.phone && <p className="text-xs text-gray-600 truncate">{f.phone}</p>}
+                    {f.company && <p className="text-xs text-ink-muted truncate">{f.company}</p>}
+                    {f.email && <p className="text-xs text-ink-muted truncate">{f.email}</p>}
+                    {f.phone && <p className="text-xs text-ink-muted truncate">{f.phone}</p>}
                     <div className="flex items-center gap-1.5 text-[10px] text-surface-muted mt-auto pt-2">
                       {(card.ocrSource === 'gemini' || card.ocrSource === 'ollama') && <Sparkles className="w-3 h-3 text-brand-400" />}
                       <span>{timeAgo(card.createdAt)}</span>

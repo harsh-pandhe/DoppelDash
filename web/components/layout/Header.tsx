@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/toast'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import ThemeToggle from '@/components/ThemeToggle'
 
 interface SearchResult {
   type: 'contact' | 'leave' | 'expense' | 'announcement'
@@ -91,7 +92,7 @@ function GlobalSearch() {
         aria-label="Search"
       >
         <Search className="w-4 h-4 flex-shrink-0" />
-        <span className="hidden md:block text-xs">Search… <kbd className="ml-1 text-[9px] font-mono bg-gray-100 px-1 py-0.5 rounded">⌘K</kbd></span>
+        <span className="hidden md:block text-xs">Search… <kbd className="ml-1 text-[9px] font-mono bg-surface-2 px-1 py-0.5 rounded">⌘K</kbd></span>
       </button>
 
       {open && (
@@ -104,12 +105,12 @@ function GlobalSearch() {
               onChange={e => { setQuery(e.target.value); setActive(-1) }}
               onKeyDown={onKey}
               placeholder="Search contacts, leaves, expenses…"
-              className="flex-1 text-sm bg-transparent outline-none text-gray-900 placeholder:text-surface-muted"
+              className="flex-1 text-sm bg-transparent outline-none text-ink placeholder:text-surface-muted"
               autoComplete="off"
             />
             {query && (
               <button type="button" aria-label="Clear search" onClick={() => { setQuery(''); setResults([]) }}>
-                <X className="w-3.5 h-3.5 text-surface-muted hover:text-gray-700" />
+                <X className="w-3.5 h-3.5 text-surface-muted hover:text-ink-muted" />
               </button>
             )}
           </div>
@@ -135,7 +136,7 @@ function GlobalSearch() {
                       <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-900 truncate">{r.title}</p>
+                      <p className="text-xs font-semibold text-ink truncate">{r.title}</p>
                       <p className="text-[10px] text-surface-muted truncate">{r.sub}</p>
                     </div>
                     <span className="text-[9px] font-bold uppercase text-surface-muted/60 flex-shrink-0">{r.type}</span>
@@ -254,30 +255,31 @@ export default function Header({ title }: { title?: string }) {
   const toggleSidebar = () => window.dispatchEvent(new CustomEvent('toggle-sidebar'))
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4">
+    <header className="sticky top-0 z-30 bg-surface-1/80 backdrop-blur-md border-b border-surface-border shadow-[0_1px_3px_rgba(0,0,0,0.06)] px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4">
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <button
           type="button"
           aria-label="Open menu"
           onClick={toggleSidebar}
-          className="md:hidden p-2 rounded-xl hover:bg-surface text-gray-500 transition-colors flex-shrink-0"
+          className="md:hidden p-2 rounded-xl hover:bg-surface text-ink-muted transition-colors flex-shrink-0"
         >
           <Menu className="w-5 h-5" />
         </button>
         {title && (
-          <h1 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight truncate">{title}</h1>
+          <h1 className="text-sm sm:text-base font-bold text-ink tracking-tight truncate">{title}</h1>
         )}
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 ml-auto flex-shrink-0">
         <GlobalSearch />
+        <ThemeToggle />
         {/* Notification bell */}
         <div className="relative" ref={panelRef}>
             <button
               type="button"
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
               onClick={() => setPanelOpen(o => !o)}
-              className={`relative p-2 rounded-xl transition-colors ${panelOpen ? 'bg-brand-50 text-brand-500' : 'hover:bg-slate-100 text-gray-500'}`}
+              className={`relative p-2 rounded-xl transition-colors ${panelOpen ? 'bg-brand-50 text-brand-500' : 'hover:bg-slate-100 text-ink-muted'}`}
             >
               <Bell className="w-[18px] h-[18px]" />
               {unreadCount > 0 && (
@@ -291,7 +293,7 @@ export default function Header({ title }: { title?: string }) {
               <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1.5rem)] max-w-[360px] glass-card rounded-2xl z-50 overflow-hidden animate-slide-down">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/40 gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900">Notifications</p>
+                    <p className="text-sm font-bold text-ink">Notifications</p>
                     {total > 0 && (
                       <p className="text-[10px] text-surface-muted truncate">
                         {urgentUnread > 0 ? <span className="text-red-600 font-bold">{urgentUnread} urgent · </span> : null}
@@ -339,7 +341,7 @@ export default function Header({ title }: { title?: string }) {
                 ) : items.length === 0 ? (
                   <div className="px-4 py-8 text-center">
                     <Clock className="w-8 h-8 text-slate-200 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-gray-700">All caught up!</p>
+                    <p className="text-sm font-semibold text-ink-muted">All caught up!</p>
                     <p className="text-xs text-surface-muted mt-0.5">{isManager ? 'No pending approvals or alerts.' : 'No new notifications.'}</p>
                   </div>
                 ) : (
@@ -373,7 +375,7 @@ export default function Header({ title }: { title?: string }) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className={`text-xs leading-snug truncate flex-1 ${isUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-600'}`}>{item.title}</p>
+                              <p className={`text-xs leading-snug truncate flex-1 ${isUnread ? 'font-semibold text-ink' : 'font-medium text-ink-muted'}`}>{item.title}</p>
                               {item.urgent && isUnread && <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 flex-shrink-0">!</span>}
                             </div>
                             <p className="text-[11px] text-surface-muted mt-0.5 line-clamp-1">{item.subtitle}</p>
@@ -387,7 +389,7 @@ export default function Header({ title }: { title?: string }) {
                 {items.length > 0 && (
                   <div className="px-4 py-2 border-t border-slate-100/60 text-center">
                     <button type="button" onClick={() => setPanelOpen(false)}
-                      className="text-[11px] font-semibold text-surface-muted hover:text-gray-700">
+                      className="text-[11px] font-semibold text-surface-muted hover:text-ink-muted">
                       Close
                     </button>
                   </div>
@@ -429,7 +431,7 @@ function UserMenu() {
       <button type="button" onClick={() => setOpen(o => !o)} aria-label="User menu"
         className="flex items-center gap-2.5 hover:bg-surface px-2 py-1 rounded-xl transition-colors">
         <div className="hidden sm:block text-right">
-          <p className="text-xs font-semibold text-gray-900 leading-tight">{user?.fullName || user?.firstName}</p>
+          <p className="text-xs font-semibold text-ink leading-tight">{user?.fullName || user?.firstName}</p>
           <p className="text-[10px] text-surface-muted capitalize">{role}</p>
         </div>
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-xs">
@@ -438,18 +440,18 @@ function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-30 w-60 bg-white rounded-2xl shadow-xl border border-surface-border overflow-hidden">
+        <div className="absolute right-0 top-12 z-30 w-60 bg-surface-1 rounded-2xl shadow-xl border border-surface-border overflow-hidden">
           <div className="p-3 border-b border-surface-border">
-            <p className="text-sm font-bold text-gray-900 truncate">{user?.fullName || '—'}</p>
+            <p className="text-sm font-bold text-ink truncate">{user?.fullName || '—'}</p>
             <p className="text-xs text-surface-muted truncate">{user?.email}</p>
           </div>
           <div className="p-1.5 space-y-0.5">
             <Link href="/profile" onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-surface transition-colors">
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface transition-colors">
               <UserIcon className="w-4 h-4 text-surface-muted" />My profile
             </Link>
             <Link href="/settings" onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-surface transition-colors">
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface transition-colors">
               <UserIcon className="w-4 h-4 text-surface-muted" />Settings
             </Link>
             <button type="button" onClick={logout}

@@ -14,9 +14,9 @@ export const useToast = () => useContext(Ctx)
 
 const icons = { success: CheckCircle2, error: XCircle, info: Info }
 const styles = {
-  success: 'border-green-200 bg-white',
-  error:   'border-red-200   bg-white',
-  info:    'border-blue-200  bg-white',
+  success: 'border-green-200 bg-surface-1',
+  error:   'border-red-200   bg-surface-1',
+  info:    'border-blue-200  bg-surface-1',
 }
 const iconStyles = {
   success: 'text-green-500',
@@ -54,7 +54,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               )}
             >
               <Icon className={cn('w-4 h-4 flex-shrink-0', iconStyles[kind])} />
-              <T.Description className="flex-1 text-gray-800">{text}</T.Description>
+              <T.Description className="flex-1 text-ink">{text}</T.Description>
               {action && (
                 <button
                   type="button"
@@ -66,7 +66,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               )}
               <T.Close
                 onClick={() => setMsgs(m => m.filter(x => x.id !== id))}
-                className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-0.5 rounded hover:bg-surface-2 text-ink-muted hover:text-ink-muted transition-colors"
                 aria-label="Close"
               >
                 <X className="w-3.5 h-3.5" />

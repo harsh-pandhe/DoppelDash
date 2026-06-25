@@ -58,15 +58,15 @@ export default function SharedDashboardPage({ params }: { params: { token: strin
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
+              <div key={i} className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3">
                 <Skeleton className="h-4 w-1/3" /><Skeleton className="h-8 w-1/2" />
               </div>
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-24 bg-white rounded-2xl border border-surface-border max-w-lg mx-auto mt-10">
+          <div className="text-center py-24 bg-surface-1 rounded-2xl border border-surface-border max-w-lg mx-auto mt-10">
             <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-            <p className="font-bold text-gray-900 text-lg">Dashboard unavailable</p>
+            <p className="font-bold text-ink text-lg">Dashboard unavailable</p>
             <p className="text-sm text-surface-muted mt-1.5">{error}</p>
           </div>
         ) : res ? (

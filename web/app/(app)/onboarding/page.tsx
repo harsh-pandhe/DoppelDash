@@ -159,7 +159,7 @@ export default function OnboardingPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <span className="text-white font-black text-xl">D</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Welcome to DoppelDash</h1>
+          <h1 className="text-2xl font-extrabold text-ink">Welcome to DoppelDash</h1>
           <p className="text-sm text-surface-muted mt-1">Complete your profile to get started</p>
         </div>
 
@@ -174,11 +174,11 @@ export default function OnboardingPage() {
                 <div className="flex flex-col items-center">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all shadow-sm
                     ${done    ? 'bg-brand-500 text-white' :
-                      current ? 'bg-white text-brand-600 ring-2 ring-brand-500 shadow-brand-200' :
-                                'bg-white text-surface-muted border border-surface-border'}`}>
+                      current ? 'bg-surface-1 text-brand-600 ring-2 ring-brand-500 shadow-brand-200' :
+                                'bg-surface-1 text-surface-muted border border-surface-border'}`}>
                     {done ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                   </div>
-                  <p className={`text-[9px] font-bold mt-1 ${current ? 'text-brand-600' : done ? 'text-gray-600' : 'text-surface-muted'}`}>{s.label}</p>
+                  <p className={`text-[9px] font-bold mt-1 ${current ? 'text-brand-600' : done ? 'text-ink-muted' : 'text-surface-muted'}`}>{s.label}</p>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div className={`flex-1 h-0.5 mx-1 rounded ${i < step ? 'bg-brand-400' : 'bg-surface-border'}`} />
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-xl border border-surface-border overflow-hidden">
+        <div className="bg-surface-1 rounded-3xl shadow-xl border border-surface-border overflow-hidden">
           <div className="bg-gradient-to-r from-brand-500 to-brand-700 px-6 py-4">
             <p className="text-white font-bold">{STEPS[step].label}</p>
             <p className="text-brand-200 text-xs">{STEPS[step].desc}</p>
@@ -275,7 +275,7 @@ export default function OnboardingPage() {
                 ] as [string, unknown][]).map(([k, v]) => (
                   <div key={k} className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface border border-surface-border">
                     <span className="text-xs font-bold text-surface-muted uppercase tracking-wide">{k}</span>
-                    <span className="text-sm font-semibold text-gray-900">{String(v ?? '—')}</span>
+                    <span className="text-sm font-semibold text-ink">{String(v ?? '—')}</span>
                   </div>
                 ))}
               </div>

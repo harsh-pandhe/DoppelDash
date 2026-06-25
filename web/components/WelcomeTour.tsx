@@ -55,7 +55,7 @@ export default function WelcomeTour() {
     <Dialog.Root open={open} onOpenChange={o => { if (!o) close() }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/55 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-1 rounded-3xl shadow-2xl overflow-hidden">
 
           <Dialog.Title className="sr-only">{Cur.title}</Dialog.Title>
           <Dialog.Description className="sr-only">{Cur.body}</Dialog.Description>
@@ -74,7 +74,7 @@ export default function WelcomeTour() {
 
           {/* Body */}
           <div className="p-7 space-y-5">
-            <p className="text-sm text-gray-700 leading-relaxed">{Cur.body}</p>
+            <p className="text-sm text-ink-muted leading-relaxed">{Cur.body}</p>
 
             {/* Step dots */}
             <div className="flex justify-center gap-1.5">
@@ -91,7 +91,7 @@ export default function WelcomeTour() {
                   <ChevronLeft className="w-3.5 h-3.5" /> Back
                 </Button>
               )}
-              <button type="button" onClick={close} className="text-xs font-semibold text-surface-muted hover:text-gray-700 px-2">
+              <button type="button" onClick={close} className="text-xs font-semibold text-surface-muted hover:text-ink-muted px-2">
                 Skip
               </button>
               <div className="ml-auto">

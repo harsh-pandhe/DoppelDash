@@ -11,7 +11,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-red-50 via-white to-orange-50">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-red-100 overflow-hidden">
+      <div className="max-w-md w-full bg-surface-1 rounded-3xl shadow-xl border border-red-100 overflow-hidden">
         <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
             <AlertOctagon className="w-5 h-5 text-white" />
@@ -23,13 +23,13 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
         </div>
 
         <div className="p-6 space-y-4">
-          <div className="text-sm text-gray-700 leading-relaxed">
+          <div className="text-sm text-ink-muted leading-relaxed">
             <p>The page couldn&apos;t finish loading. Try refreshing — if it keeps happening, sign out and back in.</p>
           </div>
 
           {error.message && (
             <details className="text-[10px] text-surface-muted bg-surface p-3 rounded-xl border border-surface-border">
-              <summary className="cursor-pointer font-semibold text-gray-700 mb-1">Technical details</summary>
+              <summary className="cursor-pointer font-semibold text-ink-muted mb-1">Technical details</summary>
               <code className="block mt-2 font-mono break-all">{error.message}</code>
               {error.digest && <p className="mt-1 text-surface-muted">Digest: {error.digest}</p>}
             </details>

@@ -137,7 +137,7 @@ function RecipientPicker({ recipients, setRecipients }: {
         <div className="flex rounded-xl border border-surface-border overflow-hidden flex-shrink-0">
           {(['to', 'cc', 'bcc'] as Field[]).map(f => (
             <button key={f} type="button" onClick={() => setField(f)}
-              className={`px-2.5 py-2 text-[11px] font-bold uppercase transition-all ${field === f ? 'bg-brand-500 text-white' : 'bg-white text-surface-muted hover:bg-surface'}`}>
+              className={`px-2.5 py-2 text-[11px] font-bold uppercase transition-all ${field === f ? 'bg-brand-500 text-white' : 'bg-surface-1 text-surface-muted hover:bg-surface'}`}>
               {f}
             </button>
           ))}
@@ -150,7 +150,7 @@ function RecipientPicker({ recipients, setRecipients }: {
             placeholder="Search contacts & directory, or type an email…"
             className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20" />
           {open && query && (
-            <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-surface-border shadow-lg overflow-hidden">
+            <div className="absolute z-20 mt-1 w-full bg-surface-1 rounded-xl border border-surface-border shadow-lg overflow-hidden">
               {results.map(e => (
                 <button key={e.email} type="button" onClick={() => add(e)}
                   className="flex items-center gap-2.5 w-full px-3 py-2 text-left hover:bg-brand-50 transition-colors">
@@ -160,7 +160,7 @@ function RecipientPicker({ recipients, setRecipients }: {
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-gray-900 truncate">{e.name}</p>
+                    <p className="text-xs font-semibold text-ink truncate">{e.name}</p>
                     <p className="text-[10px] text-surface-muted truncate">{e.email}{e.company ? ` · ${e.company}` : ''}</p>
                   </div>
                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${e.source === 'directory' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
@@ -172,7 +172,7 @@ function RecipientPicker({ recipients, setRecipients }: {
                 <button type="button" onClick={addManual}
                   className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-brand-50 transition-colors border-t border-surface-border">
                   <Mail className="w-3.5 h-3.5 text-surface-muted" />
-                  <span className="text-xs text-gray-700">Add <strong>{query.trim()}</strong></span>
+                  <span className="text-xs text-ink-muted">Add <strong>{query.trim()}</strong></span>
                 </button>
               )}
               {!results.length && !query.includes('@') && (
@@ -190,7 +190,7 @@ function RecipientPicker({ recipients, setRecipients }: {
           {allTags.map(t => (
             <button key={t} type="button" onClick={() => addTagSegment(t)}
               title={`Add all contacts tagged "${t}" to ${field.toUpperCase()}`}
-              className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white border border-surface-border text-gray-600 hover:border-brand-400 hover:text-brand-700 transition-all">
+              className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400 hover:text-brand-700 transition-all">
               +{t}
             </button>
           ))}
@@ -238,8 +238,8 @@ function ConfirmSendDialog({ open, onOpenChange, title, recipients, onConfirm, c
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto">
+          <Dialog.Title className="text-base font-bold text-ink mb-1 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" /> {title}
           </Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">
@@ -250,7 +250,7 @@ function ConfirmSendDialog({ open, onOpenChange, title, recipients, onConfirm, c
               <div key={r.email} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-surface border border-surface-border">
                 <span className="text-[9px] font-bold uppercase w-7 text-surface-muted flex-shrink-0">{r.field}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-gray-900 truncate">{r.name}</p>
+                  <p className="text-xs font-semibold text-ink truncate">{r.name}</p>
                   <p className="text-[10px] text-surface-muted truncate">{r.email}</p>
                 </div>
                 {r.company && <Badge variant="secondary" className="text-[9px] flex-shrink-0">{r.company.split(' ')[0]}</Badge>}
@@ -294,8 +294,8 @@ function QueueSendDialog({ open, onOpenChange, recipients, subject, bodyPlain }:
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[85vh] flex flex-col">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-2xl p-6 w-full max-w-md max-h-[85vh] flex flex-col">
+          <Dialog.Title className="text-base font-bold text-ink mb-1 flex items-center gap-2">
             <ListChecks className="w-4 h-4 text-brand-500" /> Personalized drafts — click through
           </Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">
@@ -308,7 +308,7 @@ function QueueSendDialog({ open, onOpenChange, recipients, subject, bodyPlain }:
               return (
                 <div key={r.email} className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all ${isDone ? 'bg-green-50 border-green-200' : 'bg-surface border-surface-border'}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-gray-900 truncate">{r.name}</p>
+                    <p className="text-xs font-semibold text-ink truncate">{r.name}</p>
                     <p className="text-[10px] text-surface-muted truncate">{r.email}</p>
                   </div>
                   <Button type="button" size="sm" variant={isDone ? 'outline' : 'default'} className="gap-1.5 flex-shrink-0"
@@ -619,7 +619,7 @@ Excerpt:
       <main className="flex-1 p-5 lg:p-8 xl:px-12 max-w-7xl space-y-5 w-full mx-auto">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+            <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
               <Mail className="w-5 h-5 text-brand-500" /> Communications
             </h2>
             <p className="text-xs text-surface-muted mt-0.5">
@@ -686,7 +686,7 @@ Excerpt:
                     <input type="text" value={partialInstr} onChange={e => setPartialInstr(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && partialInstr.trim()) rewriteSelection() }}
                       placeholder={`Rewrite selection (${selText.length} chars) — e.g. "make this more direct"`}
-                      className="flex-1 h-8 px-2.5 rounded-lg border border-purple-200 bg-white text-xs focus:outline-none focus:border-purple-400" />
+                      className="flex-1 h-8 px-2.5 rounded-lg border border-purple-200 bg-surface-1 text-xs focus:outline-none focus:border-purple-400" />
                     <Button type="button" size="sm" disabled={partialBusy || !partialInstr.trim()} onClick={rewriteSelection}
                       className="gap-1 bg-purple-600 hover:bg-purple-700 flex-shrink-0">
                       {partialBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
@@ -715,7 +715,7 @@ Excerpt:
                   {AI_TYPES.map(t => (
                     <button key={t} type="button" onClick={() => setAiType(t)}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all
-                        ${aiType === t ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-surface-border text-gray-600 hover:border-gray-300'}`}>
+                        ${aiType === t ? 'border-purple-400 bg-purple-50 text-purple-700' : 'border-surface-border text-ink-muted hover:border-surface-border'}`}>
                       {t}
                     </button>
                   ))}
@@ -723,7 +723,7 @@ Excerpt:
                 <textarea value={aiContext} onChange={e => setAiContext(e.target.value)} rows={2}
                   placeholder="Goal/context — e.g. follow up on the Varanasi ropeway proposal, ask for a decision timeline"
                   className="w-full rounded-xl border border-surface-border px-3 py-2 text-xs resize-none focus:outline-none focus:border-purple-300 focus:ring-2 focus:ring-purple-300/20" />
-                <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-ink-muted cursor-pointer">
                   <input type="checkbox" checked={withSignature} onChange={e => setWithSignature(e.target.checked)}
                     className="rounded border-surface-border text-brand-500 focus:ring-brand-500/30" />
                   Append my signature ({userName || 'name'}{designation ? ` · ${designation}` : ''})

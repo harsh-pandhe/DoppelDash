@@ -34,7 +34,7 @@ const TYPE_META: Record<LeaveType, { label: string; color: string }> = {
   sick:       { label: 'Sick Leave',       color: 'bg-red-100    text-red-700    border-red-200'    },
   medical:    { label: 'Sick Leave',       color: 'bg-red-100    text-red-700    border-red-200'    },
   earned:     { label: 'Earned Leave',     color: 'bg-green-100  text-green-700  border-green-200'  },
-  lwp:        { label: 'Leave Without Pay',color: 'bg-gray-100   text-gray-700   border-gray-200'   },
+  lwp:        { label: 'Leave Without Pay',color: 'bg-surface-2   text-ink-muted   border-surface-border'   },
   privilege:  { label: 'Privilege Leave',  color: 'bg-purple-100 text-purple-700 border-purple-200' },
   restricted: { label: 'Restricted Leave', color: 'bg-orange-100 text-orange-700 border-orange-200' },
 }
@@ -62,8 +62,8 @@ function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50" />
-        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-          <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Reject Leave Request</Dialog.Title>
+        <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+          <Dialog.Title className="text-base font-bold text-ink mb-1">Reject Leave Request</Dialog.Title>
           <Dialog.Description className="text-sm text-surface-muted mb-4">Employee will be notified with your reason.</Dialog.Description>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
             placeholder="Reason for rejection (optional)…"
@@ -173,7 +173,7 @@ export default function LeaveDetailPage() {
         {/* Progress tracker */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold text-gray-700 uppercase tracking-widest">Application Progress</CardTitle>
+            <CardTitle className="text-sm font-bold text-ink-muted uppercase tracking-widest">Application Progress</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between gap-2">
@@ -185,7 +185,7 @@ export default function LeaveDetailPage() {
                   <div key={step.key} className="flex items-center flex-1">
                     <div className="flex flex-col items-center flex-1">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all
-                        ${done && !current ? 'bg-green-500 border-green-500' : current ? 'bg-brand-500 border-brand-500' : 'bg-white border-surface-border'}`}>
+                        ${done && !current ? 'bg-green-500 border-green-500' : current ? 'bg-brand-500 border-brand-500' : 'bg-surface-1 border-surface-border'}`}>
                         {done && !current
                           ? <CheckCircle2 className="w-5 h-5 text-white" />
                           : current
@@ -193,7 +193,7 @@ export default function LeaveDetailPage() {
                             : <span className="text-xs font-bold text-surface-muted">{i + 1}</span>
                         }
                       </div>
-                      <p className={`text-xs font-semibold mt-1.5 text-center ${done || current ? 'text-gray-900' : 'text-surface-muted'}`}>
+                      <p className={`text-xs font-semibold mt-1.5 text-center ${done || current ? 'text-ink' : 'text-surface-muted'}`}>
                         {step.label}
                       </p>
                       <p className="text-[10px] text-surface-muted text-center leading-tight mt-0.5">{step.desc}</p>
@@ -218,7 +218,7 @@ export default function LeaveDetailPage() {
                   <User className="w-5 h-5 text-brand-500 flex-shrink-0" />
                   <div>
                     <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">Employee</p>
-                    <p className="text-sm font-bold text-gray-900">{leave.userName}</p>
+                    <p className="text-sm font-bold text-ink">{leave.userName}</p>
                   </div>
                 </div>
               )}
@@ -228,14 +228,14 @@ export default function LeaveDetailPage() {
                   <Calendar className="w-5 h-5 text-brand-500 flex-shrink-0" />
                   <div>
                     <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">From</p>
-                    <p className="text-sm font-bold text-gray-900">{startFmt}</p>
+                    <p className="text-sm font-bold text-ink">{startFmt}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-surface-border">
                   <Calendar className="w-5 h-5 text-purple-500 flex-shrink-0" />
                   <div>
                     <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">To</p>
-                    <p className="text-sm font-bold text-gray-900">{endFmt}</p>
+                    <p className="text-sm font-bold text-ink">{endFmt}</p>
                   </div>
                 </div>
               </div>
@@ -244,13 +244,13 @@ export default function LeaveDetailPage() {
                 <CalendarClock className="w-5 h-5 text-orange-500 flex-shrink-0" />
                 <div>
                   <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold">Duration</p>
-                  <p className="text-sm font-bold text-gray-900">{leave.days} day{leave.days > 1 ? 's' : ''}</p>
+                  <p className="text-sm font-bold text-ink">{leave.days} day{leave.days > 1 ? 's' : ''}</p>
                 </div>
               </div>
 
               <div className="p-3 rounded-xl bg-surface border border-surface-border">
                 <p className="text-[10px] text-surface-muted uppercase tracking-wide font-semibold mb-1">Reason for Leave</p>
-                <p className="text-sm text-gray-900">{leave.reason}</p>
+                <p className="text-sm text-ink">{leave.reason}</p>
               </div>
 
               <p className="text-xs text-surface-muted px-1">Submitted on {submittedFmt}</p>
@@ -283,7 +283,7 @@ export default function LeaveDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-50 border border-surface-border">
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-surface-2 border border-surface-border">
                     <AlertCircle className="w-4 h-4 text-surface-muted flex-shrink-0" />
                     <p className="text-xs text-surface-muted">
                       {isSickType
@@ -339,10 +339,10 @@ export default function LeaveDetailPage() {
                   <Dialog.Root open={withdrawOpen} onOpenChange={setWithdrawOpen}>
                     <Dialog.Portal>
                       <Dialog.Overlay className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" />
-                      <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-                        <Dialog.Title className="text-base font-bold text-gray-900 mb-1">Withdraw leave request?</Dialog.Title>
+                      <Dialog.Content className="fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-1 rounded-2xl shadow-xl p-6 w-full max-w-sm">
+                        <Dialog.Title className="text-base font-bold text-ink mb-1">Withdraw leave request?</Dialog.Title>
                         <Dialog.Description className="text-sm text-surface-muted mb-5">
-                          This removes your <strong className="text-gray-900">{t.label.toLowerCase()}</strong> request for <strong className="text-gray-900">{leave.days} day{leave.days > 1 ? 's' : ''}</strong>. You can submit a new one anytime.
+                          This removes your <strong className="text-ink">{t.label.toLowerCase()}</strong> request for <strong className="text-ink">{leave.days} day{leave.days > 1 ? 's' : ''}</strong>. You can submit a new one anytime.
                         </Dialog.Description>
                         <div className="flex gap-3 justify-end">
                           <Dialog.Close asChild>

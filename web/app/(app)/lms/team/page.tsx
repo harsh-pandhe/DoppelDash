@@ -37,20 +37,20 @@ function leaveChipClasses(l: Leave): string {
   if (l.type === 'casual')      return 'bg-blue-100 text-blue-800 border-blue-300'
   if (l.type === 'sick' || l.type === 'medical') return 'bg-red-100 text-red-800 border-red-300'
   if (l.type === 'privilege')   return 'bg-purple-100 text-purple-800 border-purple-300'
-  if (l.type === 'lwp')         return 'bg-gray-200 text-gray-800 border-gray-300'
+  if (l.type === 'lwp')         return 'bg-surface-3 text-ink border-surface-border'
   if (l.type === 'restricted')  return 'bg-orange-100 text-orange-800 border-orange-300'
   if (l.type === 'earned')      return 'bg-green-100 text-green-800 border-green-300'
-  return 'bg-gray-100 text-gray-700 border-gray-200'
+  return 'bg-surface-2 text-ink-muted border-surface-border'
 }
 
 function iconBgFor(type: string): string {
   if (type === 'casual')                                  return 'bg-blue-100   text-blue-700'
   if (type === 'sick' || type === 'medical')              return 'bg-red-100    text-red-700'
   if (type === 'privilege')                               return 'bg-purple-100 text-purple-700'
-  if (type === 'lwp')                                     return 'bg-gray-100   text-gray-700'
+  if (type === 'lwp')                                     return 'bg-surface-2   text-ink-muted'
   if (type === 'restricted')                              return 'bg-orange-100 text-orange-700'
   if (type === 'earned')                                  return 'bg-green-100  text-green-700'
-  return 'bg-gray-100 text-gray-600'
+  return 'bg-surface-2 text-ink-muted'
 }
 
 export default function TeamCalendarPage() {
@@ -173,7 +173,7 @@ export default function TeamCalendarPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border
                   ${filter === f.id
                     ? 'bg-dm-graphite text-white border-dm-graphite'
-                    : 'bg-white text-gray-600 border-surface-border hover:border-brand-400'}`}>
+                    : 'bg-surface-1 text-ink-muted border-surface-border hover:border-brand-400'}`}>
                 <span className={`w-2 h-2 rounded-full ${f.color}`} />
                 {f.label}
               </button>
@@ -189,14 +189,14 @@ export default function TeamCalendarPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 items-start">
 
           {/* Calendar */}
-          <div className="bg-white rounded-2xl border border-surface-border p-5">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
             {/* Nav */}
             <div className="flex items-center justify-between mb-5">
               <button type="button" aria-label="Previous month" onClick={prev}
                 className="p-2 rounded-lg hover:bg-surface transition-colors">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <h2 className="text-base font-bold text-gray-900 tracking-tight">{MONTHS[month]} {year}</h2>
+              <h2 className="text-base font-bold text-ink tracking-tight">{MONTHS[month]} {year}</h2>
               <button type="button" aria-label="Next month" onClick={next}
                 className="p-2 rounded-lg hover:bg-surface transition-colors">
                 <ChevronRight className="w-4 h-4" />
@@ -245,7 +245,7 @@ export default function TeamCalendarPage() {
                       <span className={`text-xs font-bold mb-1 w-5 h-5 flex items-center justify-center rounded-full flex-shrink-0
                         ${isToday ? 'bg-brand-500 text-white' :
                           holiday ? 'bg-brand-600 text-white' :
-                          isWeekend ? 'text-surface-muted' : 'text-gray-700'}`}>
+                          isWeekend ? 'text-surface-muted' : 'text-ink-muted'}`}>
                         {d}
                       </span>
                       <div className="flex flex-col gap-0.5 w-full overflow-hidden">
@@ -323,16 +323,16 @@ function StatCard({ label, value, hint, tone }: {
   tone: 'brand' | 'info' | 'warn' | 'neutral'
 }) {
   const colorClasses = {
-    brand:   'bg-white border-surface-border',
-    info:    'bg-white border-surface-border',
-    warn:    'bg-white border-surface-border',
-    neutral: 'bg-white border-surface-border',
+    brand:   'bg-surface-1 border-surface-border',
+    info:    'bg-surface-1 border-surface-border',
+    warn:    'bg-surface-1 border-surface-border',
+    neutral: 'bg-surface-1 border-surface-border',
   }[tone]
   const valueColor = {
     brand:   'text-brand-600',
     info:    'text-blue-600',
-    warn:    value > 0 ? 'text-amber-600' : 'text-gray-400',
-    neutral: 'text-dm-graphite',
+    warn:    value > 0 ? 'text-amber-600' : 'text-ink-muted',
+    neutral: 'text-ink',
   }[tone]
   return (
     <div className={`rounded-2xl border p-4 ${colorClasses}`}>
@@ -350,11 +350,11 @@ function DetailPanel({ date, monthLabel, year, leaves, holiday, onClose }: {
 }) {
   const weekday = new Date(year, MONTHS_INDEX_LOOKUP[monthLabel], date).toLocaleDateString('en-IN', { weekday: 'long' })
   return (
-    <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
       <div className="px-4 py-3 border-b border-surface-border flex items-start justify-between gap-2">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">{weekday}</p>
-          <h3 className="font-extrabold text-gray-900 text-base tracking-tight">{monthLabel} {date}, {year}</h3>
+          <h3 className="font-extrabold text-ink text-base tracking-tight">{monthLabel} {date}, {year}</h3>
         </div>
         <button type="button" aria-label="Close detail" onClick={onClose}
           className="p-1.5 rounded-lg text-surface-muted hover:bg-surface transition-colors">
@@ -368,7 +368,7 @@ function DetailPanel({ date, monthLabel, year, leaves, holiday, onClose }: {
             <Sparkles className="w-4 h-4 text-brand-600" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900">{holiday.name}</p>
+            <p className="text-sm font-bold text-ink">{holiday.name}</p>
             <p className="text-[10px] capitalize text-surface-muted">{holiday.type} holiday</p>
           </div>
         </div>
@@ -388,7 +388,7 @@ function DetailPanel({ date, monthLabel, year, leaves, holiday, onClose }: {
                   <CalendarClock className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{l.userName}</p>
+                  <p className="text-sm font-semibold text-ink truncate">{l.userName}</p>
                   <p className="text-[10px] text-surface-muted capitalize">{l.type} · {l.days} day{l.days !== 1 ? 's' : ''}</p>
                 </div>
                 <Badge variant={l.status === 'approved' ? 'success' : 'warning'} className="text-[10px] capitalize flex-shrink-0">
@@ -413,7 +413,7 @@ function UpcomingPanel({ leaves, holidays }: { leaves: Leave[]; holidays: Holida
 
   return (
     <div className="space-y-3">
-      <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+      <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
         <div className="px-4 py-3 border-b border-surface-border">
           <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted flex items-center gap-1.5">
             <Users className="w-3 h-3" /> Upcoming leaves
@@ -431,10 +431,10 @@ function UpcomingPanel({ leaves, holidays }: { leaves: Leave[]; holidays: Holida
                     <span className="text-[9px] font-bold uppercase text-surface-muted leading-none">
                       {start.toLocaleDateString('en-IN', { month: 'short' })}
                     </span>
-                    <span className="text-lg font-extrabold text-dm-graphite leading-none tracking-tighter">{start.getDate()}</span>
+                    <span className="text-lg font-extrabold text-ink leading-none tracking-tighter">{start.getDate()}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{l.userName}</p>
+                    <p className="text-sm font-semibold text-ink truncate">{l.userName}</p>
                     <p className="text-[10px] text-surface-muted capitalize">{l.type} · {l.days} day{l.days !== 1 ? 's' : ''}</p>
                   </div>
                   <Badge variant={l.status === 'approved' ? 'success' : 'warning'} className="text-[9px] capitalize flex-shrink-0">
@@ -447,7 +447,7 @@ function UpcomingPanel({ leaves, holidays }: { leaves: Leave[]; holidays: Holida
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+      <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
         <div className="px-4 py-3 border-b border-surface-border">
           <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted flex items-center gap-1.5">
             <Sparkles className="w-3 h-3" /> Upcoming holidays
@@ -463,12 +463,12 @@ function UpcomingPanel({ leaves, holidays }: { leaves: Leave[]; holidays: Holida
                   <span className="text-[9px] font-bold uppercase text-brand-500 leading-none">
                     {h.dateObj.toLocaleDateString('en-IN', { month: 'short' })}
                   </span>
-                  <span className="text-lg font-extrabold text-dm-graphite leading-none tracking-tighter">
+                  <span className="text-lg font-extrabold text-ink leading-none tracking-tighter">
                     {h.dateObj.getDate()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{h.name}</p>
+                  <p className="text-sm font-semibold text-ink truncate">{h.name}</p>
                   <p className="text-[10px] text-surface-muted capitalize">{h.type} holiday</p>
                 </div>
               </li>

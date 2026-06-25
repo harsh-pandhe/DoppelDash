@@ -23,7 +23,7 @@ export function Sheet({ open, onOpenChange, children, side = 'right', className 
         <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
         <Drawer.Content
           className={cn(
-            'fixed z-50 bg-white flex flex-col',
+            'fixed z-50 bg-surface-1 flex flex-col',
             'shadow-2xl outline-none',
             side === 'right'  && 'right-0 top-0 bottom-0 w-full max-w-lg',
             side === 'left'   && 'left-0 top-0 bottom-0 w-full max-w-lg',
@@ -50,13 +50,13 @@ export function SheetHeader({ title, description, onClose, children }: SheetHead
   return (
     <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-surface-border flex-shrink-0">
       <div className="flex-1 min-w-0">
-        <Drawer.Title className="text-base font-bold text-gray-900 leading-tight">{title}</Drawer.Title>
+        <Drawer.Title className="text-base font-bold text-ink leading-tight">{title}</Drawer.Title>
         {description && <p className="text-sm text-surface-muted mt-0.5">{description}</p>}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {children}
         <button type="button" onClick={onClose} aria-label="Close"
-          className="p-1.5 rounded-lg text-surface-muted hover:bg-surface hover:text-gray-700 transition-colors">
+          className="p-1.5 rounded-lg text-surface-muted hover:bg-surface hover:text-ink-muted transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -74,7 +74,7 @@ export function SheetBody({ children, className }: { children: React.ReactNode; 
 
 export function SheetFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex-shrink-0 px-6 py-4 border-t border-surface-border bg-gray-50/80', className)}>
+    <div className={cn('flex-shrink-0 px-6 py-4 border-t border-surface-border bg-surface-2/80', className)}>
       {children}
     </div>
   )

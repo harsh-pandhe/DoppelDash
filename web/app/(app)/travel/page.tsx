@@ -28,7 +28,7 @@ const STATUS_CFG: Record<string, { label: string; icon: React.ElementType; ring:
   pending_admin:    { label: 'Admin Approval',  icon: Clock,        ring: 'ring-blue-200 bg-blue-50',     text: 'text-blue-700',   dot: 'bg-blue-400'   },
   approved:        { label: 'Approved',       icon: CheckCircle2, ring: 'ring-green-200 bg-green-50',   text: 'text-green-700',  dot: 'bg-green-500'  },
   rejected:        { label: 'Rejected',       icon: XCircle,      ring: 'ring-red-200 bg-red-50',       text: 'text-red-700',    dot: 'bg-red-400'    },
-  cancelled:       { label: 'Cancelled',      icon: XCircle,      ring: 'ring-gray-200 bg-gray-50',     text: 'text-gray-500',   dot: 'bg-gray-400'   },
+  cancelled:       { label: 'Cancelled',      icon: XCircle,      ring: 'ring-gray-200 bg-surface-2',     text: 'text-ink-muted',   dot: 'bg-gray-400'   },
 }
 
 const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-purple-400 to-violet-600','from-orange-400 to-red-500','from-emerald-400 to-green-600','from-pink-400 to-rose-500']
@@ -121,7 +121,7 @@ export default function TravelPage() {
               <Plane className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Travel Requests</p>
+              <p className="text-sm font-bold text-ink">Travel Requests</p>
               <p className="text-xs text-surface-muted">{requests.length} total{pendingCount > 0 ? ` · ${pendingCount} need action` : ''}</p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function TravelPage() {
           {FILTERS.map(f => (
             <button key={f} type="button" onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all
-                ${filter === f ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                ${filter === f ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
               {f === 'all' ? `All (${requests.length})` : STATUS_CFG[f]?.label || f}
             </button>
           ))}
@@ -168,14 +168,14 @@ export default function TravelPage() {
               const canCreateExpense  = r.userId === user?.id && r.status === 'approved' && tripFinished && !r.expenseId
 
               return (
-                <div key={r._id} className="bg-white rounded-2xl border border-surface-border p-5 space-y-3 hover:shadow-md transition-shadow">
+                <div key={r._id} className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradient(r.userName)} flex items-center justify-center flex-shrink-0`}>
                         <span className="text-white font-bold text-[10px]">{r.userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900">{r.purpose}</p>
+                        <p className="text-sm font-bold text-ink">{r.purpose}</p>
                         {isManager && <p className="text-xs text-surface-muted">{r.userName}</p>}
                       </div>
                     </div>
@@ -191,7 +191,7 @@ export default function TravelPage() {
                       {new Date(r.departureDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} —{' '}
                       {new Date(r.returnDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}
                     </span>
-                    <span className="flex items-center gap-1 font-semibold text-gray-700">
+                    <span className="flex items-center gap-1 font-semibold text-ink-muted">
                       <IndianRupee className="w-3 h-3" />₹{r.estimatedTotal.toLocaleString('en-IN')} est.
                     </span>
                     {r.advanceRequested > 0 && (
@@ -262,7 +262,7 @@ export default function TravelPage() {
                             </>
                           )}
                           {canCancel && (
-                            <Button size="sm" variant="outline" className="gap-1.5 text-gray-600"
+                            <Button size="sm" variant="outline" className="gap-1.5 text-ink-muted"
                               onClick={() => cancel(r._id)}>
                               <XCircle className="w-3 h-3" /> Cancel Request
                             </Button>

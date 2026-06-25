@@ -55,9 +55,9 @@ export default function TeamPanel({ team, onLeaveToday, availability }: Props) {
     <div className="space-y-4">
 
       {/* ── Team quick stats ── */}
-      <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+      <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
         <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between">
-          <h2 className="text-sm font-bold tracking-tight text-dm-graphite uppercase">My team</h2>
+          <h2 className="text-sm font-bold tracking-tight text-ink uppercase">My team</h2>
           <Link href="/admin/users" className="text-[11px] font-bold text-dm-orange hover:text-dm-orange-600 flex items-center gap-1">
             Manage <ArrowRight className="w-3 h-3" />
           </Link>
@@ -79,14 +79,14 @@ export default function TeamPanel({ team, onLeaveToday, availability }: Props) {
       </div>
 
       {/* ── On leave today ── */}
-      <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+      <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
         <div className="px-5 py-3 border-b border-surface-border">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-dm-graphite">On leave today</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-ink">On leave today</h3>
         </div>
         {onLeaveToday.length === 0 ? (
           <div className="px-5 py-6 text-center">
             <UserCheck className="w-6 h-6 text-status-success mx-auto mb-1.5" />
-            <p className="text-xs font-semibold text-dm-graphite-2">Full team in office</p>
+            <p className="text-xs font-semibold text-ink-muted">Full team in office</p>
           </div>
         ) : (
           <div className="divide-y divide-surface-border">
@@ -94,7 +94,7 @@ export default function TeamPanel({ team, onLeaveToday, availability }: Props) {
               <div key={i} className="px-5 py-2.5 flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full flex-shrink-0 ${TYPE_COLOR[l.type] || 'bg-gray-400'}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-dm-graphite truncate">{l.userName}</p>
+                  <p className="text-xs font-semibold text-ink truncate">{l.userName}</p>
                   <p className="text-[10px] text-surface-muted capitalize">{l.type} · returns {new Date(l.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                 </div>
               </div>
@@ -104,9 +104,9 @@ export default function TeamPanel({ team, onLeaveToday, availability }: Props) {
       </div>
 
       {/* ── 14-day availability strip ── */}
-      <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+      <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
         <div className="px-5 py-3 border-b border-surface-border flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-dm-graphite">Next 14 days</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Next 14 days</h3>
           <Link href="/lms/team" className="text-[10px] font-bold text-dm-orange hover:text-dm-orange-600 flex items-center gap-1">
             Full calendar <ArrowRight className="w-2.5 h-2.5" />
           </Link>
@@ -148,18 +148,18 @@ export default function TeamPanel({ team, onLeaveToday, availability }: Props) {
 
       {/* ── Departments breakdown ── */}
       {Object.keys(byDept).length > 0 && (
-        <div className="bg-white border border-surface-border rounded-lg overflow-hidden">
+        <div className="bg-surface-1 border border-surface-border rounded-lg overflow-hidden">
           <div className="px-5 py-3 border-b border-surface-border">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-dm-graphite">By department</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink">By department</h3>
           </div>
           <div className="px-5 py-3 space-y-2">
             {Object.entries(byDept).sort((a, b) => b[1] - a[1]).map(([dept, count]) => (
               <div key={dept} className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-dm-graphite-2 flex-1 truncate">{dept}</span>
+                <span className="text-xs font-semibold text-ink-muted flex-1 truncate">{dept}</span>
                 <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                   <div className="h-full bg-dm-orange" style={{ width: `${(count / total) * 100}%` }} />
                 </div>
-                <span className="text-xs font-mono font-bold text-dm-graphite w-6 text-right">{count}</span>
+                <span className="text-xs font-mono font-bold text-ink w-6 text-right">{count}</span>
               </div>
             ))}
           </div>
@@ -173,7 +173,7 @@ function Stat({ icon: Icon, value, label, tone = 'neutral' }: {
   icon: typeof Users; value: number; label: string; tone?: 'neutral' | 'success' | 'warning'
 }) {
   const colors = {
-    neutral: 'text-dm-graphite',
+    neutral: 'text-ink',
     success: 'text-status-success',
     warning: 'text-status-warning',
   }

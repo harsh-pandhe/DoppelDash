@@ -53,6 +53,11 @@ DoppelDash is designed to automate and streamline enterprise administrative proc
 
 ### Changelog
 
+#### Dark Mode + IMAP Inbox + 3D Sign-In (2026-06-25)
+- **Dark mode** — token-based theme: CSS vars (`:root` / `.dark`) drive `surface-*` / `ink` / `ink-muted`; tailwind `darkMode:'class'`. Literal `bg-white` / `text-gray-*` / `text-dm-graphite` codemodded to tokens across ~75 files. `ThemeToggle` in the Header (localStorage + system preference) with a no-flash pre-paint script; chart tooltips theme-aware; print forced light. Verified 20 pages × both themes, zero console errors.
+- **IMAP inbox** — shared mailbox synced into the app. Poll-on-demand (`lib/imap.ts` `syncInbox()`, imapflow + mailparser, HTML sanitized on ingest), `models/InboxMessage.ts`, `/api/inbox` + `/api/inbox/[id]`, `/inbox` UI (list + detail + read-state + Reply), sidebar nav gated to mail access. `IMAP_PASS` = Gmail app password (spaces stripped automatically).
+- **Sign-in** — full-screen procedural Three.js night cable-car scene (`components/CableCarScene.tsx`: 8 towers, 6 gondolas on a loop, parallax peaks, moon, stars), lazy-loaded; logo switched to the DoppelDash mark.
+
 #### Phase 12B + 12C — Branded Exports (2026-06-23)
 - New shared `lib/export.ts` — `brandedPDF` / `brandedXLSX` / `brandedCSV` produce consistent Doppelmayr-branded files: DOPPELMAYR wordmark header, blue (`#0057A8`) table headers, `DD-MMM-YYYY` dates, "Confidential — Doppelmayr India" footer (PDF also gets page numbers + alt-row shading). Reports (PDF + XLSX + CSV), Reimbursements, Contacts, and the Audit log all export through it now.
 - **12B** confirmed: Reports already ships date-range presets (Today / Last 7 days / This month / Last 3 months / This year + custom). **This completes the roadmap (phases 8–13).**

@@ -222,8 +222,8 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
 
         {/* History panel */}
         {showHistory && (
-          <div className="bg-white rounded-2xl border border-surface-border p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2"><History className="w-4 h-4 text-brand-500" /> Recent campaigns</h3>
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
+            <h3 className="text-sm font-bold text-ink mb-3 flex items-center gap-2"><History className="w-4 h-4 text-brand-500" /> Recent campaigns</h3>
             {history.length === 0 ? (
               <p className="text-sm text-surface-muted py-4 text-center">No campaigns sent yet.</p>
             ) : (
@@ -232,7 +232,7 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
                   <div key={h._id} className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-surface-border">
                     <div className="w-9 h-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0"><Mail className="w-4 h-4 text-brand-600" /></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{h.subject}</p>
+                      <p className="text-sm font-semibold text-ink truncate">{h.subject}</p>
                       <p className="text-xs text-surface-muted">{timeAgo(h.createdAt)}{h.tag ? ` · tag: ${h.tag}` : ''} · via {h.channel}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -249,9 +249,9 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* ── Left (3/5): compose ── */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
+            <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
               <div>
-                <h2 className="text-base font-bold text-gray-900">Compose Campaign</h2>
+                <h2 className="text-base font-bold text-ink">Compose Campaign</h2>
                 <p className="text-xs text-surface-muted mt-0.5">Bulk email by segment. Use merge fields for personalization.</p>
               </div>
 
@@ -260,12 +260,12 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
                 <Label className="flex items-center gap-1.5"><TagIcon className="w-3.5 h-3.5" /> Target segment</Label>
                 <div className="flex gap-1.5 flex-wrap">
                   <button type="button" onClick={() => setTag('')}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${!tag ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${!tag ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
                     All with email
                   </button>
                   {allTags.map(t => (
                     <button type="button" key={t} onClick={() => setTag(t === tag ? '' : t)}
-                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${tag === t ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${tag === t ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
                       {t}
                     </button>
                   ))}
@@ -354,9 +354,9 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
           {/* ── Right (2/5): recipients + live preview ── */}
           <div className="lg:col-span-2 space-y-4">
             {/* Recipients */}
-            <div className="bg-white rounded-2xl border border-surface-border p-5">
+            <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Users className="w-4 h-4 text-brand-500" /> Recipients</h3>
+                <h3 className="text-sm font-bold text-ink flex items-center gap-2"><Users className="w-4 h-4 text-brand-500" /> Recipients</h3>
                 {excluded.size > 0 && <button type="button" onClick={() => setExcluded(new Set())} className="text-[11px] font-semibold text-brand-600 hover:underline">Reset ({excluded.size})</button>}
               </div>
               <div className="relative mb-3">
@@ -372,7 +372,7 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
                   {visibleRecipients.map(c => (
                     <div key={c._id} className="group flex items-center gap-3 p-2.5 rounded-xl bg-surface border border-surface-border">
                       <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0"><span className="text-brand-700 font-bold text-[10px]">{c.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}</span></div>
-                      <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p><p className="text-xs text-surface-muted truncate">{c.email}</p></div>
+                      <div className="flex-1 min-w-0"><p className="text-sm font-semibold text-ink truncate">{c.name}</p><p className="text-xs text-surface-muted truncate">{c.email}</p></div>
                       <button type="button" onClick={() => setExcluded(s => new Set(s).add(c._id))} aria-label={`Remove ${c.name}`} className="p-1 rounded-lg text-surface-muted hover:text-red-600 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"><X className="w-4 h-4" /></button>
                     </div>
                   ))}
@@ -381,14 +381,14 @@ Concise (3-4 sentences), professional. Use {{name}} and {{company}} placeholders
             </div>
 
             {/* Live preview */}
-            <div className="bg-white rounded-2xl border border-surface-border p-5">
-              <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3"><Eye className="w-4 h-4 text-brand-500" /> Live preview <span className="text-[10px] font-normal text-surface-muted">(first recipient)</span></h3>
+            <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
+              <h3 className="text-sm font-bold text-ink flex items-center gap-2 mb-3"><Eye className="w-4 h-4 text-brand-500" /> Live preview <span className="text-[10px] font-normal text-surface-muted">(first recipient)</span></h3>
               <div className="rounded-xl bg-surface border border-surface-border p-4">
                 <p className="text-[10px] font-bold text-surface-muted uppercase tracking-wide mb-1">To: {recipients[0]?.email || '—'}</p>
-                <p className="text-sm font-bold text-gray-900 mb-2">{subject ? subject.replace(/\{\{name\}\}/gi, recipients[0]?.name || '{{name}}').replace(/\{\{company\}\}/gi, recipients[0]?.company || '{{company}}') : <span className="text-surface-muted font-normal">(no subject)</span>}</p>
+                <p className="text-sm font-bold text-ink mb-2">{subject ? subject.replace(/\{\{name\}\}/gi, recipients[0]?.name || '{{name}}').replace(/\{\{company\}\}/gi, recipients[0]?.company || '{{company}}') : <span className="text-surface-muted font-normal">(no subject)</span>}</p>
                 <hr className="border-surface-border mb-3" />
                 {bodyText ? (
-                  <div className="prose prose-sm max-w-none text-gray-700" dangerouslySetInnerHTML={{ __html: body.replace(/\{\{name\}\}/gi, recipients[0]?.name || '{{name}}').replace(/\{\{company\}\}/gi, recipients[0]?.company || '{{company}}') }} />
+                  <div className="prose prose-sm max-w-none text-ink-muted" dangerouslySetInnerHTML={{ __html: body.replace(/\{\{name\}\}/gi, recipients[0]?.name || '{{name}}').replace(/\{\{company\}\}/gi, recipients[0]?.company || '{{company}}') }} />
                 ) : <p className="text-sm text-surface-muted">Your email body will appear here.</p>}
               </div>
             </div>

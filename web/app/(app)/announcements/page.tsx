@@ -123,7 +123,7 @@ function AnnouncementDialog({ onSaved, edit, open, onOpenChange }: {
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input type="checkbox" checked={form.pinned} onChange={e => setForm(f => ({ ...f, pinned: e.target.checked }))}
                   className="w-4 h-4 rounded accent-brand-500" />
-                <span className="text-sm font-medium text-gray-700">Pin to top</span>
+                <span className="text-sm font-medium text-ink-muted">Pin to top</span>
               </label>
             </div>
           </div>
@@ -134,7 +134,7 @@ function AnnouncementDialog({ onSaved, edit, open, onOpenChange }: {
             <input id="ann-schedule" type="datetime-local"
               value={form.scheduledFor} min={toLocalInput(new Date().toISOString())}
               onChange={e => setForm(f => ({ ...f, scheduledFor: e.target.value }))}
-              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-white text-sm focus:outline-none focus:border-brand-500" />
+              className="w-full h-10 px-3 rounded-xl border border-surface-border bg-surface-1 text-sm focus:outline-none focus:border-brand-500" />
             <p className="text-[11px] text-surface-muted">Leave empty to publish immediately. Scheduled posts stay hidden from others until then.</p>
           </div>
         </ModalBody>
@@ -212,7 +212,7 @@ export default function AnnouncementsPage() {
               <Megaphone className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Company Notices</p>
+              <p className="text-sm font-bold text-ink">Company Notices</p>
               <p className="text-xs text-surface-muted">Updates and announcements from management.</p>
             </div>
           </div>
@@ -309,7 +309,7 @@ function BroadcastButton({ id }: { id: string }) {
           {([['employee', 'Employees'],['manager', 'Managers'],['admin', 'Admins']] as const).map(([r, label]) => (
             <label key={r} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border cursor-pointer hover:bg-surface transition-colors">
               <input type="checkbox" checked={roles.includes(r)} onChange={() => toggle(r)} className="accent-brand-500 w-4 h-4" />
-              <span className="text-sm font-semibold text-gray-700">{label}</span>
+              <span className="text-sm font-semibold text-ink-muted">{label}</span>
             </label>
           ))}
         </div>
@@ -337,7 +337,7 @@ function AnnouncementCard({ item, canPost, onPin, onDelete, onEdit }: {
   const isScheduled = !!item.scheduledFor && new Date(item.scheduledFor).getTime() > Date.now()
 
   return (
-    <div className={`group bg-white rounded-2xl border overflow-hidden hover:shadow-md transition-all ${item.pinned ? 'border-brand-200 shadow-sm' : 'border-surface-border'}`}>
+    <div className={`group bg-surface-1 rounded-2xl border overflow-hidden hover:shadow-md transition-all ${item.pinned ? 'border-brand-200 shadow-sm' : 'border-surface-border'}`}>
       {/* Priority gradient top bar */}
       <div className={`h-1 bg-gradient-to-r ${p.bar}`} />
 
@@ -368,8 +368,8 @@ function AnnouncementCard({ item, canPost, onPin, onDelete, onEdit }: {
               )}
             </div>
 
-            <h3 className="font-bold text-gray-900 text-sm mb-2">{item.title}</h3>
-            <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed"
+            <h3 className="font-bold text-ink text-sm mb-2">{item.title}</h3>
+            <div className="prose prose-sm max-w-none text-ink-muted leading-relaxed"
               dangerouslySetInnerHTML={{ __html: item.body }} />
             <p className="text-[11px] text-surface-muted mt-3">
               Posted by <strong>{item.authorName}</strong> ·{' '}

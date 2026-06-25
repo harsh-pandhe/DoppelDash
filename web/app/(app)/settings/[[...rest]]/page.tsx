@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import FileUploader from '@/components/ui/file-uploader'
 
 const ROLE_META: Record<string, { icon: React.ElementType; color: string; label: string; desc: string }> = {
-  employee: { icon: User,      color: 'text-gray-500',  label: 'Employee', desc: 'Standard access' },
+  employee: { icon: User,      color: 'text-ink-muted',  label: 'Employee', desc: 'Standard access' },
   manager:  { icon: Briefcase, color: 'text-brand-500', label: 'Manager',  desc: 'Approve requests, manage team' },
   admin:    { icon: Shield,    color: 'text-amber-500', label: 'Admin',    desc: 'Full oversight & admin' },
 }
@@ -42,7 +42,7 @@ function ChangePasswordCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2"><KeyRound className="w-4 h-4 text-brand-500"/>Change Password</CardTitle>
+        <CardTitle className="text-sm font-bold text-ink-muted flex items-center gap-2"><KeyRound className="w-4 h-4 text-brand-500"/>Change Password</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         <div className="space-y-1.5">
@@ -54,7 +54,7 @@ function ChangePasswordCard() {
           <div className="relative">
             <Input id="n1-pwd" type={show?'text':'password'} value={n1} onChange={e => setN1(e.target.value)} placeholder="Min 8 characters" />
             <button type="button" title="Toggle" aria-label="Toggle password visibility" onClick={() => setShow(s=>!s)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-gray-700">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-ink-muted">
               {show?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}
             </button>
           </div>
@@ -140,13 +140,13 @@ function MyEmailCard() {
   if (loading) return <div className="h-20 rounded-xl bg-surface-border animate-pulse" />
 
   return (
-    <div className="rounded-xl border border-surface-border bg-white overflow-hidden">
+    <div className="rounded-xl border border-surface-border bg-surface-1 overflow-hidden">
       <div className="flex items-start gap-4 p-4">
         <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 mt-0.5">
           <Send className="w-5 h-5 text-brand-500" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900">Connect Your Email</p>
+          <p className="text-sm font-bold text-ink">Connect Your Email</p>
           <p className="text-xs text-surface-muted">Send CRM messages, OTPs, and announcements from your own email account via SMTP.</p>
           {config && (
             <p className="text-xs mt-1 flex items-center gap-1.5">
@@ -194,7 +194,7 @@ function MyEmailCard() {
                   className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors ${
                     form.smtpHost === p.host && p.host !== ''
                       ? 'bg-brand-500 text-white border-brand-500'
-                      : 'bg-white text-gray-700 border-surface-border hover:border-brand-400'
+                      : 'bg-surface-1 text-ink-muted border-surface-border hover:border-brand-400'
                   }`}>
                   {p.label}
                 </button>
@@ -223,7 +223,7 @@ function MyEmailCard() {
                 <Input id="me-pass" type={showPass ? 'text' : 'password'} placeholder="App-specific password (not your login password)"
                   value={form.appPassword} onChange={e => setForm(f => ({ ...f, appPassword: e.target.value }))} />
                 <button type="button" title="Toggle" aria-label="Toggle visibility" onClick={() => setShowPass(p => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-gray-700">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-muted hover:text-ink-muted">
                   {showPass ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                 </button>
               </div>
@@ -254,12 +254,12 @@ function EmailSyncCard() {
     setSyncing(false)
   }
   return (
-    <div className="flex items-start gap-4 p-4 rounded-xl border border-surface-border bg-white">
+    <div className="flex items-start gap-4 p-4 rounded-xl border border-surface-border bg-surface-1">
       <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0 mt-0.5">
         <Inbox className="w-5 h-5 text-indigo-500" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-gray-900">Email → CRM Sync (IMAP)</p>
+        <p className="text-sm font-bold text-ink">Email → CRM Sync (IMAP)</p>
         <p className="text-xs text-surface-muted">Match inbox emails to contacts by sender address.</p>
         {status !== null && (
           <p className="text-xs mt-1 flex items-center gap-1">
@@ -305,7 +305,7 @@ function OrgProfileCard({ isBoss }: { isBoss: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-bold text-gray-700 flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-ink-muted flex items-center gap-2">
           <Building2 className="w-4 h-4 text-brand-500"/>Organisation Profile
         </CardTitle>
       </CardHeader>
@@ -367,20 +367,20 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold text-gray-700">Account</CardTitle>
+            <CardTitle className="text-sm font-bold text-ink-muted">Account</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
-            <div className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-white">
+            <div className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-surface-1">
               <div className={`w-12 h-12 rounded-xl bg-surface flex items-center justify-center ${meta.color}`}>
                 <RoleIcon className="w-5 h-5"/>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-gray-900">{user?.fullName || '—'}</p>
+                <p className="font-bold text-sm text-ink">{user?.fullName || '—'}</p>
                 <p className="text-xs text-surface-muted">{user?.email || '—'}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5">{meta.label} · {meta.desc}</p>
               </div>
               <div className="flex flex-col gap-2">
-                <Link href="/profile" className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border border-surface-border text-xs font-semibold text-gray-700 hover:border-brand-400 hover:text-brand-600 transition-colors">
+                <Link href="/profile" className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl border border-surface-border text-xs font-semibold text-ink-muted hover:border-brand-400 hover:text-brand-600 transition-colors">
                   <User className="w-3.5 h-3.5" /> Edit profile
                 </Link>
                 <Button variant="outline" size="sm" className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50" onClick={logout}>
@@ -398,15 +398,15 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-bold text-gray-700">Integrations</CardTitle>
+            <CardTitle className="text-sm font-bold text-ink-muted">Integrations</CardTitle>
           </CardHeader>
           <CardContent className="pt-0 space-y-3">
             <MyEmailCard />
             <EmailSyncCard />
-            <a href="/api/auth/outlook" className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-white hover:border-brand-300 transition-colors">
+            <a href="/api/auth/outlook" className="flex items-center gap-4 p-4 rounded-xl border border-surface-border bg-surface-1 hover:border-brand-300 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><Mail className="w-5 h-5 text-blue-500"/></div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Microsoft Outlook</p>
+                <p className="text-sm font-bold text-ink">Microsoft Outlook</p>
                 <p className="text-xs text-surface-muted">Auto-sync emails to CRM contact timelines</p>
               </div>
               <Button type="button" size="sm" variant="outline" className="gap-1.5"><Mail className="w-3.5 h-3.5"/>Connect</Button>

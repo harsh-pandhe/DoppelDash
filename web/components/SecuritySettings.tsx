@@ -151,7 +151,7 @@ export default function SecuritySettings() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Authenticator app</p>
+                <p className="text-sm font-semibold text-ink">Authenticator app</p>
                 <p className="text-xs text-surface-muted">
                   6-digit codes from Google/Microsoft Authenticator — works even when email is unreachable.
                 </p>
@@ -173,11 +173,11 @@ export default function SecuritySettings() {
             {setupUrl && (
               <div className="mt-4 p-4 rounded-2xl border border-surface-border bg-surface space-y-4">
                 <div className="flex flex-col sm:flex-row gap-4 items-center">
-                  <div className="bg-white p-3 rounded-xl border border-surface-border">
+                  <div className="bg-surface-1 p-3 rounded-xl border border-surface-border">
                     <QRCodeSVG value={setupUrl} size={140} />
                   </div>
                   <div className="flex-1 space-y-2 text-center sm:text-left">
-                    <p className="text-sm font-semibold text-gray-900">1. Scan with your authenticator app</p>
+                    <p className="text-sm font-semibold text-ink">1. Scan with your authenticator app</p>
                     <p className="text-xs text-surface-muted">Google Authenticator, Microsoft Authenticator, or any TOTP app.</p>
                     <button type="button" onClick={copySecret}
                       className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-800">
@@ -186,7 +186,7 @@ export default function SecuritySettings() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-900">2. Enter the 6-digit code it shows</p>
+                  <p className="text-sm font-semibold text-ink">2. Enter the 6-digit code it shows</p>
                   <div className="flex gap-2">
                     <Input
                       value={totpCode}
@@ -212,7 +212,7 @@ export default function SecuritySettings() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div>
-                <p className="text-sm font-semibold text-gray-900">Passkeys</p>
+                <p className="text-sm font-semibold text-ink">Passkeys</p>
                 <p className="text-xs text-surface-muted">
                   Sign in with fingerprint, face, or device PIN — no password or code needed.
                 </p>
@@ -228,7 +228,7 @@ export default function SecuritySettings() {
                   <div key={pk.id} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border bg-surface">
                     <KeyRound className="w-4 h-4 text-brand-500 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-900 truncate">{pk.nickname}</p>
+                      <p className="text-xs font-semibold text-ink truncate">{pk.nickname}</p>
                       <p className="text-[11px] text-surface-muted">
                         Added {new Date(pk.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                         {pk.lastUsedAt && <> · last used {new Date(pk.lastUsedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</>}

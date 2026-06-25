@@ -2,6 +2,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { startAuthentication } from '@simplewebauthn/browser'
+import dynamic from 'next/dynamic'
+
+// 3D cable-car scene — client-only, lazy (keeps three.js out of initial bundle)
+const CableCarScene = dynamic(() => import('@/components/CableCarScene'), { ssr: false })
 import {
   Mail, Lock, Eye, EyeOff, ChevronRight, ShieldCheck, Sparkles, X, Send,
   Loader2, Check, Mountain, Smartphone, KeyRound,
@@ -189,25 +193,14 @@ export default function SignInPage() {
   const stepProgress = stepIdx / 2  // 0, 0.5, 1
 
   return (
-    <div className="min-h-screen flex font-sans relative overflow-hidden bg-slate-950">
+    <div className="min-h-screen flex font-sans relative overflow-hidden bg-[#0a1424]">
 
-      {/* ─── Slow-pan background image ─────────────────────────────────── */}
-      <style jsx global>{`
-        @keyframes slowPan {
-          0%   { transform: scale(1) translate(0, 0); }
-          50%  { transform: scale(1.05) translate(-1%, -1%); }
-          100% { transform: scale(1) translate(0, 0); }
-        }
-        .animate-pan { animation: slowPan 30s ease-in-out infinite; }
-      `}</style>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <div
-        className="absolute inset-0 z-0 animate-pan bg-cover bg-center"
-        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1551524559-8af4e6624178?auto=format&fit=crop&w=2400&q=80")' }}
-        aria-hidden
-      />
-      <div className="absolute inset-0 z-0 bg-gradient-to-r from-slate-950/95 via-slate-950/40 to-slate-950/80" />
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950/95 via-slate-950/10 to-transparent" />
+      {/* ─── Full 3D cable-car scene as the entire background ───────────── */}
+      <CableCarScene />
+      {/* Soft scrim only behind the form (right) + slight bottom vignette,
+          so brand text + form stay legible without hiding the scene. */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-r from-slate-950/55 via-transparent to-slate-950/65 pointer-events-none" />
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-slate-950/70 via-transparent to-slate-950/20 pointer-events-none" />
 
       {/* ─── Main layout ───────────────────────────────────────────────── */}
       <div className="relative z-10 w-full flex flex-col lg:flex-row">
@@ -215,19 +208,12 @@ export default function SignInPage() {
         {/* LEFT — brand story */}
         <div className="w-full lg:w-1/2 p-8 lg:p-16 flex flex-col justify-between min-h-[40vh] lg:min-h-screen text-white">
           <div className={`transform transition-all duration-1000 ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-8 opacity-0'}`}>
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-12 h-12 bg-blue-600/20 backdrop-blur-md rounded-xl border border-blue-400/30 flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-6 h-6 text-blue-400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M4 6h16" />
-                  <path d="M12 6v4" />
-                  <rect x="6" y="10" width="12" height="8" rx="2" />
-                  <path d="M8 14h8" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white">DoppelDash</h1>
-                <p className="text-xs font-medium text-blue-300 tracking-widest uppercase">Doppelmayr India</p>
-              </div>
+            <div className="flex items-center mb-2">
+              <img
+                src="/icon-192.png"
+                alt="DoppelDash"
+                className="h-12 w-12 rounded-xl shadow-md shadow-black/20"
+              />
             </div>
           </div>
 

@@ -107,7 +107,7 @@ function SortableWrapper({ id, className, children }: { id: string; className?: 
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
-        className="absolute top-1 left-1 sm:-top-2 sm:-left-2 z-20 w-6 h-6 rounded-full bg-white border border-surface-border shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-surface-muted hover:text-brand-600 hover:border-brand-400 transition-colors touch-none">
+        className="absolute top-1 left-1 sm:-top-2 sm:-left-2 z-20 w-6 h-6 rounded-full bg-surface-1 border border-surface-border shadow-md flex items-center justify-center cursor-grab active:cursor-grabbing text-surface-muted hover:text-brand-600 hover:border-brand-400 transition-colors touch-none">
         <GripVertical className="w-3.5 h-3.5" />
       </button>
       {children}

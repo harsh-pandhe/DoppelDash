@@ -21,7 +21,7 @@ export function SortableTH({ label, sortKey, activeKey, activeDir, onClick, alig
       <button
         type="button"
         onClick={() => onClick(sortKey)}
-        className={`flex items-center gap-1 w-full ${alignCls} transition-colors ${active ? 'text-brand-600' : 'hover:text-gray-700'}`}
+        className={`flex items-center gap-1 w-full ${alignCls} transition-colors ${active ? 'text-brand-600' : 'hover:text-ink-muted'}`}
         aria-sort={active ? (activeDir === 'asc' ? 'ascending' : 'descending') : 'none'}
       >
         <span>{label}</span>

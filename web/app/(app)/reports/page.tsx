@@ -258,7 +258,7 @@ export default function ReportsPage() {
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">Reports</p>
+              <p className="text-sm font-bold text-ink">Reports</p>
               <p className="text-xs text-surface-muted truncate">{layout.length} tile{layout.length !== 1 ? 's' : ''} · {dateLabel}</p>
             </div>
           </div>
@@ -282,12 +282,12 @@ export default function ReportsPage() {
 
         {/* Date filter */}
         {showFilter && (
-          <div className="bg-white rounded-2xl border border-surface-border p-4 space-y-3">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 space-y-3">
             <div className="flex gap-2 flex-wrap">
               {DATE_PRESETS.map(({ label, fn }) => (
                 <button key={label} type="button"
                   onClick={() => { const r = fn(); setFrom(r.from); setTo(r.to) }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface border border-surface-border text-gray-600 hover:border-brand-400 hover:text-brand-600 transition-all">
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface border border-surface-border text-ink-muted hover:border-brand-400 hover:text-brand-600 transition-all">
                   {label}
                 </button>
               ))}
@@ -336,7 +336,7 @@ export default function ReportsPage() {
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
+              <div key={i} className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3">
                 <Skeleton className="h-4 w-1/3" />
                 <Skeleton className="h-8 w-1/2" />
               </div>
@@ -344,20 +344,20 @@ export default function ReportsPage() {
           </div>
         ) : !data ? (
           error ? (
-            <div className="bg-white rounded-2xl border border-surface-border">
+            <div className="bg-surface-1 rounded-2xl border border-surface-border">
               <ErrorState onRetry={() => fetchData()} variant="block" />
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+            <div className="text-center py-20 bg-surface-1 rounded-2xl border border-surface-border">
               <BarChart3 className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-              <p className="font-semibold text-gray-900">No report data yet</p>
+              <p className="font-semibold text-ink">No report data yet</p>
               <p className="text-sm text-surface-muted mt-1">Reports populate as leave, expense, and travel records are created.</p>
             </div>
           )
         ) : layout.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-surface-border">
+          <div className="text-center py-16 bg-surface-1 rounded-2xl border-2 border-dashed border-surface-border">
             <Layers className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">Your report is empty</p>
+            <p className="font-semibold text-ink">Your report is empty</p>
             <p className="text-sm text-surface-muted mt-1 mb-4">Add tiles to build a tailored report.</p>
             <Button type="button" className="gap-2" onClick={() => { setEditMode(true); setCatalogOpen(true) }}>
               <Plus className="w-4 h-4" /> Add your first tile
@@ -382,7 +382,7 @@ export default function ReportsPage() {
                 return (
                   <>
                     {editMode && (
-                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-20 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
+                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-20 flex items-center gap-0.5 bg-surface-1 border border-surface-border rounded-full shadow-md p-0.5">
                         <button type="button" aria-label="Move up" disabled={origIdx === 0}
                           onClick={() => moveTile(origIdx, -1)}
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -428,7 +428,7 @@ export default function ReportsPage() {
             {available.length === 0 ? (
               <div className="text-center py-10">
                 <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                <p className="font-semibold text-gray-700">Every tile is already on your report.</p>
+                <p className="font-semibold text-ink-muted">Every tile is already on your report.</p>
                 <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
               </div>
             ) : (
@@ -450,7 +450,7 @@ export default function ReportsPage() {
                               <Icon className="w-4 h-4 text-brand-600" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-gray-900">{t.label}</p>
+                              <p className="text-sm font-bold text-ink">{t.label}</p>
                               <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
                             </div>
                             <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
@@ -531,14 +531,14 @@ function KpiTile({ def, value, hint, tone = 'neutral' }: {
   tone?: 'neutral' | 'success' | 'warning' | 'danger'
 }) {
   const valueColor = {
-    neutral: 'text-dm-graphite',
+    neutral: 'text-ink',
     success: 'text-emerald-600',
     warning: 'text-amber-600',
     danger:  'text-red-600',
   }[tone]
   const Icon = def.icon
   return (
-    <div className="bg-white rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border p-4 h-full flex flex-col justify-between min-h-[120px]">
       <div className="flex items-start justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">{def.label}</p>
         <div className="w-7 h-7 rounded-lg bg-surface flex items-center justify-center flex-shrink-0">
@@ -556,14 +556,14 @@ function KpiTile({ def, value, hint, tone = 'neutral' }: {
 function TileShell({ def, actions, children }: { def: TileDef; actions?: React.ReactNode; children: React.ReactNode }) {
   const Icon = def.icon
   return (
-    <div className="bg-white rounded-2xl border border-surface-border overflow-hidden h-full flex flex-col">
+    <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden h-full flex flex-col">
       <div className="flex items-center justify-between gap-3 p-4 border-b border-surface-border">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
             <Icon className="w-4 h-4 text-brand-600" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">{def.label}</p>
+            <p className="text-sm font-bold text-ink truncate">{def.label}</p>
             <p className="text-[11px] text-surface-muted truncate">{def.description}</p>
           </div>
         </div>
@@ -580,7 +580,7 @@ function AvatarCell({ name }: { name: string }) {
       <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${avatarGradient(name)} flex items-center justify-center flex-shrink-0`}>
         <span className="text-white font-bold text-[9px]">{initialsOf(name)}</span>
       </div>
-      <span className="font-semibold text-gray-900 truncate">{name}</span>
+      <span className="font-semibold text-ink truncate">{name}</span>
     </div>
   )
 }
@@ -620,7 +620,7 @@ function LeaveSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: LeaveR
                 <tr key={r._id.userId} className="border-b border-surface-border last:border-0 hover:bg-surface/60">
                   <td className="py-3 px-5"><AvatarCell name={r._id.userName} /></td>
                   <td className="py-3 px-5 text-surface-muted">{r.totalRequests}</td>
-                  <td className="py-3 px-5"><span className="font-bold text-dm-graphite">{r.totalDays}</span> <span className="text-surface-muted">days</span></td>
+                  <td className="py-3 px-5"><span className="font-bold text-ink">{r.totalDays}</span> <span className="text-surface-muted">days</span></td>
                   <td className="py-3 px-5"><span className="font-semibold text-emerald-600">{r.approved}</span></td>
                   <td className="py-3 px-5"><span className="font-semibold text-red-600">{r.rejected}</span></td>
                 </tr>
@@ -668,7 +668,7 @@ function ExpenseSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: Expe
                 <tr key={r._id.userId} className="border-b border-surface-border last:border-0 hover:bg-surface/60">
                   <td className="py-3 px-5"><AvatarCell name={r._id.userName} /></td>
                   <td className="py-3 px-5 text-surface-muted">{r.totalRequests}</td>
-                  <td className="py-3 px-5 font-bold text-dm-graphite">{inr(r.totalAmount)}</td>
+                  <td className="py-3 px-5 font-bold text-ink">{inr(r.totalAmount)}</td>
                   <td className="py-3 px-5 font-semibold text-emerald-600">{inr(r.paid)}</td>
                   <td className="py-3 px-5 font-semibold text-amber-600">{inr(r.pending)}</td>
                 </tr>
@@ -716,7 +716,7 @@ function TravelSummaryTile({ def, rows, dateLabel }: { def: TileDef; rows: Trave
                 <tr key={r._id.userId} className="border-b border-surface-border last:border-0 hover:bg-surface/60">
                   <td className="py-3 px-5"><AvatarCell name={r._id.userName} /></td>
                   <td className="py-3 px-5 text-surface-muted">{r.totalRequests}</td>
-                  <td className="py-3 px-5 font-bold text-dm-graphite">{inr(r.totalEstimate)}</td>
+                  <td className="py-3 px-5 font-bold text-ink">{inr(r.totalEstimate)}</td>
                   <td className="py-3 px-5 font-semibold text-emerald-600">{r.approved}</td>
                 </tr>
               ))}
@@ -736,10 +736,10 @@ function LeaveByTypeTile({ def, rows }: { def: TileDef; rows: TypeBucket[] }) {
           <div key={t._id} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-brand-500" />
-              <span className="text-sm capitalize font-medium text-gray-700">{t._id}</span>
+              <span className="text-sm capitalize font-medium text-ink-muted">{t._id}</span>
             </div>
             <div className="text-right">
-              <span className="text-sm font-bold text-gray-900">{t.days} days</span>
+              <span className="text-sm font-bold text-ink">{t.days} days</span>
               <span className="text-xs text-surface-muted ml-2">{t.count} req</span>
             </div>
           </div>
@@ -757,10 +757,10 @@ function ExpenseByStatusTile({ def, rows }: { def: TileDef; rows: StatusBucket[]
           <div key={s._id} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-amber-400" />
-              <span className="text-sm capitalize font-medium text-gray-700">{s._id.replace(/_/g, ' ')}</span>
+              <span className="text-sm capitalize font-medium text-ink-muted">{s._id.replace(/_/g, ' ')}</span>
             </div>
             <div className="text-right">
-              <span className="text-sm font-bold text-gray-900">{inr(s.amount ?? 0)}</span>
+              <span className="text-sm font-bold text-ink">{inr(s.amount ?? 0)}</span>
               <span className="text-xs text-surface-muted ml-2">{s.count} req</span>
             </div>
           </div>
@@ -778,10 +778,10 @@ function TravelByStatusTile({ def, rows }: { def: TileDef; rows: StatusBucket[] 
           <div key={s._id} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#0057A8]" />
-              <span className="text-sm capitalize font-medium text-gray-700">{s._id.replace(/_/g, ' ')}</span>
+              <span className="text-sm capitalize font-medium text-ink-muted">{s._id.replace(/_/g, ' ')}</span>
             </div>
             <div className="text-right">
-              <span className="text-sm font-bold text-gray-900">{inr(s.total ?? 0)}</span>
+              <span className="text-sm font-bold text-ink">{inr(s.total ?? 0)}</span>
               <span className="text-xs text-surface-muted ml-2">{s.count} req</span>
             </div>
           </div>
@@ -823,7 +823,7 @@ function BirthdaysTile({ def, rows }: { def: TileDef; rows: BirthdayRow[] }) {
                   )}
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{b.name}</p>
+                      <p className="text-sm font-semibold text-ink truncate">{b.name}</p>
                       {b.source === 'employee' && (
                         <span className="text-[9px] font-bold px-1.5 py-0 rounded-full bg-brand-50 text-brand-700 border border-brand-200">Team</span>
                       )}

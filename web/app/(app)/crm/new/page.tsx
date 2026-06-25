@@ -85,7 +85,7 @@ export default function NewContactPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {FIELD_GROUPS.map(group => (
-            <div key={group.title} className="bg-white rounded-2xl border border-surface-border p-5">
+            <div key={group.title} className="bg-surface-1 rounded-2xl border border-surface-border p-5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-4">{group.title}</p>
               <div className="grid grid-cols-2 gap-4">
                 {group.fields.map(f => (
@@ -105,13 +105,13 @@ export default function NewContactPage() {
           ))}
 
           {/* Gender select */}
-          <div className="bg-white rounded-2xl border border-surface-border p-5">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-surface-muted mb-4">Additional</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="gender">Gender</Label>
                 <select id="gender" name="gender" aria-label="Gender" value={form.gender} onChange={handleChange}
-                  className="flex h-10 w-full rounded-xl border border-surface-border bg-white px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
+                  className="flex h-10 w-full rounded-xl border border-surface-border bg-surface-1 px-3 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
                   <option value="">Prefer not to say</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -123,7 +123,7 @@ export default function NewContactPage() {
                 <textarea
                   id="notes" name="notes" value={form.notes} onChange={handleChange}
                   rows={3} placeholder="Any additional notes…"
-                  className="flex w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
+                  className="flex w-full rounded-xl border border-surface-border bg-surface-1 px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none"
                 />
               </div>
             </div>

@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900">Analytics overview</p>
+              <p className="text-sm font-bold text-ink">Analytics overview</p>
               <p className="text-xs text-surface-muted truncate">
                 {layout.length} tile{layout.length !== 1 ? 's' : ''}
                 {data?.range && ` · ${new Date(data.range.from).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} → ${new Date(data.range.to).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}`}
@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
             <div className="inline-flex rounded-lg border border-surface-border overflow-hidden">
               {(['none', 'mom', 'yoy'] as const).map(c => (
                 <button key={c} type="button" onClick={() => setCompare(c)}
-                  className={`px-2.5 h-8 text-xs font-semibold transition-colors ${compare === c ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                  className={`px-2.5 h-8 text-xs font-semibold transition-colors ${compare === c ? 'bg-brand-500 text-white' : 'bg-surface-1 text-ink-muted hover:bg-surface'}`}>
                   {c === 'none' ? 'No compare' : c.toUpperCase()}
                 </button>
               ))}
@@ -224,12 +224,12 @@ export default function AnalyticsPage() {
 
         {/* Date filter row */}
         {showFilter && (
-          <div className="flex items-end gap-3 p-4 bg-white rounded-2xl border border-surface-border flex-wrap">
+          <div className="flex items-end gap-3 p-4 bg-surface-1 rounded-2xl border border-surface-border flex-wrap">
             <div className="flex gap-2 flex-wrap items-center">
               {DATE_PRESETS.map(p => (
                 <button key={p.label} type="button"
                   onClick={() => { setFrom(monthsAgo(p.months)); setTo('') }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-surface-border text-gray-600 hover:border-brand-400 hover:text-brand-600 transition-all">
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-surface-border text-ink-muted hover:border-brand-400 hover:text-brand-600 transition-all">
                   {p.label}
                 </button>
               ))}
@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Department</label>
                   <select aria-label="Filter by department" value={dept}
                     onChange={e => { setDept(e.target.value); setEmployee('') }}
-                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-surface-1">
                     <option value="">All departments</option>
                     {data.filterOptions.departments.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
@@ -267,7 +267,7 @@ export default function AnalyticsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Employee</label>
                   <select aria-label="Filter by employee" value={employee}
                     onChange={e => setEmployee(e.target.value)}
-                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-surface-1">
                     <option value="">All employees</option>
                     {data.filterOptions.employees
                       .filter(emp => !dept || emp.department === dept)
@@ -278,7 +278,7 @@ export default function AnalyticsPage() {
                   <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Status</label>
                   <select aria-label="Filter by status" value={status}
                     onChange={e => setStatus(e.target.value)}
-                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+                    className="h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-surface-1">
                     <option value="">Any status</option>
                     <option value="pending">Pending (leave)</option>
                     <option value="approved">Approved</option>
@@ -340,7 +340,7 @@ export default function AnalyticsPage() {
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
+              <div key={i} className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3">
                 <Skeleton className="h-4 w-1/3" />
                 <Skeleton className="h-8 w-1/2" />
               </div>
@@ -348,20 +348,20 @@ export default function AnalyticsPage() {
           </div>
         ) : !data ? (
           error ? (
-            <div className="bg-white rounded-2xl border border-surface-border">
+            <div className="bg-surface-1 rounded-2xl border border-surface-border">
               <ErrorState onRetry={() => fetchData()} variant="block" />
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-surface-border">
+            <div className="text-center py-20 bg-surface-1 rounded-2xl border border-surface-border">
               <TrendingUp className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-              <p className="font-semibold text-gray-900">No analytics data yet</p>
+              <p className="font-semibold text-ink">No analytics data yet</p>
               <p className="text-sm text-surface-muted mt-1">Tiles will populate as leave, expense, and travel records are created.</p>
             </div>
           )
         ) : layout.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-surface-border">
+          <div className="text-center py-16 bg-surface-1 rounded-2xl border-2 border-dashed border-surface-border">
             <Layers className="w-12 h-12 text-brand-200 mx-auto mb-3" />
-            <p className="font-semibold text-gray-900">Your dashboard is empty</p>
+            <p className="font-semibold text-ink">Your dashboard is empty</p>
             <p className="text-sm text-surface-muted mt-1 mb-4">Add tiles to start tracking metrics.</p>
             <Button type="button" className="gap-2" onClick={() => { setEditMode(true); setCatalogOpen(true) }}>
               <Plus className="w-4 h-4" /> Add your first tile
@@ -387,7 +387,7 @@ export default function AnalyticsPage() {
                 return (
                   <>
                     {editMode && (
-                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-20 flex items-center gap-0.5 bg-white border border-surface-border rounded-full shadow-md p-0.5">
+                      <div className="absolute top-1 right-1 sm:-top-2 sm:-right-2 z-20 flex items-center gap-0.5 bg-surface-1 border border-surface-border rounded-full shadow-md p-0.5">
                         <button type="button" aria-label="Move up" disabled={origIdx === 0}
                           onClick={() => moveTile(origIdx, -1)}
                           className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -433,7 +433,7 @@ export default function AnalyticsPage() {
             {availableTiles.length === 0 ? (
               <div className="text-center py-10">
                 <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                <p className="font-semibold text-gray-700">Every tile is already on your dashboard.</p>
+                <p className="font-semibold text-ink-muted">Every tile is already on your dashboard.</p>
                 <p className="text-xs text-surface-muted mt-1">Remove some to free up slots.</p>
               </div>
             ) : (
@@ -455,7 +455,7 @@ export default function AnalyticsPage() {
                               <Icon className="w-4 h-4 text-brand-600" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-gray-900">{t.label}</p>
+                              <p className="text-sm font-bold text-ink">{t.label}</p>
                               <p className="text-[11px] text-surface-muted leading-tight">{t.description}</p>
                             </div>
                             <Plus className="w-4 h-4 text-surface-muted flex-shrink-0 mt-1" />
@@ -544,7 +544,7 @@ function ShareDialog({ open, onOpenChange, layout, filters }: {
           <div className="space-y-1 flex-1">
             <label className="text-[10px] font-bold uppercase tracking-widest text-surface-muted">Link expires</label>
             <select aria-label="Link expiry" value={expiry} onChange={e => setExpiry(e.target.value as typeof expiry)}
-              className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-white">
+              className="w-full h-9 px-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 bg-surface-1">
               <option value="24h">In 24 hours</option>
               <option value="7d">In 7 days</option>
               <option value="30d">In 30 days</option>
@@ -567,7 +567,7 @@ function ShareDialog({ open, onOpenChange, layout, filters }: {
               {shares.map(s => (
                 <li key={s.token} className={`flex items-center gap-2 p-2.5 rounded-xl border ${s.expired ? 'border-red-200 bg-red-50/40' : 'border-surface-border'}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-mono text-gray-700 truncate">/shared/{s.token.slice(0, 12)}…</p>
+                    <p className="text-xs font-mono text-ink-muted truncate">/shared/{s.token.slice(0, 12)}…</p>
                     <p className="text-[11px] text-surface-muted">
                       {s.expired ? <span className="text-red-600 font-semibold">Expired</span> : `Expires ${fmtExpiry(s.expiresAt)}`}
                       {' · '}{s.viewCount} view{s.viewCount !== 1 ? 's' : ''}
@@ -575,7 +575,7 @@ function ShareDialog({ open, onOpenChange, layout, filters }: {
                   </div>
                   {!s.expired && (
                     <button type="button" aria-label="Copy link" onClick={() => copy(s.token)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface text-gray-500 transition-colors">
+                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-surface text-ink-muted transition-colors">
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -630,20 +630,20 @@ function ExportableTile({ def, data, drillBase, disabled }: { def: TileDef; data
         <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <button type="button" aria-label="Export tile" onClick={() => setOpen(o => !o)}
             className="w-7 h-7 rounded-lg bg-white/90 border border-surface-border flex items-center justify-center hover:bg-surface shadow-sm">
-            {busy ? <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /> : <MoreHorizontal className="w-4 h-4 text-gray-500" />}
+            {busy ? <span className="w-3 h-3 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /> : <MoreHorizontal className="w-4 h-4 text-ink-muted" />}
           </button>
           {open && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-              <div className="absolute right-0 mt-1 z-20 w-40 bg-white border border-surface-border rounded-xl shadow-lg overflow-hidden py-1">
+              <div className="absolute right-0 mt-1 z-20 w-40 bg-surface-1 border border-surface-border rounded-xl shadow-lg overflow-hidden py-1">
                 {csvRows && (
                   <button type="button" onClick={doCsv}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-surface text-left">
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-ink-muted hover:bg-surface text-left">
                     <FileText className="w-3.5 h-3.5 text-surface-muted" /> Export CSV
                   </button>
                 )}
                 <button type="button" onClick={doPng}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-surface text-left">
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-ink-muted hover:bg-surface text-left">
                   <ImageDown className="w-3.5 h-3.5 text-surface-muted" /> Export PNG
                 </button>
               </div>

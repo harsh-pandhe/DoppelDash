@@ -125,7 +125,7 @@ export default function NewTravelRequestPage() {
 
         {/* Privilege banner */}
         {priv && (
-          <div className="bg-white rounded-2xl border border-surface-border p-4">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-4">
             <div className="flex items-center gap-2 mb-3">
               <Shield className="w-4 h-4 text-indigo-500" />
               <p className="text-xs font-bold uppercase tracking-widest text-indigo-700">Your Travel Privileges</p>
@@ -138,9 +138,9 @@ export default function NewTravelRequestPage() {
                 { label: 'Hotel',  val: priv.hotel.tier  === 'none' ? 'Not eligible' : `${priv.hotel.tier} · ₹${priv.hotel.perNightLimit}/night`, ok: priv.hotel.tier !== 'none' },
                 { label: 'Advance',val: priv.travelAdvance > 0 ? `Up to ₹${priv.travelAdvance.toLocaleString('en-IN')}` : 'Not eligible',    ok: priv.travelAdvance > 0 },
               ].map(p => (
-                <div key={p.label} className={`p-2 rounded-lg border ${p.ok ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div key={p.label} className={`p-2 rounded-lg border ${p.ok ? 'bg-indigo-50 border-indigo-200' : 'bg-surface-2 border-surface-border opacity-60'}`}>
                   <p className="text-[9px] font-bold uppercase tracking-wide text-surface-muted">{p.label}</p>
-                  <p className={`text-[11px] font-bold ${p.ok ? 'text-indigo-700' : 'text-gray-500'}`}>{p.val}</p>
+                  <p className={`text-[11px] font-bold ${p.ok ? 'text-indigo-700' : 'text-ink-muted'}`}>{p.val}</p>
                 </div>
               ))}
             </div>
@@ -148,8 +148,8 @@ export default function NewTravelRequestPage() {
         )}
 
         {/* Purpose + destination */}
-        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
-          <h3 className="text-sm font-bold text-gray-700">Trip Details</h3>
+        <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
+          <h3 className="text-sm font-bold text-ink-muted">Trip Details</h3>
           <div className="space-y-1.5">
             <Label htmlFor="tr-purpose">Purpose of Travel</Label>
             <Input id="tr-purpose" value={purpose} onChange={e => setPurpose(e.target.value)} placeholder="Client meeting at IIT Bombay" />
@@ -176,9 +176,9 @@ export default function NewTravelRequestPage() {
         </div>
 
         {/* Travel legs */}
-        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
+        <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-700">Journey Legs</h3>
+            <h3 className="text-sm font-bold text-ink-muted">Journey Legs</h3>
             <button type="button" onClick={() => setLegs(l => [...l, EMPTY_LEG()])}
               className="flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
               <Plus className="w-3.5 h-3.5" /> Add leg
@@ -231,12 +231,12 @@ export default function NewTravelRequestPage() {
         </div>
 
         {/* Accommodation */}
-        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
+        <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-700">Accommodation</h3>
+            <h3 className="text-sm font-bold text-ink-muted">Accommodation</h3>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={needHotel} onChange={e => setNeedHotel(e.target.checked)} className="accent-brand-500 w-4 h-4" />
-              <span className="text-sm text-gray-700">Need hotel</span>
+              <span className="text-sm text-ink-muted">Need hotel</span>
             </label>
           </div>
           {needHotel && (
@@ -269,8 +269,8 @@ export default function NewTravelRequestPage() {
         </div>
 
         {/* Itinerary attachments */}
-        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-3">
-          <h3 className="text-sm font-bold text-gray-700">Itinerary &amp; Bookings</h3>
+        <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-3">
+          <h3 className="text-sm font-bold text-ink-muted">Itinerary &amp; Bookings</h3>
           <FileUploader
             label="Tickets, hotel confirmations, agenda (optional)"
             hint="Flight/train tickets, hotel bookings, meeting agenda · JPG, PNG, PDF"
@@ -280,11 +280,11 @@ export default function NewTravelRequestPage() {
         </div>
 
         {/* Advance + summary */}
-        <div className="bg-white rounded-2xl border border-surface-border p-5 space-y-4">
-          <h3 className="text-sm font-bold text-gray-700">Summary</h3>
+        <div className="bg-surface-1 rounded-2xl border border-surface-border p-5 space-y-4">
+          <h3 className="text-sm font-bold text-ink-muted">Summary</h3>
           <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-surface border border-surface-border">
             <span className="text-xs font-bold text-surface-muted uppercase tracking-wide">Estimated Total</span>
-            <span className="text-lg font-extrabold text-gray-900">₹{totalCost.toLocaleString('en-IN')}</span>
+            <span className="text-lg font-extrabold text-ink">₹{totalCost.toLocaleString('en-IN')}</span>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tr-advance">Advance Requested (₹) <span className="text-surface-muted font-normal">optional</span></Label>

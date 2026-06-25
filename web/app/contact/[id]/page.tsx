@@ -36,13 +36,13 @@ export default async function PublicContactPage({ params }: { params: { id: stri
   if (!contact) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-[#e8f0fa] p-4">
-        <div className="text-center bg-white rounded-3xl border border-gray-200 shadow-sm p-8 max-w-sm w-full">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <Building className="w-8 h-8 text-gray-400" />
+        <div className="text-center bg-surface-1 rounded-3xl border border-surface-border shadow-sm p-8 max-w-sm w-full">
+          <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center mx-auto mb-4">
+            <Building className="w-8 h-8 text-ink-muted" />
           </div>
-          <p className="font-bold text-gray-900 text-lg">Contact not found</p>
-          <p className="text-sm text-gray-500 mt-1">This link may be invalid or expired.</p>
-          <p className="text-[10px] text-gray-400 mt-6 uppercase tracking-widest">DoppelDash · Doppelmayr India</p>
+          <p className="font-bold text-ink text-lg">Contact not found</p>
+          <p className="text-sm text-ink-muted mt-1">This link may be invalid or expired.</p>
+          <p className="text-[10px] text-ink-muted mt-6 uppercase tracking-widest">DoppelDash · Doppelmayr India</p>
         </div>
       </div>
     )
@@ -68,7 +68,7 @@ export default async function PublicContactPage({ params }: { params: { id: stri
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-[#e8f0fa] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100">
+      <div className="bg-surface-1 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-surface-border">
 
         {/* Header — Doppelmayr blue */}
         <div className="bg-gradient-to-br from-[#003B73] via-[#0057A8] to-[#1d6dc2] px-6 pt-6 pb-6 text-white text-center relative overflow-hidden">
@@ -96,7 +96,7 @@ export default async function PublicContactPage({ params }: { params: { id: stri
         {/* Contact rows */}
         <div className="px-5 pt-5 pb-5 space-y-3">
           {(contact.email || contact.phone) && (
-            <div className="rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-50">
+            <div className="rounded-2xl border border-surface-border overflow-hidden divide-y divide-gray-50">
               {contact.email && (
                 <a href={`mailto:${contact.email}`}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-[#e8f0fa] transition-colors">
@@ -104,8 +104,8 @@ export default async function PublicContactPage({ params }: { params: { id: stri
                     <Mail className="w-4 h-4 text-[#0057A8]" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                    <p className="text-sm font-semibold text-gray-900 truncate">{contact.email}</p>
+                    <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">Email</p>
+                    <p className="text-sm font-semibold text-ink truncate">{contact.email}</p>
                   </div>
                 </a>
               )}
@@ -116,8 +116,8 @@ export default async function PublicContactPage({ params }: { params: { id: stri
                     <Phone className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Phone</p>
-                    <p className="text-sm font-semibold text-gray-900">{contact.phone}</p>
+                    <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">Phone</p>
+                    <p className="text-sm font-semibold text-ink">{contact.phone}</p>
                   </div>
                 </a>
               )}
@@ -141,9 +141,9 @@ export default async function PublicContactPage({ params }: { params: { id: stri
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-4 pt-2 border-t border-gray-50">
-          <p className="text-center text-[10px] text-gray-400 leading-relaxed">
-            Powered by <span className="font-bold text-gray-700">DoppelDash</span>
+        <div className="px-5 pb-4 pt-2 border-t border-surface-border">
+          <p className="text-center text-[10px] text-ink-muted leading-relaxed">
+            Powered by <span className="font-bold text-ink-muted">DoppelDash</span>
             <span className="mx-1.5 text-gray-300">·</span>
             Doppelmayr India
           </p>

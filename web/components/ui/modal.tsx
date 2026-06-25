@@ -51,7 +51,7 @@ export function Modal({
           onInteractOutside={dismissible ? undefined : (e) => e.preventDefault()}
           className={cn(
             'fixed z-50 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
-            'w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl',
+            'w-[calc(100vw-2rem)] bg-surface-1 rounded-2xl shadow-2xl',
             'max-h-[90vh] flex flex-col overflow-hidden',
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             WIDTHS[size],
@@ -113,7 +113,7 @@ export function ModalHeader({ title, description, icon: Icon, variant = 'plain',
           </div>
         )}
         <div className="min-w-0">
-          <Dialog.Title className="text-base font-bold text-gray-900 leading-tight truncate">{title}</Dialog.Title>
+          <Dialog.Title className="text-base font-bold text-ink leading-tight truncate">{title}</Dialog.Title>
           {description && <Dialog.Description className="text-sm text-surface-muted mt-0.5">{description}</Dialog.Description>}
         </div>
       </div>
@@ -121,7 +121,7 @@ export function ModalHeader({ title, description, icon: Icon, variant = 'plain',
         {children}
         <Dialog.Close asChild>
           <button type="button" aria-label="Close"
-            className="p-1.5 rounded-lg text-surface-muted hover:bg-surface hover:text-gray-700 transition-colors">
+            className="p-1.5 rounded-lg text-surface-muted hover:bg-surface hover:text-ink-muted transition-colors">
             <X className="w-4 h-4" />
           </button>
         </Dialog.Close>
@@ -137,7 +137,7 @@ export function ModalBody({ children, className }: { children: React.ReactNode; 
 /** Footer pinned bottom. Submit button should be rightmost, min-w-[120px]. */
 export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex-shrink-0 px-6 py-4 border-t border-surface-border bg-gray-50/80 flex items-center justify-end gap-3', className)}>
+    <div className={cn('flex-shrink-0 px-6 py-4 border-t border-surface-border bg-surface-2/80 flex items-center justify-end gap-3', className)}>
       {children}
     </div>
   )

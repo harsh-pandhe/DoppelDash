@@ -269,7 +269,7 @@ function NewExpenseDialog({
               {(['simple','table'] as const).map(m => (
                 <button key={m} type="button" onClick={() => setMode(m)}
                   className={`flex-1 py-2 text-xs font-bold capitalize transition-all
-                    ${mode === m ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                    ${mode === m ? 'bg-brand-500 text-white' : 'bg-surface-1 text-ink-muted hover:bg-surface'}`}>
                   {m === 'simple' ? 'Simple' : 'Table (Line Items)'}
                 </button>
               ))}
@@ -281,7 +281,7 @@ function NewExpenseDialog({
                 <p className="text-xs font-bold uppercase tracking-wide text-surface-muted flex items-center gap-1.5">
                   <ScanLine className="w-3.5 h-3.5" /> Bills & Receipts
                 </p>
-                {ocrSrc && <button type="button" onClick={resetAll} className="flex items-center gap-1 text-xs text-surface-muted hover:text-gray-700 transition-colors"><RotateCcw className="w-3 h-3" /> Reset</button>}
+                {ocrSrc && <button type="button" onClick={resetAll} className="flex items-center gap-1 text-xs text-surface-muted hover:text-ink-muted transition-colors"><RotateCcw className="w-3 h-3" /> Reset</button>}
               </div>
               <FileUploader value={receipts} label="" hint="JPG, PNG, PDF · Max 5 · First image auto-filled by AI" maxFiles={5} onChange={setReceipts} onFilePicked={handleFilePicked} disabled={saving} />
               {previews.length > 0 && (
@@ -326,7 +326,7 @@ function NewExpenseDialog({
                 <textarea id="exp-reason" value={form.reason} rows={2}
                   onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
                   placeholder="Explain why this expense was incurred…"
-                  className={`flex w-full rounded-lg border px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-colors ${hl('reason') || 'border-surface-border bg-white'}`} />
+                  className={`flex w-full rounded-lg border px-3.5 py-2.5 text-sm placeholder:text-surface-muted focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 resize-none transition-colors ${hl('reason') || 'border-surface-border bg-surface-1'}`} />
               </div>
               {mode === 'simple' ? (
                 <div className="space-y-1.5">
@@ -396,7 +396,7 @@ function NewExpenseDialog({
                       </div>
                     ))}
                     <div className="flex justify-end px-3 py-2 bg-surface border-t border-surface-border">
-                      <span className="text-sm font-extrabold text-gray-900">Total: ₹{lineTotal.toLocaleString('en-IN')}</span>
+                      <span className="text-sm font-extrabold text-ink">Total: ₹{lineTotal.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
@@ -492,10 +492,10 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
               <div key={step_label} className="flex items-center flex-1">
                 <div className="flex flex-col items-center flex-1 gap-1">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 text-xs font-bold transition-all
-                    ${done ? 'bg-brand-500 border-brand-500 text-white' : 'bg-white border-surface-border text-surface-muted'}`}>
+                    ${done ? 'bg-brand-500 border-brand-500 text-white' : 'bg-surface-1 border-surface-border text-surface-muted'}`}>
                     {done ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
                   </div>
-                  <p className={`text-[10px] font-semibold text-center ${done ? 'text-gray-800' : 'text-surface-muted'}`}>{step_label}</p>
+                  <p className={`text-[10px] font-semibold text-center ${done ? 'text-ink' : 'text-surface-muted'}`}>{step_label}</p>
                 </div>
                 {i < STEPS.length - 1 && <div className={`h-0.5 flex-1 mx-1 rounded ${step > i ? 'bg-brand-400' : 'bg-surface-border'}`} />}
               </div>
@@ -507,17 +507,17 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-xl bg-surface border border-surface-border">
             <p className="text-[10px] font-bold uppercase tracking-wide text-surface-muted mb-0.5">Amount</p>
-            <p className="text-lg font-extrabold text-gray-900">₹{expense.amount.toLocaleString('en-IN')}</p>
+            <p className="text-lg font-extrabold text-ink">₹{expense.amount.toLocaleString('en-IN')}</p>
           </div>
           <div className="p-3 rounded-xl bg-surface border border-surface-border">
             <p className="text-[10px] font-bold uppercase tracking-wide text-surface-muted mb-0.5">Date</p>
-            <p className="text-sm font-semibold text-gray-900">{new Date(expense.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+            <p className="text-sm font-semibold text-ink">{new Date(expense.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
           </div>
         </div>
 
         <div className="p-3 rounded-xl bg-surface border border-surface-border">
           <p className="text-[10px] font-bold uppercase tracking-wide text-surface-muted mb-0.5">Reason</p>
-          <p className="text-sm text-gray-900">{expense.reason}</p>
+          <p className="text-sm text-ink">{expense.reason}</p>
         </div>
 
         {/* Receipts */}
@@ -548,12 +548,12 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
                 return (
                   <div key={l._id || i} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-2 px-3 py-2.5 border-t border-surface-border items-center">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-900 truncate">{l.description}</p>
+                      <p className="text-xs font-semibold text-ink truncate">{l.description}</p>
                       {l.receiptUrl && <a href={l.receiptUrl} target="_blank" rel="noreferrer" className="text-[9px] text-brand-600 hover:underline">Receipt</a>}
                     </div>
-                    <span className="text-[10px] text-gray-600 capitalize">{l.category||'—'}</span>
-                    <span className="text-[10px] text-gray-600">{l.date ? new Date(l.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'}</span>
-                    <span className="text-xs font-bold text-gray-900">₹{l.amount.toLocaleString('en-IN')}</span>
+                    <span className="text-[10px] text-ink-muted capitalize">{l.category||'—'}</span>
+                    <span className="text-[10px] text-ink-muted">{l.date ? new Date(l.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'}</span>
+                    <span className="text-xs font-bold text-ink">₹{l.amount.toLocaleString('en-IN')}</span>
                     <div className="flex items-center gap-1">
                       {itemStatus === 'approved' && <span className="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0 rounded-full">OK</span>}
                       {itemStatus === 'rejected' && <span className="text-[9px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0 rounded-full">Rej</span>}
@@ -579,7 +579,7 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
                 )
               })}
               <div className="flex justify-end px-3 py-2 bg-surface border-t border-surface-border">
-                <span className="text-sm font-extrabold text-gray-900">
+                <span className="text-sm font-extrabold text-ink">
                   Total: ₹{expense.lineItems.reduce((s,l)=>s+(l.status!=='rejected'?l.amount:0),0).toLocaleString('en-IN')}
                   {expense.lineItems.some(l=>l.status==='rejected') && (
                     <span className="text-xs text-red-500 font-normal ml-2">
@@ -615,14 +615,14 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
             <p className="text-sm font-semibold text-red-800">Reason for rejection</p>
             <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3}
               placeholder="Note for employee (optional)…"
-              className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400" />
+              className="w-full rounded-lg border border-red-200 bg-surface-1 px-3 py-2 text-sm resize-none focus:outline-none focus:border-red-400" />
             <div className="flex gap-2">
               <Button type="button" size="sm" className="bg-red-600 hover:bg-red-700 gap-1.5"
                 onClick={() => act('rejected', rejectNote)} disabled={acting}>
                 {acting ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
                 Confirm Reject
               </Button>
-              <button type="button" onClick={() => setShowReject(false)} className="text-xs text-surface-muted hover:text-gray-700">Cancel</button>
+              <button type="button" onClick={() => setShowReject(false)} className="text-xs text-surface-muted hover:text-ink-muted">Cancel</button>
             </div>
           </div>
         )}
@@ -918,7 +918,7 @@ export default function RMSPage() {
             {['all', 'pending_manager', 'pending_admin', 'paid', 'rejected', 'returned'].map(s => (
               <button type="button" key={s} onClick={() => setFilter(s)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all
-                  ${filter === s ? 'bg-brand-500 text-white' : 'bg-white border border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                  ${filter === s ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
                 {s === 'all' ? 'All' : STATUS_MAP[s]?.label || s}
               </button>
             ))}
@@ -928,18 +928,18 @@ export default function RMSPage() {
             <div className="flex rounded-lg border border-surface-border overflow-hidden">
               <button type="button" onClick={() => setViewMode('card')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all
-                  ${viewMode === 'card' ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                  ${viewMode === 'card' ? 'bg-brand-500 text-white' : 'bg-surface-1 text-ink-muted hover:bg-surface'}`}>
                 <LayoutList className="w-3.5 h-3.5" /> Cards
               </button>
               <button type="button" onClick={() => setViewMode('table')}
                 className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold transition-all
-                  ${viewMode === 'table' ? 'bg-brand-500 text-white' : 'bg-white text-gray-600 hover:bg-surface'}`}>
+                  ${viewMode === 'table' ? 'bg-brand-500 text-white' : 'bg-surface-1 text-ink-muted hover:bg-surface'}`}>
                 <Table2 className="w-3.5 h-3.5" /> Table
               </button>
             </div>
             <button type="button" onClick={() => setShowFilters(f => !f)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all
-                ${(dateFrom || dateTo) ? 'bg-brand-500 text-white border-brand-500' : 'bg-white border-surface-border text-gray-600 hover:border-brand-400'}`}>
+                ${(dateFrom || dateTo) ? 'bg-brand-500 text-white border-brand-500' : 'bg-surface-1 border-surface-border text-ink-muted hover:border-brand-400'}`}>
               <Filter className="w-3.5 h-3.5" /> Filter
             </button>
             {expenses.length > 0 && (
@@ -959,7 +959,7 @@ export default function RMSPage() {
 
         {/* Date filter panel */}
         {showFilters && (
-          <div className="flex items-end gap-3 p-4 bg-white rounded-xl border border-surface-border flex-wrap">
+          <div className="flex items-end gap-3 p-4 bg-surface-1 rounded-xl border border-surface-border flex-wrap">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-surface-muted uppercase tracking-wide">From</label>
               <input type="date" aria-label="From date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
@@ -1024,7 +1024,7 @@ export default function RMSPage() {
           />
         ) : viewMode === 'table' ? (
           /* ── Table view ─────────────────────────────────────────── */
-          <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
+          <div className="bg-surface-1 rounded-2xl border border-surface-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -1045,12 +1045,12 @@ export default function RMSPage() {
                     return (
                       <tr key={exp._id} className="hover:bg-surface transition-colors group">
                         <td className="px-4 py-3">
-                          <Link href={`/rms/${exp._id}`} className="font-semibold text-gray-900 hover:text-brand-600 transition-colors">
+                          <Link href={`/rms/${exp._id}`} className="font-semibold text-ink hover:text-brand-600 transition-colors">
                             {exp.title}
                           </Link>
                           <p className="text-xs text-surface-muted truncate max-w-[220px]">{exp.reason}</p>
                         </td>
-                        <td className="px-4 py-3 text-right font-extrabold text-gray-900 whitespace-nowrap">
+                        <td className="px-4 py-3 text-right font-extrabold text-ink whitespace-nowrap">
                           ₹{exp.amount.toLocaleString('en-IN')}
                         </td>
                         <td className="px-4 py-3 text-xs text-surface-muted whitespace-nowrap">
@@ -1108,7 +1108,7 @@ export default function RMSPage() {
                 <tfoot>
                   <tr className="border-t border-surface-border bg-surface">
                     <td className="px-4 py-3 text-xs font-semibold text-surface-muted">{expenses.length} records</td>
-                    <td className="px-4 py-3 text-right font-extrabold text-gray-900 text-sm">
+                    <td className="px-4 py-3 text-right font-extrabold text-ink text-sm">
                       ₹{expenses.reduce((s, e) => s + e.amount, 0).toLocaleString('en-IN')}
                     </td>
                     <td colSpan={isManager ? 5 : 4} />
@@ -1140,7 +1140,7 @@ export default function RMSPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <p className="font-semibold text-sm text-gray-900">{exp.title}</p>
+                          <p className="font-semibold text-sm text-ink">{exp.title}</p>
                           <Badge variant={s.variant} className="gap-1 text-xs">
                             <SIcon className="w-3 h-3" />{s.label}
                           </Badge>
@@ -1148,7 +1148,7 @@ export default function RMSPage() {
                         </div>
                         <p className="text-xs text-surface-muted">{exp.reason}</p>
                         <div className="flex items-center gap-4 mt-1.5 flex-wrap">
-                          <p className="text-sm font-extrabold text-gray-900">₹{exp.amount.toLocaleString('en-IN')}</p>
+                          <p className="text-sm font-extrabold text-ink">₹{exp.amount.toLocaleString('en-IN')}</p>
                           <p className="text-xs text-surface-muted">{new Date(exp.startDate).toLocaleDateString('en-IN')}</p>
                           {exp.createdAt && (
                             <p className="text-[11px] text-surface-muted flex items-center gap-1">
