@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
-import { CheckCircle2, XCircle, ChevronLeft, MapPin, CalendarDays, IndianRupee, Loader2, RotateCcw, Printer } from 'lucide-react'
+import { CheckCircle2, XCircle, ChevronLeft, MapPin, CalendarDays, IndianRupee, Loader2, RotateCcw, Printer, FileSpreadsheet, FileText } from 'lucide-react'
+import { brandedXLSX, brandedCSV, fmtDate } from '@/lib/export'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -128,6 +129,31 @@ export default function TravelRequestDetailPage() {
   const canAdminApprove = isAdmin && request.status === 'pending_admin'
   const canCancel = request.userId === user?.id && request.status === 'pending_manager'
 
+  const exportRows = (): { head: string[]; rows: (string | number)[][] } => ({
+    head: ['Field', 'Value'],
+    rows: [
+      ['Purpose', request.purpose],
+      ['Requested by', request.userName],
+      ['Status', (STATUS_CFG[request.status]?.label) || request.status],
+      ['Destination', request.destination],
+      ['Departure', fmtDate(request.departureDate)],
+      ['Return', request.returnDate ? fmtDate(request.returnDate) : '—'],
+      ['Estimated total (₹)', request.estimatedTotal],
+      ['Advance requested', request.advanceRequested ? 'Yes' : 'No'],
+      ['Manager note', request.managerNote || '—'],
+      ['Admin note', request.adminNote || '—'],
+      ['Created', fmtDate(request.createdAt)],
+    ],
+  })
+  const exportXLSX = () => {
+    const { head, rows } = exportRows()
+    brandedXLSX({ title: 'Travel Request', subtitle: request.purpose, head, rows, sheet: 'Travel', filename: `travel-${request.userName}-${fmtDate(request.createdAt)}.xlsx` })
+  }
+  const exportCSV = () => {
+    const { head, rows } = exportRows()
+    brandedCSV({ title: 'Travel Request', subtitle: request.purpose, head, rows, filename: `travel-${request.userName}-${fmtDate(request.createdAt)}.csv` })
+  }
+
   return (
     <>
       <Header title="Travel Request" />
@@ -136,10 +162,18 @@ export default function TravelRequestDetailPage() {
           <Link href="/travel" className="inline-flex items-center gap-1.5 text-sm text-surface-muted hover:text-brand-600 transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back to Travel Requests
           </Link>
-          {/* 11E: print available to all roles */}
-          <Button size="sm" variant="outline" className="gap-2 print:hidden" onClick={() => window.print()}>
-            <Printer className="w-4 h-4" /> Print
-          </Button>
+          {/* 11E: print + Excel/CSV export, available to all roles */}
+          <div className="flex items-center gap-2 print:hidden">
+            <Button size="sm" variant="outline" className="gap-2" onClick={exportXLSX}>
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2" onClick={exportCSV}>
+              <FileText className="w-4 h-4" /> CSV
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2" onClick={() => window.print()}>
+              <Printer className="w-4 h-4" /> Print
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-3xl border border-surface-border bg-surface-1 p-6 space-y-6 shadow-sm">

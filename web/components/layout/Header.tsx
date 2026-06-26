@@ -120,18 +120,18 @@ function GlobalSearch() {
             <div className="px-4 py-5 text-center text-xs text-surface-muted">Type 2+ chars to search</div>
           ) : loading ? (
             <div className="px-4 py-5 space-y-2">
-              {[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl bg-slate-100 animate-pulse" />)}
+              {[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl bg-surface-2 animate-pulse" />)}
             </div>
           ) : results.length === 0 ? (
             <div className="px-4 py-5 text-center text-xs text-surface-muted">No results for &quot;{query}&quot;</div>
           ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100/60 scrollbar-thin">
+            <div className="max-h-72 overflow-y-auto divide-y divide-surface-border/60 scrollbar-thin">
               {results.map((r, i) => {
                 const Icon = SEARCH_ICONS[r.type] || FileText
                 return (
                   <button key={r.id} type="button" onClick={() => go(r.href)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
-                      ${i === active ? 'bg-brand-50' : 'hover:bg-slate-50/80'}`}
+                      ${i === active ? 'bg-brand-50' : 'hover:bg-surface-2'}`}
                     onMouseEnter={() => setActive(i)}>
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${SEARCH_COLORS[r.type]}`}>
                       <Icon className="w-3.5 h-3.5" />
@@ -338,7 +338,7 @@ export default function Header({ title }: { title?: string }) {
                     <p className="text-xs text-surface-muted mt-0.5">{isManager ? 'No pending approvals or alerts.' : 'No new notifications.'}</p>
                   </div>
                 ) : (
-                  <div className="max-h-96 overflow-y-auto divide-y divide-slate-100/60 scrollbar-thin">
+                  <div className="max-h-96 overflow-y-auto divide-y divide-surface-border/60 scrollbar-thin">
                     {items.map(item => {
                       const Icon = item.kind === 'leave' ? CalendarClock
                         : item.kind === 'expense' ? Receipt
@@ -357,7 +357,7 @@ export default function Header({ title }: { title?: string }) {
                       const isUnread = new Date(item.ts).getTime() > readAt
                       return (
                         <Link key={item.id} href={item.href} onClick={() => setPanelOpen(false)}
-                          className={`relative flex items-start gap-3 px-4 py-3 hover:bg-slate-50/80 transition-colors
+                          className={`relative flex items-start gap-3 px-4 py-3 hover:bg-surface-2 transition-colors
                             ${item.urgent && isUnread ? 'bg-red-50/40' : ''}
                             ${!isUnread ? 'opacity-60' : ''}`}>
                           {isUnread && (

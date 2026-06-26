@@ -6,7 +6,6 @@ import dynamic from 'next/dynamic'
 
 // 3D cable-car scene — client-only, lazy (keeps three.js out of initial bundle)
 const CableCarScene = dynamic(() => import('@/components/CableCarScene'), { ssr: false })
-import { MultiStepLoader } from '@/components/ui/multi-step-loader'
 import {
   Mail, Lock, Eye, EyeOff, ChevronRight, ShieldCheck, Sparkles, X, Send,
   Loader2, Check, Mountain, Smartphone, KeyRound,
@@ -34,7 +33,6 @@ export default function SignInPage() {
   const [newPwd,     setNewPwd]     = useState('')
   const [newPwd2,    setNewPwd2]    = useState('')
   const [loading,    setLoading]    = useState(false)
-  const [signingIn,  setSigningIn]  = useState(false)
   const [error,      setError]      = useState('')
   const [mounted,    setMounted]    = useState(false)
   const otpRefs = useRef<(HTMLInputElement|null)[]>([])
@@ -109,7 +107,6 @@ export default function SignInPage() {
   }
 
   const routeAfterAuth = async () => {
-    setSigningIn(true)
     // If employee record exists and onboarding is incomplete → onboarding, else dashboard
     try {
       const r = await fetch('/api/employees/me')
@@ -197,15 +194,6 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen flex font-sans relative overflow-hidden bg-[#0a1424]">
-
-      <MultiStepLoader
-        loading={signingIn}
-        steps={[
-          { text: 'Verifying your identity' },
-          { text: 'Loading your workspace' },
-          { text: 'Almost there' },
-        ]}
-      />
 
       {/* ─── Full 3D cable-car scene as the entire background ───────────── */}
       <CableCarScene />
