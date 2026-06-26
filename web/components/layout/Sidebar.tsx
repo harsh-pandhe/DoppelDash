@@ -87,8 +87,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 pt-5 pb-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center flex-shrink-0 shadow-inner overflow-hidden">
-            <Image src="/icon-192.png" alt="DoppelDash" width={36} height={36} className="w-full h-full object-cover" />
+          <div className="w-9 h-9 rounded-xl bg-white border border-white/25 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1">
+            <Image src="/icon-192.png" alt="DoppelDash" width={36} height={36} className="w-full h-full object-contain" />
           </div>
           <div>
             <p className="font-extrabold text-sm leading-tight text-white tracking-tight">DoppelDash</p>

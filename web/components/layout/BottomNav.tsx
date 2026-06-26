@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { LayoutDashboard, Users, CalendarClock, Receipt, Plane, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNotificationItems } from '@/lib/notificationsStore'
 
 const ITEMS = [
   { href: '/dashboard', label: 'Home',     icon: LayoutDashboard },
@@ -17,28 +18,14 @@ const ITEMS = [
 // Same key Header uses to mark notifications read
 const READ_AT_KEY = 'doppeldash-notifs-read-at'
 
-/** Lightweight unread poll so mobile users get a signal without opening the bell. */
+/** Unread dot driven by the shared notifications store (no separate poll). */
 function useUnreadDot(): boolean {
-  const [hasUnread, setHasUnread] = useState(false)
-
+  const { items } = useNotificationItems()
+  const [readAt, setReadAt] = useState(0)
   useEffect(() => {
-    let cancelled = false
-    const check = async () => {
-      try {
-        const res  = await fetch('/api/notifications')
-        const data = await res.json()
-        if (cancelled || !Array.isArray(data.items)) return
-        let readAt = 0
-        try { readAt = Number(localStorage.getItem(READ_AT_KEY)) || 0 } catch { /* ignore */ }
-        setHasUnread(data.items.some((i: { ts: string }) => new Date(i.ts).getTime() > readAt))
-      } catch { /* best-effort */ }
-    }
-    check()
-    const id = setInterval(check, 60_000)
-    return () => { cancelled = true; clearInterval(id) }
-  }, [])
-
-  return hasUnread
+    try { setReadAt(Number(localStorage.getItem(READ_AT_KEY)) || 0) } catch { /* ignore */ }
+  }, [items])
+  return items.some((i) => new Date(i.ts).getTime() > readAt)
 }
 
 export default function BottomNav() {

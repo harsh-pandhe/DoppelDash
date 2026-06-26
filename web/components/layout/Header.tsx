@@ -1,5 +1,6 @@
 'use client'
 import { useUser, clearUserCache } from '@/lib/useUser'
+import { useNotificationItems } from '@/lib/notificationsStore'
 import { Bell, X, CalendarClock, Receipt, Clock, Menu, Search, Users, FileText, Megaphone, LogOut, User as UserIcon, CheckCheck, Cake, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -175,21 +176,13 @@ function useNotifications() {
   // hydrate from localStorage once on mount (avoids SSR mismatch)
   useEffect(() => { setReadAt(loadReadAt()) }, [])
 
+  const { items: sharedItems, refresh: sharedRefresh } = useNotificationItems()
+  useEffect(() => { setItems(sharedItems as unknown as NotifItem[]) }, [sharedItems])
+
   const refresh = useCallback(async () => {
     setLoading(true)
-    try {
-      const res  = await fetch('/api/notifications')
-      const data = await res.json()
-      setItems(Array.isArray(data.items) ? data.items : [])
-    } catch { /* best-effort */ }
-    finally { setLoading(false) }
-  }, [])
-
-  useEffect(() => {
-    refresh()
-    const id = setInterval(refresh, 30_000)
-    return () => clearInterval(id)
-  }, [refresh])
+    try { await sharedRefresh() } finally { setLoading(false) }
+  }, [sharedRefresh])
 
   const markAllRead = useCallback(() => {
     const now = Date.now()
