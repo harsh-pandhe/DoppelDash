@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@/lib/useUser'
 import { useRouter } from 'next/navigation'
-import { Shield, User, Briefcase, Lock, Loader2, Eye, EyeOff, Building2, Check, LogOut, KeyRound } from 'lucide-react'
+import { Shield, User, Briefcase, Lock, Loader2, Eye, EyeOff, Building2, Check, LogOut, KeyRound, ChevronRight } from 'lucide-react'
+import ThemeToggle from '@/components/ThemeToggle'
 import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -141,6 +142,18 @@ function OrgProfileCard({ isBoss }: { isBoss: boolean }) {
   )
 }
 
+function SettingLink({ href, label, desc }: { href: string; label: string; desc: string }) {
+  return (
+    <Link href={href} className="flex items-center gap-3 p-3 rounded-xl border border-surface-border bg-surface-1 hover:border-brand-400 transition-colors group">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-ink">{label}</p>
+        <p className="text-xs text-surface-muted truncate">{desc}</p>
+      </div>
+      <ChevronRight className="w-4 h-4 text-surface-muted group-hover:text-brand-500 transition-colors" />
+    </Link>
+  )
+}
+
 export default function SettingsPage() {
   const { user } = useUser()
   const router   = useRouter()
@@ -187,7 +200,53 @@ export default function SettingsPage() {
 
         <ChangePasswordCard />
 
-        <OrgProfileCard isBoss={role === 'admin'} />
+        {/* Appearance — available to everyone */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-bold text-ink-muted">Appearance</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex items-center justify-between p-4 rounded-xl border border-surface-border bg-surface-1">
+              <div>
+                <p className="text-sm font-semibold text-ink">Theme</p>
+                <p className="text-xs text-surface-muted">Switch between light and dark.</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Role-scoped workspace shortcuts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-bold text-ink-muted">Workspace</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {role === 'admin' && (
+              <>
+                <SettingLink href="/admin/users" label="User Management" desc="Roles, permissions, leave balances" />
+                <SettingLink href="/admin/audit" label="Audit Log" desc="Review every action across the org" />
+                <SettingLink href="/analytics" label="Analytics" desc="Org-wide reports and charts" />
+              </>
+            )}
+            {role === 'manager' && (
+              <>
+                <SettingLink href="/lms/team" label="Team Leave" desc="Approve and track your team's leave" />
+                <SettingLink href="/rms" label="Reimbursements" desc="Approve expense claims" />
+              </>
+            )}
+            {role === 'employee' && (
+              <>
+                <SettingLink href="/lms" label="My Leave" desc="Apply for and track leave" />
+                <SettingLink href="/rms/new" label="New Reimbursement" desc="Submit an expense claim" />
+                <SettingLink href="/travel/new" label="New Travel Request" desc="Request business travel" />
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Organisation profile — admins only */}
+        {role === 'admin' && <OrgProfileCard isBoss />}
 
         {/* Mail integrations (SMTP / IMAP / Outlook) are configured centrally via
             environment by the developer — not exposed in the user-facing settings. */}
