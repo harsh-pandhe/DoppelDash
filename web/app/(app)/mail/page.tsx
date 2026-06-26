@@ -7,8 +7,9 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Mail, Loader2, Sparkles, Save, Send, Check, Users, X,
-  ClipboardCopy, ListChecks, AlertTriangle, Tag, FileEdit,
+  ClipboardCopy, ListChecks, AlertTriangle, Tag, FileEdit, History,
 } from 'lucide-react'
+import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import type { Editor } from '@tiptap/react'
@@ -32,6 +33,7 @@ interface Recipient {
   field: Field; source: 'contact' | 'directory' | 'manual'
 }
 interface PickerEntry { name: string; email: string; company?: string; tags?: string[]; source: 'contact' | 'directory' }
+interface SentMail { _id: string; subject: string; tag?: string; sent: number; failed: number; channel: string; createdAt: string }
 
 /* ── HTML <-> text helpers ─────────────────────────────────── */
 
@@ -347,6 +349,14 @@ function MailComposeInner() {
   const [savedAt, setSavedAt]       = useState<Date | null>(null)
   const [saving, setSaving]         = useState(false)
   const [draftError, setDraftError] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory]       = useState<SentMail[]>([])
+
+  const loadHistory = useCallback(async () => {
+    try { const r = await fetch('/api/crm/campaign?history=1'); const d = await r.json(); setHistory(d.history || []) }
+    catch { /* best-effort */ }
+  }, [])
+  useEffect(() => { if (showHistory) loadHistory() }, [showHistory, loadHistory])
 
   // AI state
   const [aiType, setAiType]         = useState('Follow-up')
@@ -547,6 +557,7 @@ Excerpt:
       if (!res.ok) throw new Error(data.error || 'Send failed')
       toast(`Sent to ${data.sent} recipient${data.sent !== 1 ? 's' : ''}${data.failed ? `, ${data.failed} failed` : ''}`, data.failed ? 'info' : 'success')
       setConfirmMode(null)
+      if (showHistory) loadHistory()
     } catch (e) { toast(e instanceof Error ? e.message : 'Send failed', 'error') }
     finally { setServerBusy(false) }
   }
@@ -597,14 +608,17 @@ Excerpt:
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
-              <Mail className="w-5 h-5 text-brand-500" /> Communications
+              <Mail className="w-5 h-5 text-brand-500" /> Mail
             </h2>
             <p className="text-xs text-surface-muted mt-0.5">
-              Compose rich emails · send via your local Outlook or server
+              Compose & send rich email — single, multiple, or by contact tag/segment
               {savedAt && ` · saved ${savedAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`}
             </p>
           </div>
           <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setShowHistory(s => !s)}>
+              <History className="w-3.5 h-3.5" /> {showHistory ? 'Hide history' : 'Sent history'}
+            </Button>
             <Link href="/mail/drafts">
               <Button type="button" variant="outline" size="sm" className="gap-1.5"><FileEdit className="w-3.5 h-3.5" /> Drafts</Button>
             </Link>
@@ -614,6 +628,31 @@ Excerpt:
             </Button>
           </div>
         </div>
+
+        {showHistory && (
+          <div className="bg-surface-1 rounded-2xl border border-surface-border p-5">
+            <h3 className="text-sm font-bold text-ink mb-3 flex items-center gap-2"><History className="w-4 h-4 text-brand-500" /> Recently sent</h3>
+            {history.length === 0 ? (
+              <p className="text-sm text-surface-muted py-4 text-center">No mail sent yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {history.map(h => (
+                  <div key={h._id} className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-surface-border">
+                    <div className="w-9 h-9 rounded-lg bg-brand-100 flex items-center justify-center flex-shrink-0"><Mail className="w-4 h-4 text-brand-600" /></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-ink truncate">{h.subject}</p>
+                      <p className="text-xs text-surface-muted">{timeAgo(h.createdAt)}{h.tag ? ` · tag: ${h.tag}` : ''} · via {h.channel}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-green-600">{h.sent} sent</p>
+                      {h.failed > 0 && <p className="text-[10px] text-red-500">{h.failed} failed</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {draftError && !draftId && !subject && !bodyPlain ? (
           <ErrorState onRetry={() => loadDraft()} />
