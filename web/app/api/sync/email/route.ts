@@ -5,6 +5,11 @@ import SyncState from '@/models/SyncState'
 import { fetchEmailsSince, imapConfigured } from '@/lib/imap'
 import { getUser } from '@/lib/auth'
 
+// IMAP raw TCP/TLS → Node runtime, longer timeout for cold connect + fetch.
+export const runtime = 'nodejs'
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
+
 export async function POST() {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -4,6 +4,12 @@ import InboxMessage from '@/models/InboxMessage'
 import { getUser } from '@/lib/auth'
 import { syncInbox, imapConfigured } from '@/lib/imap'
 
+// IMAP needs raw TCP/TLS → Node runtime (not edge). Allow extra time for the
+// cold connect + fetch on serverless; the default ~10s can truncate a sync.
+export const runtime = 'nodejs'
+export const maxDuration = 60
+export const dynamic = 'force-dynamic'
+
 // Shared org inbox — gated to mail-enabled users (admin/manager always; employees need mailAccess)
 function canAccessMail(user: { role?: string; mailAccess?: boolean } | null): boolean {
   if (!user) return false
