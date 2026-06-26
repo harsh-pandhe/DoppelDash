@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
 import { CheckCircle2, XCircle, ChevronLeft, MapPin, CalendarDays, IndianRupee, Loader2, RotateCcw, Printer, FileSpreadsheet, FileText } from 'lucide-react'
-import { brandedXLSX, brandedCSV, fmtDate } from '@/lib/export'
+import { brandedXLSX, brandedCSV, brandedPDF, fmtDate } from '@/lib/export'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -153,6 +153,15 @@ export default function TravelRequestDetailPage() {
     const { head, rows } = exportRows()
     brandedCSV({ title: 'Travel Request', subtitle: request.purpose, head, rows, filename: `travel-${request.userName}-${fmtDate(request.createdAt)}.csv` })
   }
+  const exportPDF = () => {
+    const { head, rows } = exportRows()
+    brandedPDF({
+      title: 'Travel Request',
+      subtitle: `${request.purpose} · ${request.userName}`,
+      sections: [{ title: 'Request Details', head, rows }],
+      filename: `travel-${request.userName}-${fmtDate(request.createdAt)}.pdf`,
+    })
+  }
 
   return (
     <>
@@ -170,8 +179,8 @@ export default function TravelRequestDetailPage() {
             <Button size="sm" variant="outline" className="gap-2" onClick={exportCSV}>
               <FileText className="w-4 h-4" /> CSV
             </Button>
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => window.print()}>
-              <Printer className="w-4 h-4" /> Print
+            <Button size="sm" variant="outline" className="gap-2" onClick={exportPDF}>
+              <Printer className="w-4 h-4" /> PDF
             </Button>
           </div>
         </div>

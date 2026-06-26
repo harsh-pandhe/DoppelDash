@@ -4,7 +4,7 @@
 // Per Diem, Local Conveyance), Summary + Grand Total + Balance, signature rows.
 // QR code per receipt links to the uploaded proof. Renders standalone (no app chrome)
 // so the browser's Print → Save as PDF gives a clean A4 sheet.
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Printer, ArrowLeft, Loader2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
@@ -93,6 +93,40 @@ export default function ExpensePrintPage() {
   const [expense, setExpense] = useState<Expense | null>(null)
   const [emp, setEmp] = useState<DirEntry | null>(null)
   const [error, setError] = useState('')
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
+
+  // Render the expense sheet DOM to a real A4 PDF download (no browser print dialog).
+  const downloadPdf = async () => {
+    if (!sheetRef.current || pdfBusy) return
+    setPdfBusy(true)
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+      const canvas = await html2canvas(sheetRef.current, { scale: 2, backgroundColor: '#ffffff', useCORS: true })
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
+      const pageW = pdf.internal.pageSize.getWidth()
+      const pageH = pdf.internal.pageSize.getHeight()
+      const imgW = pageW
+      const imgH = (canvas.height * imgW) / canvas.width
+      const img = canvas.toDataURL('image/jpeg', 0.95)
+      let pos = 0
+      let remaining = imgH
+      // Slice the tall canvas across A4 pages.
+      while (remaining > 0) {
+        pdf.addImage(img, 'JPEG', 0, pos, imgW, imgH)
+        remaining -= pageH
+        if (remaining > 0) { pdf.addPage(); pos -= pageH }
+      }
+      const ref = expense ? `EXP-${expense._id.slice(-6).toUpperCase()}` : 'expense'
+      pdf.save(`${ref}.pdf`)
+    } catch {
+      // Fallback to the browser print dialog if rasterization fails.
+      window.print()
+    } finally { setPdfBusy(false) }
+  }
 
   useEffect(() => {
     fetch(`/api/rms/${id}`).then(async r => {
@@ -191,12 +225,14 @@ export default function ExpensePrintPage() {
       {/* Screen-only toolbar */}
       <div className="toolbar">
         <Link href={`/rms/${id}`}><ArrowLeft style={{ width: 15, height: 15 }} /> Back to expense</Link>
-        <button type="button" className="primary" onClick={() => window.print()}>
-          <Printer style={{ width: 15, height: 15 }} /> Print / Save as PDF
+        <button type="button" className="primary" onClick={downloadPdf} disabled={pdfBusy}>
+          {pdfBusy
+            ? <><Loader2 className="spin" style={{ width: 15, height: 15 }} /> Generating…</>
+            : <><Printer style={{ width: 15, height: 15 }} /> Download PDF</>}
         </button>
       </div>
 
-      <div className="sheet">
+      <div className="sheet" ref={sheetRef}>
         {/* Brand header */}
         <div className="brand">
           <div className="logo">
