@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@/lib/useUser'
 import { useRouter } from 'next/navigation'
-import { Shield, User, Briefcase, Lock, Loader2, Mail, CheckCircle2, AlertCircle, RefreshCw, Inbox, Send, Trash2, Eye, EyeOff, Building2, Check, LogOut, KeyRound } from 'lucide-react'
+import { Shield, User, Briefcase, Lock, Loader2, Eye, EyeOff, Building2, Check, LogOut, KeyRound } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

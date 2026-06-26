@@ -530,29 +530,6 @@ Excerpt:
     finally { setPartialBusy(false) }
   }
 
-  /* ── Send: Outlook draft (single, BCC-capable) ── */
-  const openOutlookDraft = () => {
-    // Outlook parses mailto recipient lists by SEMICOLON, not the RFC comma
-    const to  = recipients.filter(r => r.field === 'to').map(r => r.email).join(';')
-    const cc  = recipients.filter(r => r.field === 'cc').map(r => r.email).join(';')
-    const bcc = recipients.filter(r => r.field === 'bcc').map(r => r.email).join(';')
-    // One shared draft can't personalize — strip placeholders to generic
-    const generic = bodyPlain.replace(/\{\{name\}\}/gi, 'there').replace(/\{\{company\}\}/gi, 'your team')
-    const params = new URLSearchParams()
-    if (cc) params.set('cc', cc)
-    if (bcc) params.set('bcc', bcc)
-    params.set('subject', subject)
-    params.set('body', generic.slice(0, MAILTO_MAX))
-    if (generic.length > MAILTO_MAX) {
-      navigator.clipboard?.writeText(generic).catch(() => {})
-      toast('Body too long for a draft — full text copied, paste into Outlook', 'info')
-    }
-    // URLSearchParams encodes spaces as '+', which mail clients show literally — convert to %20
-    const qs = params.toString().replace(/\+/g, '%20')
-    window.location.href = `mailto:${to}?${qs}`
-    setConfirmMode(null)
-  }
-
   /* ── Send: server SMTP ── */
   const sendServer = async () => {
     setServerBusy(true)
