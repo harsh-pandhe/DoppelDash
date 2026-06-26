@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Shield, User, Briefcase, Check, Loader2, Ban, UserCheck,
   Save, Search, Database, Lock, Plus, Copy, Eye, EyeOff,
-  Building2, CalendarDays, Star,
+  Building2, CalendarDays, Star, ChevronDown,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -609,6 +609,51 @@ function UserCard({ u, allUsers, onUpdate, isBoss }: { u: UserRow; allUsers: Use
   )
 }
 
+/* ─── Table row: summary line that expands into the full edit card ─────────── */
+function UserRowItem({ u, allUsers, onUpdate, isBoss, expanded, onToggle }: {
+  u: UserRow; allUsers: UserRow[]; onUpdate: () => void; isBoss: boolean
+  expanded: boolean; onToggle: () => void
+}) {
+  const roleMeta = ROLE_META[u.role] || ROLE_META.employee
+  const RoleIcon = roleMeta.icon
+  const initials = u.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  return (
+    <div className={u.banned ? 'opacity-60' : ''}>
+      <button type="button" onClick={onToggle}
+        className={`w-full text-left px-4 py-3 grid grid-cols-[1fr_auto] md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center transition-colors hover:bg-surface-2 ${expanded ? 'bg-surface-2' : ''}`}>
+        {/* Member */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${avatarGradient(u.name)} flex items-center justify-center flex-shrink-0 text-white text-xs font-bold`}>
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-ink truncate">{u.name}</p>
+            <p className="text-[11px] text-surface-muted truncate">{u.email}</p>
+          </div>
+        </div>
+        {/* Role */}
+        <span className={`hidden md:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${roleMeta.badge}`}>
+          <RoleIcon className="w-2.5 h-2.5" /> {u.role}
+        </span>
+        {/* Department */}
+        <span className="hidden md:block text-xs text-ink-muted truncate">{u.employee?.department || '—'}</span>
+        {/* Status + chevron */}
+        <div className="flex items-center gap-2 justify-end">
+          {u.banned
+            ? <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600">Banned</span>
+            : <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-600">Active</span>}
+          <ChevronDown className={`w-4 h-4 text-surface-muted transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      {expanded && (
+        <div className="px-3 pb-3">
+          <UserCard u={u} allUsers={allUsers} onUpdate={onUpdate} isBoss={isBoss} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function AdminUsersPage() {
   const { user } = useUser()
@@ -620,6 +665,7 @@ export default function AdminUsersPage() {
   const [search,  setSearch]  = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'employee' | 'manager' | 'admin'>('all')
   const [deptFilter, setDeptFilter] = useState('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [seeding, setSeeding] = useState(false)
   const toast = useToast()
 
@@ -661,7 +707,7 @@ export default function AdminUsersPage() {
   return (
     <>
       <Header title="Team Members" />
-      <main className="flex-1 p-5 space-y-5 max-w-3xl w-full mx-auto">
+      <main className="flex-1 p-5 space-y-5 max-w-5xl w-full mx-auto">
 
         <div className="flex items-center gap-3 flex-wrap justify-between">
           <div className="flex items-center gap-3">
@@ -716,12 +762,22 @@ export default function AdminUsersPage() {
         </div>
 
         {loading ? (
-          <div className="space-y-3">{[...Array(5)].map((_,i) => <div key={i} className="h-32 rounded-2xl bg-surface-border animate-pulse" />)}</div>
+          <div className="space-y-2">{[...Array(6)].map((_,i) => <div key={i} className="h-14 rounded-xl bg-surface-border animate-pulse" />)}</div>
         ) : filtered.length === 0 ? (
           <p className="text-sm text-surface-muted py-8 text-center">No users match the current filters.</p>
         ) : (
-          <div className="space-y-3">
-            {filtered.map(u => <UserCard key={u.id} u={u} allUsers={users} onUpdate={fetchUsers} isBoss={isBoss} />)}
+          <div className="rounded-2xl border border-surface-border bg-surface-1 overflow-hidden">
+            {/* Header row (md+) */}
+            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-2.5 border-b border-surface-border bg-surface-2 text-[10px] font-bold uppercase tracking-widest text-surface-muted">
+              <span>Member</span><span>Role</span><span>Department</span><span className="text-right">Status</span>
+            </div>
+            <div className="divide-y divide-surface-border">
+              {filtered.map(u => (
+                <UserRowItem key={u.id} u={u} allUsers={users} onUpdate={fetchUsers} isBoss={isBoss}
+                  expanded={expandedId === u.id}
+                  onToggle={() => setExpandedId(id => id === u.id ? null : u.id)} />
+              ))}
+            </div>
           </div>
         )}
       </main>
