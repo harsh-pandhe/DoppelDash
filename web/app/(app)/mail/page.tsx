@@ -771,29 +771,18 @@ Excerpt:
             <Card className="rounded-2xl">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center gap-2"><Send className="w-4 h-4 text-brand-500" /> Send</CardTitle>
-                <p className="text-xs text-surface-muted">Outlook drafts send from your @doppelmayr.com mailbox. mailto: carries plain text — use “Copy rich HTML” + paste for formatted mails.</p>
+                <p className="text-xs text-surface-muted">Sends rich HTML through the company server, personalized per recipient.</p>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button type="button" className="w-full gap-2" disabled={!ready}
-                  onClick={() => setConfirmMode('outlook')} title="One Outlook draft with all recipients (To/Cc/Bcc as assigned)">
-                  <Send className="w-4 h-4" /> Open Outlook draft (single)
+                {/* Outlook send paths hidden — server send is the only channel for now. */}
+                <Button type="button" className="w-full gap-2" disabled={!ready || !canServerSend}
+                  onClick={() => setConfirmMode('server')} title="Send rich HTML through the server (per-recipient personalized)">
+                  <Mail className="w-4 h-4" /> Send via server
                 </Button>
-                <Button type="button" variant="outline" className="w-full gap-2" disabled={!ready}
-                  onClick={() => setQueueOpen(true)} title="One personalized draft per recipient — click through the queue">
-                  <ListChecks className="w-4 h-4" /> Personalized queue ({recipients.length})
-                </Button>
-                {canServerSend && (
-                  <>
-                    <div className="flex items-center gap-2 py-1">
-                      <div className="flex-1 h-px bg-surface-border" />
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-surface-muted">or</span>
-                      <div className="flex-1 h-px bg-surface-border" />
-                    </div>
-                    <Button type="button" variant="outline" className="w-full gap-2" disabled={!ready}
-                      onClick={() => setConfirmMode('server')} title="Send rich HTML through the server (per-recipient personalized)">
-                      <Mail className="w-4 h-4" /> Send via server (rich HTML)
-                    </Button>
-                  </>
+                {!canServerSend && (
+                  <p className="text-[11px] text-surface-muted text-center pt-1">
+                    Server sending isn’t enabled for your account.
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -805,11 +794,11 @@ Excerpt:
         <ConfirmSendDialog
           open={confirmMode !== null}
           onOpenChange={o => { if (!o) setConfirmMode(null) }}
-          title={confirmMode === 'server' ? 'Send via server to these recipients?' : 'Open Outlook draft for these recipients?'}
+          title="Send via server to these recipients?"
           recipients={recipients}
-          confirmLabel={confirmMode === 'server' ? 'Send now' : 'Open draft'}
+          confirmLabel="Send now"
           busy={serverBusy}
-          onConfirm={confirmMode === 'server' ? sendServer : openOutlookDraft}
+          onConfirm={sendServer}
         />
         <QueueSendDialog open={queueOpen} onOpenChange={setQueueOpen}
           recipients={recipients} subject={subject} bodyPlain={bodyPlain} />
