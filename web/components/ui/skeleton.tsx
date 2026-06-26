@@ -83,7 +83,7 @@ export function PageSkeleton({
   return (
     <>
       {/* Header bar mirror */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-surface-border px-4 md:px-8 py-4 flex items-center justify-between">
+      <div className="sticky top-0 z-10 bg-surface-1/80 backdrop-blur-xl border-b border-surface-border px-4 md:px-8 py-4 flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-3 w-56" />
