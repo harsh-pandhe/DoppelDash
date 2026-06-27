@@ -69,7 +69,12 @@ const fakeReceipt = (vendor: string, amount: number, dateStr: string) => {
 
 export async function POST(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
-  // In production the secret is mandatory — never runnable without it.
+  // This endpoint wipes EVERY collection. In production it stays fully disabled
+  // unless explicitly opted in with ALLOW_DEV_SEED=true — so a leaked
+  // DEV_SEED_SECRET alone cannot erase the production database.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
+    return NextResponse.json({ error: 'Destructive seed is disabled in production' }, { status: 403 })
+  }
   if (process.env.NODE_ENV === 'production' && !required) {
     return NextResponse.json({ error: 'Disabled in production (no DEV_SEED_SECRET)' }, { status: 403 })
   }

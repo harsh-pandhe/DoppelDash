@@ -3,7 +3,14 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypt
 const ALGO = 'aes-256-gcm'
 
 function getKey(): Buffer {
-  const secret = process.env.ENCRYPTION_SECRET || 'fallback-insecure-key-set-env'
+  const secret = process.env.ENCRYPTION_SECRET
+  if (!secret) {
+    // Never silently encrypt PII / bank details under a known fallback key.
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ENCRYPTION_SECRET is not set — refusing to use an insecure fallback key')
+    }
+    return createHash('sha256').update('dev-only-insecure-key').digest()
+  }
   return createHash('sha256').update(secret).digest()
 }
 
