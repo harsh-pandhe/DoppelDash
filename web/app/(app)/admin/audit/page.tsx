@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { Download, Filter, ShieldCheck, Search, X } from 'lucide-react'
+import { Download, Filter, ShieldCheck, Search, X, ChevronDown, Code2 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { ListSkeleton } from '@/components/ui/skeleton'
@@ -109,6 +109,31 @@ const ACTION_OPTIONS = [
   'user.role_changed', 'user.banned', 'user.unbanned', 'user.permissions_changed', 'user.privileges_changed', 'user.reporting_manager_changed',
   'balance.updated',
 ] as const
+
+// Plain-English verb for each action (non-technical admins read this).
+const ACTION_VERB: Record<string, string> = {
+  'leave.approved': 'approved a leave request', 'leave.rejected': 'rejected a leave request', 'leave.withdrawn': 'withdrew a leave request',
+  'expense.paid': 'marked an expense as paid', 'expense.rejected': 'rejected an expense', 'expense.pending_admin': 'forwarded an expense for admin approval',
+  'expense.returned_to_employee': 'returned an expense to the employee', 'expense.resubmitted': 'resubmitted an expense',
+  'travel.approved': 'approved a travel request', 'travel.rejected': 'rejected a travel request', 'travel.pending_admin': 'forwarded travel for admin approval', 'travel.cancelled': 'cancelled a travel request',
+  'user.role_changed': 'changed a user’s role', 'user.banned': 'banned a user', 'user.unbanned': 'restored a user',
+  'user.permissions_changed': 'updated a user’s permissions', 'user.privileges_changed': 'updated a user’s privileges', 'user.reporting_manager_changed': 'changed a reporting manager',
+  'balance.updated': 'adjusted a leave balance',
+}
+
+/** Build a readable sentence from an audit entry. */
+function humanAudit(action: string, actor: string, md: Record<string, unknown>): string {
+  const verb = ACTION_VERB[action] || (() => {
+    const [obj, ...rest] = action.split('.')
+    return `${rest.join(' ').replace(/_/g, ' ') || 'updated'} a ${obj}`
+  })()
+  const who = md.employeeName ? ` for ${md.employeeName}` : ''
+  const role = md.newRole ? ` (now ${md.newRole})` : ''
+  const amount = md.amount !== undefined ? ` — ₹${Number(md.amount).toLocaleString('en-IN')}` : ''
+  const days = md.days !== undefined ? ` — ${md.days} day${md.days === 1 ? '' : 's'}` : ''
+  const dest = md.destination ? ` to ${md.destination}` : ''
+  return `${actor} ${verb}${who}${role}${dest}${amount}${days}`
+}
 
 const PAGE_SIZE = 50
 
@@ -284,30 +309,30 @@ export default function AuditPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Action badge */}
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${labelColor}`}>
-                          {log.action}
-                        </span>
-                        {/* Dot indicator */}
-                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${meta.dot}`} />
-                      </div>
-                      <p className="text-[10px] text-surface-muted flex-shrink-0">
+                    <div className="flex items-start justify-between gap-2">
+                      {/* Plain-English summary — the primary line for non-technical admins */}
+                      <p className="text-sm text-ink leading-snug">
+                        {humanAudit(log.action, log.performedByName || 'Someone', md)}
+                      </p>
+                      <p className="text-[10px] text-surface-muted flex-shrink-0 whitespace-nowrap pt-0.5">
                         {new Date(log.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
-                    <p className="text-xs text-ink-muted mt-1">
-                      <strong className="font-semibold">{log.performedByName}</strong>
-                      <span className="text-surface-muted"> · {log.targetType}</span>
-                      {md.employeeName ? <span> → {String(md.employeeName)}</span> : null}
-                      {md.newRole ? <span> → <span className="font-semibold">{String(md.newRole)}</span></span> : null}
-                    </p>
-                    {Object.keys(md).length > 0 && (
-                      <p className="text-[10px] text-surface-muted mt-0.5 truncate">
-                        {Object.entries(md).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(' · ')}
-                      </p>
-                    )}
+                    {/* Technical detail — raw action code + metadata, collapsed by default */}
+                    <details className="group mt-1.5">
+                      <summary className="flex items-center gap-1.5 cursor-pointer list-none text-[10px] font-semibold text-surface-muted hover:text-ink-muted w-fit">
+                        <Code2 className="w-3 h-3" />
+                        <span className={`px-1.5 py-0.5 rounded-full border ${labelColor}`}>{log.action}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                        <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
+                      </summary>
+                      <div className="mt-1.5 ml-1 rounded-lg bg-surface-2 border border-surface-border p-2.5 space-y-0.5">
+                        <p className="text-[10px] text-surface-muted"><span className="font-semibold text-ink-muted">Target:</span> {log.targetType} <span className="font-mono">{log.targetId}</span></p>
+                        {Object.entries(md).filter(([, v]) => v !== undefined && v !== null && v !== '').map(([k, v]) => (
+                          <p key={k} className="text-[10px] text-surface-muted"><span className="font-semibold text-ink-muted">{k}:</span> <span className="font-mono">{String(v)}</span></p>
+                        ))}
+                      </div>
+                    </details>
                   </div>
                 </div>
               )
