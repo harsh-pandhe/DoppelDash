@@ -4,9 +4,9 @@ import { useRouter } from 'next/navigation'
 import {
   TrendingUp, Activity, CheckCircle2, Clock, IndianRupee,
   Plane, Megaphone, AlertCircle, CalendarClock, Receipt, Layers,
-  Building, ArrowUpRight, ArrowDownRight,
+  Building, ArrowUpRight, ArrowDownRight, BarChart3,
 } from 'lucide-react'
-import { BarChart, DonutChart, AreaChart } from '@/components/ui/charts'
+import { BarChart, DonutChart, AreaChart, LineChart, HBarChart } from '@/components/ui/charts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { timeAgo } from '@/lib/timeAgo'
 
@@ -50,8 +50,10 @@ export type TileId =
   | 'kpi.travelApproved' | 'kpi.pendingTravel'
   | 'kpi.contacts' | 'kpi.announcements'
   | 'chart.leaveByMonth' | 'chart.expenseByMonth'
+  | 'chart.leaveTrendLine' | 'chart.expenseTrendLine'
   | 'chart.leaveStatus' | 'chart.expenseStatus' | 'chart.travelStatus'
   | 'chart.leaveType' | 'chart.featureUsage30d'
+  | 'chart.leaveTypeBar' | 'chart.expenseStatusBar' | 'chart.travelStatusBar'
   | 'list.topSpenders' | 'list.recentActivity'
 export type LayoutEntry = { id: TileId; size: TileSize }
 
@@ -77,10 +79,15 @@ export const TILE_CATALOG: TileDef[] = [
   { id: 'kpi.announcements',   label: 'Announcements',       description: 'Total posted',                 category: 'kpi', defaultSize: 'sm', icon: Megaphone },
   { id: 'chart.leaveByMonth',   label: 'Leave requests by month', description: 'Area trend over selected range', category: 'chart', defaultSize: 'md', icon: TrendingUp },
   { id: 'chart.expenseByMonth', label: 'Expense ₹ by month',      description: 'Area trend over range',          category: 'chart', defaultSize: 'md', icon: TrendingUp },
+  { id: 'chart.leaveTrendLine',  label: 'Leave trend (line)',     description: 'Line chart of leaves by month',  category: 'chart', defaultSize: 'md', icon: Activity },
+  { id: 'chart.expenseTrendLine',label: 'Expense trend (line)',   description: 'Line chart of ₹ by month',       category: 'chart', defaultSize: 'md', icon: Activity },
   { id: 'chart.leaveStatus',    label: 'Leave status breakdown',  description: 'Donut: approved / pending / rejected', category: 'chart', defaultSize: 'md', icon: Layers },
   { id: 'chart.expenseStatus',  label: 'Expense status breakdown',description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
   { id: 'chart.travelStatus',   label: 'Travel status breakdown', description: 'Donut by stage',                category: 'chart', defaultSize: 'md', icon: Layers },
   { id: 'chart.leaveType',      label: 'Leave by type',           description: 'Casual / sick / earned etc.',   category: 'chart', defaultSize: 'md', icon: Layers },
+  { id: 'chart.leaveTypeBar',     label: 'Leave by type (bars)',     description: 'Horizontal bar by leave type', category: 'chart', defaultSize: 'md', icon: BarChart3 },
+  { id: 'chart.expenseStatusBar', label: 'Expense status (bars)',    description: 'Horizontal bar by stage',      category: 'chart', defaultSize: 'md', icon: BarChart3 },
+  { id: 'chart.travelStatusBar',  label: 'Travel status (bars)',     description: 'Horizontal bar by stage',      category: 'chart', defaultSize: 'md', icon: BarChart3 },
   { id: 'chart.featureUsage30d',label: 'Feature usage · 30 days', description: 'Leaves vs expenses vs travel',  category: 'chart', defaultSize: 'md', icon: Activity },
   { id: 'list.topSpenders',     label: 'Top spenders',     description: 'Highest reimbursed in range',   category: 'list', defaultSize: 'md', icon: TrendingUp },
   { id: 'list.recentActivity',  label: 'Recent activity',  description: 'Latest audit log entries',      category: 'list', defaultSize: 'lg', icon: Activity },
@@ -117,6 +124,10 @@ export function TileBody({ def, data, drillBase, readOnly = false }: { def: Tile
       return <ChartCard def={def}><AreaChart data={data.leaveByMonth.map(m => ({ label: m.label, value: m.count }))} color="#0057A8" /></ChartCard>
     case 'chart.expenseByMonth':
       return <ChartCard def={def}><AreaChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" /></ChartCard>
+    case 'chart.leaveTrendLine':
+      return <ChartCard def={def}><LineChart data={data.leaveByMonth.map(m => ({ label: m.label, value: m.count }))} color="#0057A8" /></ChartCard>
+    case 'chart.expenseTrendLine':
+      return <ChartCard def={def}><LineChart data={data.expenseByMonth.map(m => ({ label: m.label, value: m.total ?? 0 }))} color="#003B73" unit="₹" /></ChartCard>
     case 'chart.leaveStatus':
       return <DonutCard def={def} metric={dMetric('leave')} drillBase={drillBase} data={data.leaveStatus.map(s => ({ label: s._id, raw: s._id, value: s.count, color: LEAVE_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.expenseStatus':
@@ -125,6 +136,12 @@ export function TileBody({ def, data, drillBase, readOnly = false }: { def: Tile
       return <DonutCard def={def} metric={dMetric('travel')} drillBase={drillBase} data={data.travelStatus.map(s => ({ label: s._id.replace(/_/g, ' '), raw: s._id, value: s.count, color: TRAVEL_STATUS_COLORS[s._id] || '#94A3B8' }))} />
     case 'chart.leaveType':
       return <DonutCard def={def} data={data.leaveType.map(s => ({ label: s._id, value: s.count, color: LEAVE_TYPE_COLORS[s._id] || '#94A3B8' }))} />
+    case 'chart.leaveTypeBar':
+      return <ChartCard def={def}><HBarChart data={data.leaveType.map(s => ({ label: s._id, value: s.count, color: LEAVE_TYPE_COLORS[s._id] || '#94A3B8' }))} /></ChartCard>
+    case 'chart.expenseStatusBar':
+      return <ChartCard def={def}><HBarChart data={data.expenseStatus.map(s => ({ label: s._id.replace(/_/g, ' '), value: s.count, color: EXPENSE_STATUS_COLORS[s._id] || '#94A3B8' }))} /></ChartCard>
+    case 'chart.travelStatusBar':
+      return <ChartCard def={def}><HBarChart data={data.travelStatus.map(s => ({ label: s._id.replace(/_/g, ' '), value: s.count, color: TRAVEL_STATUS_COLORS[s._id] || '#94A3B8' }))} /></ChartCard>
     case 'chart.featureUsage30d':
       return <ChartCard def={def}><BarChart data={[{ label: 'Leaves', value: data.kpis.leavesIn30d }, { label: 'Expenses', value: data.kpis.expensesIn30d }, { label: 'Travel', value: data.kpis.travelIn30d }]} color="#0057A8" /></ChartCard>
     case 'list.topSpenders':   return <TopSpendersCard def={def} data={data.topSpenders} />
