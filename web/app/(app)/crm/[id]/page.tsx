@@ -134,7 +134,7 @@ function ReminderCard({ contactId, reminderDate, reminderNote, onSaved }: {
   return (
     <div className={`col-span-2 rounded-2xl border overflow-hidden ${isOverdue ? 'bg-red-50 border-red-200' : 'bg-surface border-surface-border'}`}>
       {/* Header strip */}
-      <div className={`flex items-center justify-between gap-2 px-4 py-2.5 border-b ${isOverdue ? 'border-red-200 bg-red-100/50' : 'border-surface-border bg-white/40'}`}>
+      <div className={`flex items-center justify-between gap-2 px-4 py-2.5 border-b ${isOverdue ? 'border-red-200 bg-red-100/50' : 'border-surface-border bg-surface-1/60'}`}>
         <p className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${isOverdue ? 'text-red-600' : 'text-surface-muted'}`}>
           <Bell className="w-3.5 h-3.5" /> Follow-up reminder
         </p>

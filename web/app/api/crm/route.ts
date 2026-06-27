@@ -30,8 +30,14 @@ export async function GET(req: NextRequest) {
 
     const filter: Record<string, unknown> = { $or: visClauses }
     if (q) filter.name = { $regex: q, $options: 'i' }
-    const contacts = await Contact.find(filter).sort({ createdAt: -1 }).limit(200).lean()
-    return NextResponse.json(contacts.map(c => decryptContact(c)))
+    // List view only needs lightweight card fields — skip heavy/encrypted ones
+    // (notes, activity, gender/caste/religion). No decrypt pass needed.
+    const contacts = await Contact.find(filter)
+      .select('name company email phone designation tags photo colorLabel visibility createdBy createdAt')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean()
+    return NextResponse.json(contacts)
   } catch (err) {
     console.error('[CRM GET]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
