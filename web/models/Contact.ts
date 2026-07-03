@@ -34,11 +34,16 @@ export interface IContact extends Document {
   birthdayGreetingSent?: boolean
   reminderDate?: Date
   reminderNote?: string
+  reminderDismissedAt?: Date
   timeline: ITimelineEntry[]
 
   // Sharing
   visibility: ContactVisibility
   sharedWith?: string[]   // explicit clerkUserIds if visibility='private' but shared 1:1
+
+  // Public share link (QR / contact card)
+  shareToken?: string | null
+  shareTokenExpiresAt?: Date | null
 
   // Color label
   colorLabel?: IColorLabel
@@ -82,10 +87,14 @@ const ContactSchema = new Schema<IContact>(
     birthdayGreetingSent: { type: Boolean, default: false },
     reminderDate:         { type: Date },
     reminderNote:         { type: String },
+    reminderDismissedAt:  { type: Date },
     timeline:             [TimelineEntrySchema],
 
     visibility:  { type: String, enum: ['private','team','org','boss_only'], default: 'private' },
     sharedWith:  [{ type: String }],
+
+    shareToken:          { type: String, index: true },
+    shareTokenExpiresAt: { type: Date, default: null },
 
     colorLabel: {
       color: { type: String },

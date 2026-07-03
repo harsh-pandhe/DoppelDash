@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     contactId?: string
   }
   if (!body.imageData) return NextResponse.json({ error: 'imageData required' }, { status: 400 })
+  if (body.imageData.length > 1_500_000) return NextResponse.json({ error: 'imageData too large' }, { status: 400 })
 
   await connectDB()
   // Strip nulls from parsed fields so schema stays clean

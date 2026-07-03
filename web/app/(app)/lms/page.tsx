@@ -695,20 +695,29 @@ export default function LMSPage() {
   useAutoRefresh(fetchLeaves)
 
   const handleAction = async (id: string, status: 'approved' | 'rejected', note?: string) => {
-    await fetch(`/api/lms/${id}`, {
+    const res = await fetch(`/api/lms/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, managerNote: note }),
     })
+    if (!res.ok) {
+      const text = await res.text()
+      toast(`Action failed: ${text || 'Unable to update status'}`, 'error')
+      fetchLeaves()
+      return
+    }
     toast(status === 'approved' ? 'Leave approved' : 'Leave rejected', status === 'approved' ? 'success' : 'error')
     fetchLeaves()
   }
 
   const bulkAction = async (status: 'approved' | 'rejected') => {
     setBulking(true)
-    await Promise.all(Array.from(bulkSel).map(id =>
+    const results = await Promise.all(Array.from(bulkSel).map(id =>
       fetch(`/api/lms/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
     ))
-    toast(`${bulkSel.size} leave${bulkSel.size > 1 ? 's' : ''} ${status}`, status === 'approved' ? 'success' : 'error')
+    const failed = results.filter(r => !r.ok).length
+    const okCount = results.length - failed
+    if (okCount > 0) toast(`${okCount} leave${okCount > 1 ? 's' : ''} ${status}`, status === 'approved' ? 'success' : 'error')
+    if (failed > 0) toast(`${failed} leave${failed > 1 ? 's' : ''} failed to update`, 'error')
     setBulkSel(new Set()); setBulking(false); fetchLeaves()
   }
 

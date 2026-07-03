@@ -72,34 +72,40 @@ export async function POST(req: NextRequest) {
   const channel  = userSmtp ? 'user_smtp' : 'smtp'
 
   let sent = 0; let failed = 0
-  await Promise.allSettled(
-    contacts.map(async c => {
-      const personalized = body.bodyTemplate
-        .replace(/\{\{name\}\}/gi, c.name || 'there')
-        .replace(/\{\{company\}\}/gi, c.company || 'your team')
+  // Send in small batches with a short pause between them so a large tag segment
+  // doesn't hit the SMTP relay with hundreds of simultaneous connections.
+  const BATCH = 20
+  for (let i = 0; i < contacts.length; i += BATCH) {
+    await Promise.allSettled(
+      contacts.slice(i, i + BATCH).map(async c => {
+        const personalized = body.bodyTemplate
+          .replace(/\{\{name\}\}/gi, c.name || 'there')
+          .replace(/\{\{company\}\}/gi, c.company || 'your team')
 
-      // isHtml: body is already rich HTML from the mail editor — embed as-is.
-      // Legacy plaintext campaigns: convert newlines and wrap in a paragraph.
-      const inner = body.isHtml ? personalized : `<p>${personalized.replace(/\n/g, '<br>')}</p>`
+        // isHtml: body is already rich HTML from the mail editor — embed as-is.
+        // Legacy plaintext campaigns: convert newlines and wrap in a paragraph.
+        const inner = body.isHtml ? personalized : `<p>${personalized.replace(/\n/g, '<br>')}</p>`
 
-      const html = `
-        <div style="font-family:Calibri,'Segoe UI',Inter,system-ui,sans-serif; max-width:640px; margin:0 auto; padding:32px 24px">
-          ${inner}
-          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-          <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash — Doppelmayr India</p>
-        </div>`
+        const html = `
+          <div style="font-family:Calibri,'Segoe UI',Inter,system-ui,sans-serif; max-width:640px; margin:0 auto; padding:32px 24px">
+            ${inner}
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+            <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash — Doppelmayr India</p>
+          </div>`
 
-      try {
-        if (userSmtp) {
-          await userSmtp.transporter.sendMail({ from: userSmtp.from, to: c.email!, subject: body.subject, html })
-          sent++
-        } else {
-          const ok = await sendMail({ to: c.email!, subject: body.subject, html })
-          if (ok) sent++; else failed++
-        }
-      } catch { failed++ }
-    })
-  )
+        try {
+          if (userSmtp) {
+            await userSmtp.transporter.sendMail({ from: userSmtp.from, to: c.email!, subject: body.subject, html })
+            sent++
+          } else {
+            const ok = await sendMail({ to: c.email!, subject: body.subject, html })
+            if (ok) sent++; else failed++
+          }
+        } catch { failed++ }
+      })
+    )
+    if (i + BATCH < contacts.length) await new Promise(r => setTimeout(r, 250))
+  }
 
   // Log non-test campaigns for history
   if (!body.testEmail) {

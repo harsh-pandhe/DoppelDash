@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
+import LeaveBalance from '@/models/LeaveBalance'
 import { emailLeaveSubmitted } from '@/lib/email'
 import { getUser } from '@/lib/auth'
 import { notifyTargetsFor } from '@/lib/notify-targets'
+
+const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
 export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
@@ -39,6 +42,31 @@ export async function POST(req: NextRequest) {
   // 11B: earned leave capped at 4 days per single application
   if (body.type === 'earned' && Number(body.days) > 4) {
     return NextResponse.json({ error: 'Earned leave is capped at 4 days per application.' }, { status: 400 })
+  }
+
+  if (body.type === 'sick' && Number(body.days) > 2 && !(Array.isArray(body.medicalDocs) && body.medicalDocs.length > 0)) {
+    return NextResponse.json({ error: 'Medical docs required for sick leave > 2 days.' }, { status: 400 })
+  }
+
+  if (body.type in DEFAULTS) {
+    const type = body.type as keyof typeof DEFAULTS
+    const startDate = new Date(body.startDate)
+    const year = startDate.getFullYear()
+    const yearStart = new Date(year, 0, 1)
+    const yearEnd   = new Date(year + 1, 0, 1)
+
+    const balanceDoc = await LeaveBalance.findOne({ userId, year }).lean()
+    const entitlement = (balanceDoc as unknown as Record<string, number> | null)?.[type] ?? DEFAULTS[type]
+
+    const usedAgg = await Leave.aggregate([
+      { $match: { userId, type, status: { $in: ['approved', 'pending'] }, startDate: { $gte: yearStart, $lt: yearEnd } } },
+      { $group: { _id: null, days: { $sum: '$days' } } },
+    ])
+    const used = usedAgg[0]?.days || 0
+
+    if (used + Number(body.days) > entitlement) {
+      return NextResponse.json({ error: `This would exceed your ${type} leave balance (${used}/${entitlement} already used or pending).` }, { status: 400 })
+    }
   }
 
   const leave = await Leave.create({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
 import { getUser } from '@/lib/auth'
+import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user } = await getUser()
@@ -14,6 +15,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if ('scheduledFor' in body) {
     body.scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
   }
+  if (typeof body.body === 'string') body.body = sanitizeMailHtml(body.body)
   const item = await Announcement.findByIdAndUpdate(params.id, body, { returnDocument: 'after' })
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(item)

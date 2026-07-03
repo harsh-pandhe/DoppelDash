@@ -1,8 +1,17 @@
 import { SignJWT, jwtVerify } from 'jose'
 import type { IUserPublic } from '@/models/User'
 
-const SECRET_STR = process.env.JWT_SECRET || 'change-me-in-production-32-chars!!'
-const SECRET = new TextEncoder().encode(SECRET_STR)
+function getSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET is not set — refusing to use an insecure fallback key')
+    }
+    return new TextEncoder().encode('change-me-in-production-32-chars!!')
+  }
+  return new TextEncoder().encode(secret)
+}
+
 const EXPIRES = '7d'
 
 export interface JWTPayload {
@@ -24,12 +33,12 @@ export async function signToken(user: IUserPublic): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(EXPIRES)
-    .sign(SECRET)
+    .sign(getSecret())
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET)
+    const { payload } = await jwtVerify(token, getSecret())
     return payload as unknown as JWTPayload
   } catch (e) {
     if (process.env.NODE_ENV !== 'production') {

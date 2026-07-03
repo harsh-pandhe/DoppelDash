@@ -61,13 +61,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Inject user info into headers for use in route handlers (optional optimisation)
-  const headers = new Headers(req.headers)
-  headers.set('x-user-id',   payload.userId)
-  headers.set('x-user-role', payload.role)
-  headers.set('x-user-name', `${payload.firstName} ${payload.lastName}`)
-
-  return NextResponse.next({ request: { headers } })
+  return NextResponse.next()
 }
 
 export const config = {

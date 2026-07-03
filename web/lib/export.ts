@@ -140,7 +140,11 @@ export function brandedCSV(opts: {
   rows: (string | number)[][]
   filename: string
 }) {
-  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`
+  const esc = (v: string | number) => {
+    let s = String(v)
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`
+    return `"${s.replace(/"/g, '""')}"`
+  }
   const lines = [
     esc(`Doppelmayr India — ${opts.title}`),
     esc([opts.subtitle, `Generated ${fmtDate()}`].filter(Boolean).join(' · ')),

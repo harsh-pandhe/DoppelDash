@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
 import { emailUrgentAnnouncement } from '@/lib/email'
 import { getUser, listUsers } from '@/lib/auth'
+import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
 
 export async function GET() {
   const { userId } = await getUser()
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
   const isFutureScheduled = !!(scheduledFor && scheduledFor.getTime() > Date.now())
+  if (typeof body.body === 'string') body.body = sanitizeMailHtml(body.body)
   const item = await Announcement.create({
     ...body,
     scheduledFor,

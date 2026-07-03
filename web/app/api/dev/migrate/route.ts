@@ -13,6 +13,9 @@ import mongoose from 'mongoose'
  */
 export async function POST(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
+    return NextResponse.json({ error: 'Destructive seed is disabled in production' }, { status: 403 })
+  }
   if (process.env.NODE_ENV === 'production' && !required) {
     return NextResponse.json({ error: 'Disabled in production (no DEV_SEED_SECRET)' }, { status: 403 })
   }

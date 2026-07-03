@@ -214,12 +214,16 @@ function CSVImportDialog({ onImport }: { onImport: () => void }) {
     if (!rows.length) return
     setLoading(true); setResult(null)
     let created = 0; let errors = 0
-    await Promise.all(rows.map(async row => {
-      const body = { name: row.name||row.Name||'', email: row.email||row.Email||'', phone: row.phone||row.Phone||'', company: row.company||row.Company||'', designation: row.designation||row.Designation||'', tags: (row.tags||row.Tags||'').split(';').map((s:string)=>s.trim()).filter(Boolean) }
-      if (!body.name) { errors++; return }
-      const res = await fetch('/api/crm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
-      if (res.ok) created++; else errors++
-    }))
+    // Import in small batches so a large CSV doesn't fire hundreds of concurrent POSTs.
+    const BATCH = 15
+    for (let i = 0; i < rows.length; i += BATCH) {
+      await Promise.all(rows.slice(i, i + BATCH).map(async row => {
+        const body = { name: row.name||row.Name||'', email: row.email||row.Email||'', phone: row.phone||row.Phone||'', company: row.company||row.Company||'', designation: row.designation||row.Designation||'', tags: (row.tags||row.Tags||'').split(';').map((s:string)=>s.trim()).filter(Boolean) }
+        if (!body.name) { errors++; return }
+        const res = await fetch('/api/crm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+        if (res.ok) created++; else errors++
+      }))
+    }
     setResult({ created, errors })
     if (created > 0) { toast(`${created} contacts imported`, 'success'); onImport() }
     setLoading(false)

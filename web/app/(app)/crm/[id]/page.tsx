@@ -514,11 +514,39 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
 function ShareQRDialog({ contactId, contactName }: { contactId: string; contactName: string }) {
   const [open, setOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/contact/${contactId}` : `/contact/${contactId}`
+  const [loading, setLoading] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const shareUrl = token ? `${origin}/contact/${token}` : ''
+
+  const fetchLink = useCallback(async () => {
+    setLoading(true)
+    const res = await fetch(`/api/crm/${contactId}/share`)
+    const data = await res.json()
+    setToken(data.token || null)
+    setLoading(false)
+  }, [contactId])
+
+  useEffect(() => { if (open) fetchLink() }, [open, fetchLink])
 
   const copy = async () => {
     await navigator.clipboard.writeText(shareUrl)
     setCopied(true); setTimeout(() => setCopied(false), 2000)
+  }
+
+  const regenerate = async () => {
+    setLoading(true)
+    const res = await fetch(`/api/crm/${contactId}/share`, { method: 'POST' })
+    const data = await res.json()
+    setToken(data.token || null)
+    setLoading(false)
+  }
+
+  const revoke = async () => {
+    setLoading(true)
+    await fetch(`/api/crm/${contactId}/share`, { method: 'DELETE' })
+    setToken(null)
+    setLoading(false)
   }
 
   return (
@@ -535,20 +563,34 @@ function ShareQRDialog({ contactId, contactName }: { contactId: string; contactN
           <Dialog.Description className="text-sm text-surface-muted mb-4">
             Scan QR or copy link to share {contactName}&apos;s public contact page.
           </Dialog.Description>
-          <div className="flex justify-center mb-4 p-4 bg-surface rounded-2xl border border-surface-border">
-            <QRCodeSVG value={shareUrl} size={160} marginSize={4} />
-          </div>
+          {loading || !shareUrl ? (
+            <div className="flex justify-center items-center mb-4 p-4 bg-surface rounded-2xl border border-surface-border h-[192px]">
+              <Loader2 className="w-5 h-5 animate-spin text-surface-muted" />
+            </div>
+          ) : (
+            <div className="flex justify-center mb-4 p-4 bg-surface rounded-2xl border border-surface-border">
+              <QRCodeSVG value={shareUrl} size={160} marginSize={4} />
+            </div>
+          )}
           <div className="flex items-center gap-2 p-3 rounded-xl bg-surface border border-surface-border mb-4">
-            <p className="text-xs text-ink-muted flex-1 truncate">{shareUrl}</p>
-            <button type="button" onClick={copy} className="flex-shrink-0 text-brand-500 hover:text-brand-700 transition-colors">
+            <p className="text-xs text-ink-muted flex-1 truncate">{shareUrl || 'Generating link…'}</p>
+            <button type="button" onClick={copy} disabled={!shareUrl} className="flex-shrink-0 text-brand-500 hover:text-brand-700 transition-colors disabled:opacity-40">
               {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>
-          <div className="flex gap-3 justify-end">
-            <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
-            <a href={shareUrl} target="_blank" rel="noreferrer">
-              <Button type="button" size="sm" className="gap-1.5"><QrCode className="w-3.5 h-3.5" /> Open Page</Button>
-            </a>
+          <div className="flex gap-2 justify-between">
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={regenerate} disabled={loading}>Regenerate</Button>
+              <Button type="button" variant="outline" size="sm" onClick={revoke} disabled={loading || !token} className="gap-1.5 text-red-600 hover:text-red-700">
+                <XCircle className="w-3.5 h-3.5" /> Revoke
+              </Button>
+            </div>
+            <div className="flex gap-3">
+              <Dialog.Close asChild><Button type="button" variant="outline" size="sm">Close</Button></Dialog.Close>
+              <a href={shareUrl || '#'} target="_blank" rel="noreferrer">
+                <Button type="button" size="sm" disabled={!shareUrl} className="gap-1.5"><QrCode className="w-3.5 h-3.5" /> Open Page</Button>
+              </a>
+            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

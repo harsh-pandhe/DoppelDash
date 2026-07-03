@@ -7,13 +7,18 @@ const MAX_ATTEMPTS = 5
 /** Generate a 6-digit OTP, save hashed copy to user, return plain OTP */
 export async function generateOTP(userId: string): Promise<string> {
   await connectDB()
+  const user   = await User.findById(userId)
   const otp    = String(Math.floor(100000 + Math.random() * 900000))
   const expiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000)
 
+  // Resending while the previous OTP is still valid must not reset the
+  // attempt counter, or resend becomes a lockout-bypass for brute-forcing.
+  const stillValid = !!(user?.otp && user?.otpExpiry && new Date() <= user.otpExpiry)
+
   await User.findByIdAndUpdate(userId, {
     otp,
-    otpExpiry:   expiry,
-    otpAttempts: 0,
+    otpExpiry: expiry,
+    ...(stillValid ? {} : { otpAttempts: 0 }),
   })
   return otp
 }

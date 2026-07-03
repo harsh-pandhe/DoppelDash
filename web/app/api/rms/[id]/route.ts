@@ -38,6 +38,20 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     updates.status = 'pending_manager'
     delete updates.managerNote
     delete updates.adminNote
+  } else if (updates.status !== undefined) {
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      pending_manager: ['pending_admin', 'rejected', 'returned'],
+      pending_admin:    ['paid', 'rejected', 'pending_manager'],
+      paid:            [],
+      rejected:        [],
+      returned:        [],
+    }
+    if (!VALID_TRANSITIONS[existingExpense.status]?.includes(updates.status as string)) {
+      return NextResponse.json({ error: `Cannot move from ${existingExpense.status} to ${updates.status}` }, { status: 409 })
+    }
+    if (updates.status === 'paid' && role !== 'admin') {
+      return NextResponse.json({ error: 'Only the boss can mark expenses as paid' }, { status: 403 })
+    }
   }
 
   const expense = await Expense.findByIdAndUpdate(params.id, updates, { returnDocument: 'after' })

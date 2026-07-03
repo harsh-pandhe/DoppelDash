@@ -868,13 +868,16 @@ export default function RMSPage() {
   const bulkAction = async (status: string) => {
     if (!selected.size) return
     setBulking(true)
-    await Promise.all(Array.from(selected).map(id =>
+    const results = await Promise.all(Array.from(selected).map(id =>
       fetch(`/api/rms/${id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
     ))
-    toast(`${selected.size} expense${selected.size > 1 ? 's' : ''} ${status === 'rejected' ? 'rejected' : 'approved'}`, status === 'rejected' ? 'error' : 'success')
+    const failed = results.filter(r => !r.ok).length
+    const okCount = results.length - failed
+    if (okCount > 0) toast(`${okCount} expense${okCount > 1 ? 's' : ''} ${status === 'rejected' ? 'rejected' : 'approved'}`, status === 'rejected' ? 'error' : 'success')
+    if (failed > 0) toast(`${failed} expense${failed > 1 ? 's' : ''} failed to update`, 'error')
     setSelected(new Set())
     setBulking(false)
     fetchExpenses()

@@ -121,12 +121,14 @@ function saveLayout(l: LayoutEntry[]) {
   try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(l)) } catch { /* quota */ }
 }
 
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
 const DATE_PRESETS = [
-  { label: 'Today',         fn: () => { const d = new Date().toISOString().slice(0,10); return { from: d, to: d } } },
-  { label: 'Last 7 days',   fn: () => { const t = new Date(); const f = new Date(t); f.setDate(f.getDate()-6); return { from: f.toISOString().slice(0,10), to: t.toISOString().slice(0,10) } } },
-  { label: 'This month',    fn: () => { const t = new Date(); return { from: new Date(t.getFullYear(), t.getMonth(), 1).toISOString().slice(0,10), to: t.toISOString().slice(0,10) } } },
-  { label: 'Last 3 months', fn: () => { const t = new Date(); const f = new Date(t); f.setMonth(f.getMonth()-3); return { from: f.toISOString().slice(0,10), to: t.toISOString().slice(0,10) } } },
-  { label: 'This year',     fn: () => { const t = new Date(); return { from: `${t.getFullYear()}-01-01`, to: t.toISOString().slice(0,10) } } },
+  { label: 'Today',         fn: () => { const d = ymd(new Date()); return { from: d, to: d } } },
+  { label: 'Last 7 days',   fn: () => { const t = new Date(); const f = new Date(t); f.setDate(f.getDate()-6); return { from: ymd(f), to: ymd(t) } } },
+  { label: 'This month',    fn: () => { const t = new Date(); return { from: ymd(new Date(t.getFullYear(), t.getMonth(), 1)), to: ymd(t) } } },
+  { label: 'Last 3 months', fn: () => { const t = new Date(); const f = new Date(t); f.setMonth(f.getMonth()-3); return { from: ymd(f), to: ymd(t) } } },
+  { label: 'This year',     fn: () => { const t = new Date(); return { from: `${t.getFullYear()}-01-01`, to: ymd(t) } } },
 ]
 
 const AVATAR_GRADIENTS = ['from-brand-400 to-brand-600','from-[#003B73] to-[#0057A8]','from-orange-400 to-red-500','from-emerald-400 to-green-600','from-pink-400 to-rose-500','from-cyan-400 to-teal-600']

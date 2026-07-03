@@ -3,6 +3,9 @@ import { writeAudit } from '@/lib/audit'
 import { getUser, updateUser, getUserById } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
+import type { UserRole } from '@/models/User'
+
+const VALID_ROLES: UserRole[] = ['admin', 'manager', 'employee']
 
 export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
   const { userId, user } = await getUser()
@@ -13,6 +16,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const body   = await req.json()
   const target = await getUserById(params.userId)
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (typeof body.role === 'string' && !VALID_ROLES.includes(body.role)) {
+    return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+  }
 
   const patch: Record<string, unknown> = {}
   if (Array.isArray(body.permissions))        patch.permissions = body.permissions

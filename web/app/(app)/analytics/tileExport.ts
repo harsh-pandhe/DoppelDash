@@ -3,7 +3,11 @@
  * html2canvas is lazy-imported only when a PNG export actually runs (keeps it out of the main bundle).
  */
 
-const csvCell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+const csvCell = (v: unknown) => {
+  let s = String(v ?? '')
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`
+  return `"${s.replace(/"/g, '""')}"`
+}
 const toCsv = (rows: (string | number)[][]) => rows.map(r => r.map(csvCell).join(',')).join('\n')
 
 function download(blob: Blob, filename: string) {

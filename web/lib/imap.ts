@@ -1,8 +1,8 @@
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
-import sanitizeHtml from 'sanitize-html'
 import { connectDB } from '@/lib/db'
 import InboxMessage from '@/models/InboxMessage'
+import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
 
 export interface EmailMessage {
   uid: number
@@ -80,21 +80,6 @@ export async function fetchEmailsSince(since: Date, lastUid: number): Promise<Em
 const INBOX_MAILBOX = 'INBOX'
 const MAX_PER_SYNC = 40 // cap work per poll so a serverless invocation stays under timeout
 
-function sanitizeBody(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'span']),
-    allowedAttributes: {
-      a: ['href', 'name', 'target', 'rel'],
-      img: ['src', 'alt', 'width', 'height'],
-      '*': ['style'],
-    },
-    allowedSchemes: ['https', 'http', 'mailto', 'data', 'cid'],
-    transformTags: {
-      a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' }),
-    },
-  })
-}
-
 export interface SyncResult {
   synced: number
   skipped: number
@@ -152,45 +137,70 @@ export async function syncInbox(): Promise<SyncResult> {
         if (synced >= MAX_PER_SYNC) break
         if (!msg.source) { skipped++; continue }
 
-        const parsed = await simpleParser(msg.source)
-        const fromAddr = parsed.from?.value?.[0]
-        const toList = Array.isArray(parsed.to)
-          ? parsed.to.flatMap(t => t.value.map(v => v.address || ''))
-          : (parsed.to?.value?.map(v => v.address || '') ?? [])
-        const text = parsed.text || ''
-        const rawHtml = typeof parsed.html === 'string' ? parsed.html : ''
-        const html = rawHtml ? sanitizeBody(rawHtml) : ''
-        const snippet = (text || rawHtml.replace(/<[^>]+>/g, ' '))
-          .replace(/\s+/g, ' ').trim().slice(0, 200)
+        try {
+          const parsed = await simpleParser(msg.source)
+          const fromAddr = parsed.from?.value?.[0]
+          const toList = Array.isArray(parsed.to)
+            ? parsed.to.flatMap(t => t.value.map(v => v.address || ''))
+            : (parsed.to?.value?.map(v => v.address || '') ?? [])
+          const text = parsed.text || ''
+          const rawHtml = typeof parsed.html === 'string' ? parsed.html : ''
+          const html = rawHtml ? sanitizeMailHtml(rawHtml) : ''
+          const snippet = (text || rawHtml.replace(/<[^>]+>/g, ' '))
+            .replace(/\s+/g, ' ').trim().slice(0, 200)
 
-        await InboxMessage.updateOne(
-          { mailbox: INBOX_MAILBOX, uid: msg.uid },
-          {
-            $set: {
-              mailbox:     INBOX_MAILBOX,
-              uid:         msg.uid,
-              messageId:   parsed.messageId,
-              fromName:    fromAddr?.name || '',
-              fromAddress: (fromAddr?.address || 'unknown@unknown').toLowerCase(),
-              toAddresses: toList.filter(Boolean),
-              subject:     parsed.subject || '(no subject)',
-              snippet,
-              text,
-              html,
-              date:        parsed.date || new Date(),
-              seen:        msg.flags?.has('\\Seen') ?? false,
-              attachments: (parsed.attachments || []).map(a => ({
-                filename:    a.filename || 'attachment',
-                contentType: a.contentType || 'application/octet-stream',
-                size:        a.size || 0,
-              })),
-              syncedAt:    new Date(),
+          await InboxMessage.updateOne(
+            { mailbox: INBOX_MAILBOX, uid: msg.uid },
+            {
+              $set: {
+                mailbox:     INBOX_MAILBOX,
+                uid:         msg.uid,
+                messageId:   parsed.messageId,
+                fromName:    fromAddr?.name || '',
+                fromAddress: (fromAddr?.address || 'unknown@unknown').toLowerCase(),
+                toAddresses: toList.filter(Boolean),
+                subject:     parsed.subject || '(no subject)',
+                snippet,
+                text,
+                html,
+                date:        parsed.date || new Date(),
+                seen:        msg.flags?.has('\\Seen') ?? false,
+                attachments: (parsed.attachments || []).map(a => ({
+                  filename:    a.filename || 'attachment',
+                  contentType: a.contentType || 'application/octet-stream',
+                  size:        a.size || 0,
+                })),
+                syncedAt:    new Date(),
+              },
+              $setOnInsert: { readByApp: false },
             },
-            $setOnInsert: { readByApp: false },
-          },
-          { upsert: true },
-        )
-        synced++
+            { upsert: true },
+          )
+          synced++
+        } catch (err) {
+          console.error(`syncInbox: failed to process uid ${msg.uid}`, err)
+          // Store a minimal stub so this UID counts as "handled" and sinceUid
+          // (derived from the max stored uid) advances past it next poll —
+          // otherwise a single poisoned message would block all newer mail forever.
+          await InboxMessage.updateOne(
+            { mailbox: INBOX_MAILBOX, uid: msg.uid },
+            {
+              $set: {
+                mailbox:  INBOX_MAILBOX,
+                uid:      msg.uid,
+                subject:  '(failed to parse message)',
+                syncedAt: new Date(),
+              },
+              $setOnInsert: {
+                fromName: '', fromAddress: 'unknown@unknown', toAddresses: [],
+                snippet: '', text: '', html: '', date: new Date(),
+                seen: false, attachments: [], readByApp: false,
+              },
+            },
+            { upsert: true },
+          ).catch(e => console.error(`syncInbox: failed to store stub for uid ${msg.uid}`, e))
+          skipped++
+        }
       }
     } finally {
       lock.release()

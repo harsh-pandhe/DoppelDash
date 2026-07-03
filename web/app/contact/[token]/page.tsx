@@ -1,5 +1,5 @@
 // Public contact card — no auth required.
-// Accessible via /contact/[id] or via QR. Queries DB directly (no HTTP hop).
+// Accessible via /contact/[token] (random share token) or via QR. Queries DB directly (no HTTP hop).
 import { Mail, Phone, Building2, Building, Download } from 'lucide-react'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
@@ -10,10 +10,11 @@ interface PublicContact {
   tags?: string[]; website?: string
 }
 
-async function getContact(id: string): Promise<PublicContact | null> {
+async function getContact(token: string): Promise<PublicContact | null> {
   try {
     await connectDB()
-    const doc = await Contact.findById(id,
+    const doc = await Contact.findOne(
+      { shareToken: token, shareTokenExpiresAt: { $gt: new Date() } },
       'name email phone company designation photo tags'
     ).lean()
     if (!doc) return null
@@ -31,8 +32,8 @@ async function getContact(id: string): Promise<PublicContact | null> {
   } catch { return null }
 }
 
-export default async function PublicContactPage({ params }: { params: { id: string } }) {
-  const contact = await getContact(params.id)
+export default async function PublicContactPage({ params }: { params: { token: string } }) {
+  const contact = await getContact(params.token)
   if (!contact) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-[#e8f0fa] p-4">

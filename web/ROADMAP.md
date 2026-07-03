@@ -11,6 +11,7 @@ Single source of truth. All prior phase plans deleted.
 - ✅ Phase 13 (audit hardening — pagination + full color map)
 - 🎉 **All roadmap phases 8–13 + remaining large features shipped.** Dark mode ✅ + IMAP inbox ✅ done (2026-06-25). Only backlog left = extra chart types (donut/bar already sufficient).
 - ⚠️ **Prod DB migration required** after deploying 10A/11E/11F (see bottom).
+- ✅ **Full-app audit + fixes done (2026-07-03)** — static checks clean, code-level review across every module found 2 IDORs + 2 missing approval-state-machines + 10 more real bugs/hardening gaps; all fixed same-day (sonnet-5-high), re-verified tsc+lint+build clean after. See **Phase 14** below. One low-priority perf item deferred; two prod-verification checks flagged for next session.
 
 ---
 
@@ -183,6 +184,59 @@ Standard to apply to every dialog:
 - [x] `boss` audit refs → `admin` (10A sweep; performedByName fallbacks now 'Admin')
 - [x] Pagination — API returns `{logs,total,hasMore}` w/ `skip`/`limit` (PAGE_SIZE 50); "Load more" button on page
 - [x] Action color map expanded — all `travel.*`, `expense.returned_*/pending_manager/resubmitted/withdrawn/deleted`, `user.mail_access_changed/permissions/privileges/reporting_manager`; `travel` added to type filter (maps to `travel_request` targetType in API)
+
+---
+
+## Phase 14 — Full-App Audit (2026-07-03) ✅ FIXES DONE (2026-07-03, same day, sonnet-5-high)
+
+**Method:** installed deps fresh, ran `tsc --noEmit` + `next lint` + `next build` (all exit 0, clean — no type errors, no lint errors, only 7 pre-existing `<img>`/hook-dep warnings, build produces all routes). Then 5 parallel code-reading audits covering every module found the items below. All 🔴 and 🟠 items then fixed same-day in 5 parallel fix passes; re-ran `tsc` + `lint` + `next build` clean after — zero new errors/warnings, all routes (incl. renamed `/contact/[token]`) compile.
+
+### 🔴 Security — all fixed
+
+- [x] **14A CRM contact share link is guessable + never expires + can't be revoked** — FIXED: `models/Contact.ts` gained `shareToken`/`shareTokenExpiresAt` (random hex, 30-day TTL, regenerate/revoke). `api/crm/[id]/share/route.ts` rewritten (GET reuse-or-issue, POST regenerate, DELETE revoke). Public page moved `app/contact/[id]` → `app/contact/[token]/page.tsx`, looks up by token not `_id`. `ShareQRDialog` in `crm/[id]/page.tsx` now fetches the token live instead of embedding the raw ID.
+- [x] **14B CRM contact PATCH/DELETE allow any viewer to edit/delete, not just the owner** — FIXED: `api/crm/[id]/route.ts` PATCH/DELETE now filter on `createdBy === userId` OR admin; GET keeps the original broader visibility filter.
+- [x] **14C RMS has no approval state machine at all** — FIXED: `api/rms/[id]/route.ts` gained a `VALID_TRANSITIONS` map mirroring travel's (`pending_manager→[pending_admin,rejected,returned]`, `pending_admin→[paid,rejected,pending_manager]`, terminal `paid`/`rejected`/`returned`), admin-only gate on `paid`. Employee `returned`-only edit window untouched.
+- [x] **14D LMS has no approval state machine at all** — FIXED: `api/lms/[id]/route.ts` now validates `pending → approved|rejected` only (409 on re-transition); existing withdraw-while-pending flow untouched.
+- [x] **14E Earned-leave cap + balance never enforced server-side on approval** — FIXED: `api/lms/route.ts` POST now sums approved+pending days per capped type/year against entitlement before allowing submission; `api/lms/[id]/route.ts` PATCH re-checks on approval (409 if it would exceed balance). `lwp` stays uncapped, matching existing balance-route convention.
+- [x] **14F Medical-leave doc requirement (>2 days) is client-only** — FIXED: `api/lms/route.ts` POST now replicates the client's `sick && days>2 && no medicalDocs` check server-side (400).
+- [x] **14G CSV/formula injection in exports** — FIXED: `lib/export.ts` `esc()` and `analytics/tileExport.ts` `csvCell()` both prepend `'` to string cells starting with `=+-@`/tab/CR; numeric fields (all callers verified to pass real `number`, not strings) are untouched so legitimate negative amounts render correctly.
+- [x] **14H Hardcoded JWT fallback secret** — FIXED: `lib/auth/jwt.ts` now mirrors `lib/encrypt.ts`'s `getKey()` pattern — throws if `JWT_SECRET` unset in production, dev-only fallback preserved.
+- [x] **14I `/api/dev/migrate` missing the `ALLOW_DEV_SEED` double-gate** — FIXED: added the identical `ALLOW_DEV_SEED==='true'` + secret gate that `/api/dev/seed` already had.
+- [x] **14J `lib/imap.ts` inbound-HTML sanitizer allows `style` on all tags** — FIXED: `'style'` dropped from the `'*'` wildcard attribute allowlist (extracted into shared `lib/sanitizeHtml.ts`).
+- [x] **14K Announcement body sent as email HTML with no server-side sanitization** — FIXED: new shared `lib/sanitizeHtml.ts` (`sanitizeMailHtml`, same config as IMAP ingest) now runs on announcement `body` in both the create (`api/announcements/route.ts`) and edit (`api/announcements/[id]/route.ts`) handlers before persisting.
+- [x] Minor/low batch — FIXED: scanned-card `imageData` server-side size cap (1.5MB) added; OTP resend no longer resets the attempt counter while a still-valid code exists (`lib/auth/otp.ts`); `api/admin/users/[userId]` PATCH now validates `role` against the real enum; dead `x-user-id`/`x-user-role`/`x-user-name` header injection deleted from `middleware.ts` (confirmed nothing read them).
+
+### 🟠 Bugs — all fixed except one deferred
+
+- [x] **14L `lib/imap.ts` — one malformed inbound email permanently stalls inbox sync.** FIXED: per-message parse+upsert wrapped in try/catch; a failed message now gets a minimal stub row logged with its UID so `sinceUid` advances past it instead of retrying forever.
+- [x] **14M CRM reminders have no "already seen" flag or lower bound** — FIXED: `Contact.reminderDismissedAt` added, GET excludes dismissed reminders, new dismiss PATCH added on `api/crm/reminders/route.ts` (not yet wired to a UI button — the existing "Clear reminder" action already covers the common case by nulling `reminderDate` directly).
+- [x] **14N Reports date presets computed in UTC, not local IST** — FIXED: `app/(app)/reports/page.tsx` now builds `YYYY-MM-DD` from local `getFullYear()/getMonth()/getDate()` via a `ymd()` helper across all 5 presets.
+- [x] **CSV import + campaign send now batched** — FIXED (2026-07-03, opus): CSV import (`app/(app)/crm/page.tsx`) processes rows in batches of 15; campaign send (`api/crm/campaign/route.ts`) sends in batches of 20 with a 250ms pause between batches so a large tag segment no longer opens hundreds of simultaneous SMTP connections.
+
+### 🧹 Data reset (2026-07-03)
+- [x] **Wiped to just-admin + real reference data** — new secret-gated `api/dev/reset-to-admin/route.ts` (same `ALLOW_DEV_SEED`+secret gating as seed; refuses to run if no admin exists). Keeps `role:'admin'` user(s) + their Employee profile / LeaveBalance / passkeys / email config / outlook token, all PublicHolidays, all OrgSettings; wipes every non-admin user + all leaves/expenses/travel/contacts/scanned-cards/announcements/audit/inbox/campaign-logs/mail-drafts/sync-state.
+- [x] **Local DB done** — `mongodb://localhost:27017/doppeldash` reset: 1 admin (`harshpandhehome@gmail.com`) + its profile/balance + 42 holidays remain; 10 fake users + 15 leaves + 12 expenses + 7 travel + 8 contacts + 5 announcements + 80 audit + 91 inbox all deleted.
+- [ ] **Prod Atlas — user to run tomorrow:** deploy, then `POST /api/dev/reset-to-admin?secret=<DEV_SEED_SECRET>` against the live app (needs `ALLOW_DEV_SEED=true` in Netlify env). Then add managers/employees by hand.
+
+### ✅ Verified correct (called out by name so nobody re-litigates)
+
+- Scan Card OCR pipeline (Gemini→Ollama fallback, rate-limited, no unhandled rejections) — matches ROADMAP 11C claim.
+- Campaign send is server-side role/mailAccess gated, not just UI-hidden — matches 11D claim.
+- `analytics/share` / `analytics/shared/[token]` — proper random token + expiry + owner-scoped revoke; use as the template for fixing 14A.
+- Role-aware global search (`api/search`) — genuinely scoped inside the Mongo query server-side, not post-filtered client-side.
+- MoM/YoY analytics comparison math — internally consistent, no off-by-one or leap-year bug.
+- Branded exporters (`lib/export.ts`) handle empty datasets without crashing.
+- Cron routes (`announcements`/`birthday`/`onboarding`) all fail closed on missing/wrong `CRON_SECRET`.
+- IMAP credentials never reach the client bundle or logs; inbox route still has `runtime='nodejs'` + `maxDuration=60` (236d302 fix intact, no regression).
+- `InboxMessage` upsert correctly uses its unique `{mailbox,uid}` index — no duplicate rows on repeat sync.
+- Every LMS/RMS/Travel `[id]` route correctly scopes employee reads/writes to their own `userId` — **no IDOR found on the leave/expense/travel detail routes** (the IDOR issues are CRM-specific, see 14A/14B).
+- `/api/dev/seed` double-gate (`ALLOW_DEV_SEED` + secret) intact and effective — prior hardening (4a29be1) holds.
+- Audit log pagination clamps `limit`/`skip` server-side, matches client `PAGE_SIZE=50` — no DoS via huge `limit`.
+- Every approve/reject/withdraw/delete transition across LMS/RMS/Travel writes an audit entry with actor+timestamp — no silent-skip found.
+
+- [x] **UI error-surfacing gap (found while closing out this phase):** LMS `handleAction`/`bulkAction` and RMS `bulkAction` (`app/(app)/lms/page.tsx`, `app/(app)/rms/page.tsx`) never checked `res.ok` — a manager hitting the new 409 from 14C/14D would still see a false "approved" success toast. FIXED: all three now check response status and show a per-item failure count on error.
+
+**Remaining for next session (needs a schema/data-migration decision, holding for opus review):** existing CRM contacts created before 14A has no `shareToken` yet — first share-link request per contact will silently issue one on demand (handled in the GET path), so no manual migration is strictly required, but worth a prod sanity-check after deploy that old shared links (bookmarked `/contact/<raw-_id>` URLs) now correctly 404 instead of silently still working — confirm nothing depends on the old URL shape still resolving.
 
 ---
 
