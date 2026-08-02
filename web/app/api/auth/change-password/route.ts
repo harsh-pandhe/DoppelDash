@@ -16,8 +16,11 @@ export async function POST(req: NextRequest) {
   const user = await User.findById(userId)
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // If not first-login, verify current password
-  if (!user.mustChangePassword && currentPassword) {
+  // If not first-login, current password is mandatory and must verify —
+  // omitting it must never bypass the check (that would let any live
+  // session change the password with no re-auth).
+  if (!user.mustChangePassword) {
+    if (!currentPassword) return NextResponse.json({ error: 'Current password required' }, { status: 400 })
     const ok = await user.checkPassword(currentPassword)
     if (!ok) return NextResponse.json({ error: 'Current password incorrect' }, { status: 401 })
   }

@@ -68,7 +68,13 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       })
-      if (!res.ok) { toast('Failed — try opening the item', 'error'); return }
+      if (!res.ok) {
+        // Surface the server's reason — a self-approval block or a stale state
+        // transition is actionable, "try opening the item" is not.
+        const reason = await res.json().then(d => d?.error).catch(() => null)
+        toast(reason || 'Failed — try opening the item', 'error')
+        return
+      }
       setHidden(p => new Set(p).add(item.id))
       toast(
         action === 'approve' ? `${KIND_META[item.kind].label} approved` :

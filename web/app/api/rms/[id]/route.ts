@@ -4,6 +4,9 @@ import Expense from '@/models/Expense'
 import { writeAudit } from '@/lib/audit'
 import { getUserEmail, emailExpenseStatusChanged, emailExpensePendingPayout } from '@/lib/email'
 import { getUser, listUsers } from '@/lib/auth'
+import { pick } from '@/lib/pick'
+import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
+import { EXPENSE_CREATE_FIELDS, EXPENSE_REVIEW_FIELDS } from '@/lib/apiFields'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user } = await getUser()
@@ -33,11 +36,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = await req.json()
-  const updates: Record<string, unknown> = { ...body }
+  // Whitelist by role — an employee resubmitting must not be able to inject
+  // userId/approvedBy/paidBy, and an approver must not be able to edit amounts.
+  const updates: Record<string, unknown> = role === 'employee'
+    ? pick(body, EXPENSE_CREATE_FIELDS)
+    : pick(body, EXPENSE_REVIEW_FIELDS)
+
+  // Reviewers also approve/reject individual line items via a positional path
+  // (`lineItems.3.status`). Allowed explicitly — the generic whitelist can't
+  // express it, and a blanket dotted-key pass would reopen mass-assignment.
+  let touchedLineItems = false
+  if (role !== 'employee') {
+    for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
+      if (/^lineItems\.\d+\.status$/.test(key) && (value === 'approved' || value === 'rejected')) {
+        updates[key] = value
+        touchedLineItems = true
+      }
+    }
+  }
+
+  let selfApproved = false
+  // Per-line-item approval is an approval decision too — same separation of
+  // duties as a whole-expense transition, or it becomes the obvious bypass.
+  if (touchedLineItems) {
+    const check = selfApprovalCheck(userId, role, existingExpense.userId)
+    if (check.blocked) return NextResponse.json({ error: SELF_APPROVAL_ERROR }, { status: 403 })
+    selfApproved = check.selfApproved
+  }
+
   if (role === 'employee') {
     updates.status = 'pending_manager'
-    delete updates.managerNote
-    delete updates.adminNote
   } else if (updates.status !== undefined) {
     const VALID_TRANSITIONS: Record<string, string[]> = {
       pending_manager: ['pending_admin', 'rejected', 'returned'],
@@ -52,6 +80,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (updates.status === 'paid' && role !== 'admin') {
       return NextResponse.json({ error: 'Only the boss can mark expenses as paid' }, { status: 403 })
     }
+    const check = selfApprovalCheck(userId, role, existingExpense.userId)
+    if (check.blocked) return NextResponse.json({ error: SELF_APPROVAL_ERROR }, { status: 403 })
+    selfApproved = check.selfApproved
   }
 
   const expense = await Expense.findByIdAndUpdate(params.id, updates, { returnDocument: 'after' })
@@ -59,11 +90,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const actorName = user?.fullName || user?.firstName || 'Manager'
 
-  const auditAction = role === 'employee' && updates.status === 'pending_manager'
+  const baseAction = role === 'employee' && updates.status === 'pending_manager'
     ? 'expense.resubmitted'
     : updates.status === 'pending_manager' ? 'expense.returned_to_manager'
     : updates.status === 'returned' ? 'expense.returned_to_employee'
     : `expense.${updates.status}`
+  const auditAction = selfApproved ? `${baseAction}.self_approved` : baseAction
 
   writeAudit({
     action:          auditAction,
@@ -71,7 +103,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'expense',
-    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote },
+    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote, ...(selfApproved ? { selfApproved: true } : {}) },
   })
 
   // Notify boss(es) when manager approves (pending_admin)

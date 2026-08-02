@@ -24,7 +24,7 @@ export default function SignInPage() {
   const [password,   setPassword]   = useState('')
   const [showPwd,    setShowPwd]    = useState(false)
   const [otp,        setOtp]        = useState(['','','','','',''])
-  const [userId,     setUserId]     = useState('')
+  const [preAuthToken, setPreAuthToken] = useState('')
   const [firstName,  setFirstName]  = useState('')
   const [methods,      setMethods]      = useState<VerifyMethod[]>(['email'])
   const [verifyMethod, setVerifyMethod] = useState<VerifyMethod>('email')
@@ -61,7 +61,7 @@ export default function SignInPage() {
       const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); return }
-      setUserId(data.userId); setFirstName(data.firstName)
+      setFirstName(data.firstName); setPreAuthToken(data.preAuthToken || '')
       const m: VerifyMethod[] = Array.isArray(data.methods) && data.methods.length ? data.methods : ['email']
       setMethods(m)
       setVerifyMethod(m[0])
@@ -85,7 +85,7 @@ export default function SignInPage() {
       const verRes  = await fetch('/api/auth/passkey/login', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: optData.userId, response: assertion }) })
       const verData = await verRes.json()
       if (!verRes.ok) { setError(verData.error || 'Passkey verification failed'); return }
-      if (verData.mustChangePassword) { setUserId(optData.userId); setStep('change-password'); return }
+      if (verData.mustChangePassword) { setStep('change-password'); return }
       await routeAfterAuth()
     } catch (err) {
       // NotAllowedError = user dismissed the browser prompt — not a real failure
@@ -98,7 +98,7 @@ export default function SignInPage() {
   const requestEmailOtp = async () => {
     setError(''); setLoading(true)
     try {
-      const res = await fetch('/api/auth/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId }) })
+      const res = await fetch('/api/auth/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ preAuthToken }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Could not send code'); return }
       setEmailSent(true)
@@ -124,7 +124,7 @@ export default function SignInPage() {
   const submitOTPDirect = async (code: string) => {
     setError(''); setLoading(true)
     try {
-      const res  = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId, otp: code, method: verifyMethod }) })
+      const res  = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ preAuthToken, otp: code, method: verifyMethod }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Invalid OTP'); setOtp(['','','','','','']); otpRefs.current[0]?.focus(); return }
       if (data.mustChangePassword) { setStep('change-password'); return }

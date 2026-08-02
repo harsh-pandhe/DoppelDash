@@ -5,6 +5,9 @@ import LeaveBalance from '@/models/LeaveBalance'
 import { writeAudit } from '@/lib/audit'
 import { getUserEmail, emailLeaveStatusChanged } from '@/lib/email'
 import { getUser } from '@/lib/auth'
+import { pick } from '@/lib/pick'
+import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
+import { LEAVE_REVIEW_FIELDS } from '@/lib/apiFields'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
@@ -32,6 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const existingLeave = await Leave.findById(params.id)
   if (!existingLeave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  let selfApproved = false
   if (body.status !== undefined && body.status !== existingLeave.status) {
     const VALID_TRANSITIONS: Record<string, string[]> = {
       pending:  ['approved', 'rejected'],
@@ -41,6 +45,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!VALID_TRANSITIONS[existingLeave.status]?.includes(body.status)) {
       return NextResponse.json({ error: `Cannot move from ${existingLeave.status} to ${body.status}` }, { status: 409 })
     }
+
+    const check = selfApprovalCheck(userId, role, existingLeave.userId)
+    if (check.blocked) return NextResponse.json({ error: SELF_APPROVAL_ERROR }, { status: 403 })
+    selfApproved = check.selfApproved
 
     if (body.status === 'approved' && existingLeave.type in DEFAULTS) {
       const type = existingLeave.type as keyof typeof DEFAULTS
@@ -65,7 +73,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const leave = await Leave.findByIdAndUpdate(
     params.id,
-    { ...body, approvedBy: userId },
+    {
+      ...pick(body, LEAVE_REVIEW_FIELDS),
+      // Only an approval records an approver — a rejection must not look approved.
+      ...(body.status === 'approved' ? { approvedBy: userId } : {}),
+    },
     { returnDocument: 'after' }
   )
   if (!leave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -73,12 +85,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const actorName = user?.fullName || user?.firstName || 'Manager'
 
   writeAudit({
-    action:          `leave.${body.status}`,
+    action:          selfApproved ? `leave.${body.status}.self_approved` : `leave.${body.status}`,
     performedBy:     userId,
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'leave',
-    metadata:        { status: body.status, employeeName: leave.userName, days: leave.days, note: body.managerNote },
+    metadata:        { status: body.status, employeeName: leave.userName, days: leave.days, note: body.managerNote, ...(selfApproved ? { selfApproved: true } : {}) },
   })
 
   if (body.status === 'approved' || body.status === 'rejected') {

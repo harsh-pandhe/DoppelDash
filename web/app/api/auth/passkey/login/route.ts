@@ -5,7 +5,7 @@ import { rateLimit } from '@/lib/ratelimit'
 /** Get authentication options for a passkey sign-in (public, by email). */
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  if (!rateLimit(`pk-login:${ip}`, 10, 60_000)) {
+  if (!(await rateLimit(`pk-login:${ip}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts — wait 1 minute' }, { status: 429 })
   }
 
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest) {
   const { userId, response } = await req.json()
   if (!userId || !response) return NextResponse.json({ error: 'userId and response required' }, { status: 400 })
 
-  if (!rateLimit(`pk-verify:${userId}`, 10, 60_000)) {
+  if (!(await rateLimit(`pk-verify:${userId}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts' }, { status: 429 })
   }
 

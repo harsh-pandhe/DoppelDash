@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
 
   if (!notifications?.length) return NextResponse.json({ ok: true })
 
-  const expectedSecret = process.env.OUTLOOK_WEBHOOK_SECRET || 'doppeldash-secret'
+  // No fallback — clientState is this endpoint's only auth. A hardcoded
+  // default (present in the public repo) would let anyone forge notifications.
+  const expectedSecret = process.env.OUTLOOK_WEBHOOK_SECRET
+  if (!expectedSecret) return NextResponse.json({ ok: true })
 
   await connectDB()
 

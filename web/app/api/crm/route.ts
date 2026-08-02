@@ -4,6 +4,15 @@ import Contact from '@/models/Contact'
 import { sanitize } from '@/lib/sanitize'
 import { encryptContact, decryptContact } from '@/lib/encrypt'
 import { getUser } from '@/lib/auth'
+import { pick } from '@/lib/pick'
+
+// createdBy is derived server-side. shareToken/shareTokenExpiresAt are issued
+// only by the share route, and isEmployee/employeeClerkId only by directory sync.
+const CONTACT_CREATE_FIELDS = [
+  'name', 'email', 'phone', 'company', 'designation', 'gender', 'caste', 'religion',
+  'notes', 'tags', 'projects', 'photo', 'birthday', 'anniversary',
+  'reminderDate', 'reminderNote', 'timeline', 'visibility', 'sharedWith', 'colorLabel',
+] as const
 
 export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
@@ -48,7 +57,9 @@ export async function POST(req: NextRequest) {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
-  const raw  = sanitize(await req.json())
+  // sanitize() only strips $-operators — it does not whitelist, so pick() is
+  // what stops a client seeding its own shareToken or faking isEmployee.
+  const raw  = pick(sanitize(await req.json()), CONTACT_CREATE_FIELDS)
   const body = encryptContact(raw as Record<string, unknown>)
   const contact = await Contact.create({ ...body, createdBy: userId })
   return NextResponse.json(decryptContact(contact.toObject()), { status: 201 })

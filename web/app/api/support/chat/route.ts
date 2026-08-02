@@ -20,10 +20,21 @@ Rules:
 - NEVER give out actual passwords, verification codes, or any credentials.
 - If asked about something unrelated to IT support (politics, code, etc.), politely redirect: "I'm here for DoppelDash login and access help only."`
 
+const MAX_TURNS = 12
+const MAX_CHARS = 800
+const IT_FALLBACK = "Our assistant is busy right now. Please email IT-NaviMumbai@doppelmayr.com and the team will help you sign in."
+
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  if (!rateLimit(`support:${ip}`, 15, 60_000)) {
+  if (!(await rateLimit(`support:${ip}`, 8, 60_000))) {
     return NextResponse.json({ error: 'Too many messages — wait a minute.' }, { status: 429 })
+  }
+
+  // This endpoint is unauthenticated by design (pre-login IT help), so per-IP
+  // limits alone don't bound spend — a distributed caller trivially sidesteps
+  // them. A global daily ceiling caps worst-case Gemini cost.
+  if (!(await rateLimit('support:global', 2000, 24 * 60 * 60_000))) {
+    return NextResponse.json({ text: IT_FALLBACK })
   }
 
   const apiKey = process.env.GEMINI_API_KEY
@@ -34,18 +45,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'messages required' }, { status: 400 })
   }
 
-  // Cap context to last 12 turns and strip any unsupported fields.
+  // Reject oversized input rather than silently truncating it — validate before
+  // spending an API call, not after.
+  if (messages.length > MAX_TURNS) {
+    return NextResponse.json({ error: `Conversation too long — max ${MAX_TURNS} messages.` }, { status: 400 })
+  }
+  if (messages.some(m => typeof m?.text !== 'string' || m.text.length > MAX_CHARS)) {
+    return NextResponse.json({ error: `Each message must be text under ${MAX_CHARS} characters.` }, { status: 400 })
+  }
+
   // Gemini expects `contents` to be an array of objects with `parts` only.
-  const trimmed = messages.slice(-12).map(m => ({
-    parts: [{ text: `${m.role === 'user' ? 'User:' : 'Assistant:'} ${m.text.slice(0, 800)}` }],
+  const trimmed = messages.map(m => ({
+    parts: [{ text: `${m.role === 'user' ? 'User:' : 'Assistant:'} ${m.text}` }],
   }))
 
   try {
     const res  = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
       {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // Key in a header, not the query string — URLs land in proxy/CDN logs.
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body:    JSON.stringify({
           contents: trimmed,
           systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },

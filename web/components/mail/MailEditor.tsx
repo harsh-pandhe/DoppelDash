@@ -24,6 +24,7 @@ import { Tooltip } from '@/components/ui/tooltip'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 interface Props {
   value?: string
@@ -37,8 +38,9 @@ interface Props {
 
 /* ── Image helpers ─────────────────────────────────────────── */
 
-// Compress to a data-URI so the image lives inside the HTML itself —
-// works in device preview, clipboard rich-copy, and server SMTP send.
+// Fallback only (Cloudinary not configured): compress to a data-URI so the
+// image lives inside the HTML itself. Works everywhere but bloats every
+// recipient's copy of a mass-send — insertImage() prefers a hosted URL.
 function fileToDataUri(file: File, maxKB = 350): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new window.Image()
@@ -382,8 +384,17 @@ export default function MailEditor({
   if (!editor) return null
 
   const insertImage = async (file: File) => {
-    const dataUri = await fileToDataUri(file)
-    editor.chain().focus().setImage({ src: dataUri, alt: file.name }).run()
+    // Prefer a hosted Cloudinary URL — a data URI gets embedded in the HTML
+    // of every recipient's copy, which bloats a mass-send and instantly blows
+    // the mailto: character cap. Fall back to inline base64 only if
+    // Cloudinary isn't configured, so this still works without it.
+    try {
+      const url = await uploadToCloudinary(file)
+      editor.chain().focus().setImage({ src: url, alt: file.name }).run()
+    } catch {
+      const dataUri = await fileToDataUri(file)
+      editor.chain().focus().setImage({ src: dataUri, alt: file.name }).run()
+    }
   }
 
   const btn = (key: string, Icon: React.ElementType, title: string, action: () => void, active = false, disabledBtn = false) => (

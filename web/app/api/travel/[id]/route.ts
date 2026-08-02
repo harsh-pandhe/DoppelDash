@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/db'
 import TravelRequest from '@/models/TravelRequest'
 import { writeAudit } from '@/lib/audit'
 import { getUser, listUsers } from '@/lib/auth'
+import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
 import {
   getUserEmail,
   emailTravelForwardedToBoss,
@@ -52,6 +53,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Only the boss can approve at this stage' }, { status: 403 })
   }
 
+  const check = selfApprovalCheck(userId, role, tr.userId)
+  if (check.blocked) return NextResponse.json({ error: SELF_APPROVAL_ERROR }, { status: 403 })
+  const selfApproved = check.selfApproved
+
   tr.status = status
   if (managerNote !== undefined) tr.managerNote = managerNote
   if (adminNote    !== undefined) tr.adminNote    = adminNote
@@ -60,12 +65,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   await tr.save()
 
   writeAudit({
-    action:          `travel.${status}`,
+    action:          selfApproved ? `travel.${status}.self_approved` : `travel.${status}`,
     performedBy:     userId,
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'travel_request',
-    metadata:        { employeeName: tr.userName, destination: tr.destination, amount: tr.estimatedTotal, note: managerNote || adminNote },
+    metadata:        { employeeName: tr.userName, destination: tr.destination, amount: tr.estimatedTotal, note: managerNote || adminNote, ...(selfApproved ? { selfApproved: true } : {}) },
   })
 
   // Notifications (fire-and-forget)

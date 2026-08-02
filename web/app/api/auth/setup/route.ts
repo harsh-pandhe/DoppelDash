@@ -20,7 +20,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { secret, email, password, firstName, lastName } = body
 
-  const expectedSecret = process.env.SETUP_SECRET || 'CHANGE_THIS_SECRET'
+  const expectedSecret = process.env.SETUP_SECRET
+  if (!expectedSecret) {
+    // No fallback — a hardcoded default here would let anyone create the
+    // first admin account on a freshly deployed, not-yet-configured prod.
+    return NextResponse.json({ error: 'Setup is not configured' }, { status: 503 })
+  }
   if (secret !== expectedSecret) {
     return NextResponse.json({ error: 'Invalid setup secret' }, { status: 403 })
   }

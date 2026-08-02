@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/toast'
 import { ErrorState } from '@/components/ui/error-state'
 import { useUser } from '@/lib/useUser'
 import SecuritySettings from '@/components/SecuritySettings'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 interface Employee {
   _id: string
@@ -114,13 +115,12 @@ export default function ProfilePage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const fd = new FormData(); fd.append('file', file)
     setSaving(true)
     try {
-      const up = await fetch('/api/upload', { method: 'POST', body: fd })
-      const d  = await up.json()
-      if (!d.url) { toast('Photo upload failed', 'error'); return }
-      await patch({ photo: d.url })
+      const url = await uploadToCloudinary(file)
+      await patch({ photo: url })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Photo upload failed', 'error')
     } finally { setSaving(false); e.target.value = '' }
   }
 

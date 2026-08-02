@@ -20,6 +20,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/moda
 import { useUrlState } from '@/lib/useUrlState'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 import { brandedCSV, fmtDate } from '@/lib/export'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 interface ExpenseLineItem {
   _id?: string; description: string; amount: number; date: string
@@ -167,11 +168,12 @@ function NewExpenseDialog({
 
   const uploadLineReceipt = async (i: number, file: File) => {
     setLineUploading(i)
-    const fd = new FormData(); fd.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const d = await res.json()
-    if (d.url) updateLine(i, 'receiptUrl', d.url)
-    setLineUploading(null)
+    try {
+      const url = await uploadToCloudinary(file)
+      updateLine(i, 'receiptUrl', url)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Receipt upload failed', 'error')
+    } finally { setLineUploading(null) }
   }
 
   const handleFilePicked = useCallback(async (files: File[]) => {

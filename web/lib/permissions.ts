@@ -28,6 +28,30 @@ export function hasPermission(meta: UserMeta | null | undefined, perm: Permissio
   return (meta.permissions || []).includes(perm)
 }
 
+/**
+ * Separation of duties on approve/reject/forward/pay transitions.
+ *
+ * A manager must never action their own request — it escalates to an admin
+ * instead. An admin has nobody above them, so blocking them outright would
+ * deadlock their own requests (deployments routinely run with a single admin);
+ * their self-approvals are allowed but flagged in the audit log.
+ *
+ * Only call this for approval transitions, never for an owner editing their
+ * own returned/draft record.
+ */
+export function selfApprovalCheck(
+  actorId: string,
+  actorRole: string,
+  ownerId: string,
+): { blocked: boolean; selfApproved: boolean } {
+  if (actorId !== ownerId) return { blocked: false, selfApproved: false }
+  if (actorRole === 'admin') return { blocked: false, selfApproved: true }
+  return { blocked: true, selfApproved: true }
+}
+
+export const SELF_APPROVAL_ERROR =
+  'You cannot action your own request — it must be reviewed by an admin.'
+
 export function getRolePermissions(role: string): Permission[] {
   if (role === 'admin') return ALL_PERMISSIONS.map(p => p.key)
   if (role === 'manager') return ['approve_leaves', 'approve_expenses', 'post_announcements', 'view_all_data', 'manage_contacts']

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import OrgSettings from '@/models/OrgSettings'
 import { getUser } from '@/lib/auth'
+import { pick } from '@/lib/pick'
+import { ORG_SETTINGS_FIELDS } from '@/lib/apiFields'
 
 export async function GET() {
   const { userId } = await getUser()
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const settings = await OrgSettings.findOneAndUpdate(
     {},
-    { ...body, updatedBy: userId },
+    { ...pick(body, ORG_SETTINGS_FIELDS), updatedBy: userId },
     { upsert: true, returnDocument: 'after' }
   ).lean()
 

@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
-import { generateOTP, sendOTP } from '@/lib/auth'
+import { generateOTP, sendOTP, verifyPreAuthToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 /** Send (or resend) the email OTP for a user mid-login. */
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  const { userId } = await req.json()
-  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+  const { preAuthToken } = await req.json()
+  const userId = preAuthToken ? await verifyPreAuthToken(preAuthToken) : null
+  if (!userId) return NextResponse.json({ error: 'Session expired — sign in again' }, { status: 401 })
 
-  if (!rateLimit(`send-otp:${ip}:${userId}`, 3, 60_000)) {
+  if (!(await rateLimit(`send-otp:${ip}:${userId}`, 3, 60_000))) {
     return NextResponse.json({ error: 'Too many requests — wait 1 minute' }, { status: 429 })
   }
 

@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import PasskeyCredential from '@/models/PasskeyCredential'
-import { generateOTP, sendOTP } from '@/lib/auth'
+import { generateOTP, sendOTP, signPreAuthToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  if (!rateLimit(`login:${ip}`, 10, 60_000)) {
+  if (!(await rateLimit(`login:${ip}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many login attempts — wait 1 minute' }, { status: 429 })
   }
 
@@ -41,11 +41,17 @@ export async function POST(req: NextRequest) {
     await sendOTP(user.email, otp)
   }
 
+  // Proof the password step passed for this userId — send-otp/verify-otp
+  // require this instead of trusting a client-supplied userId, otherwise
+  // knowing a colleague's ObjectId is enough to request/verify their OTP.
+  const preAuthToken = await signPreAuthToken(user._id.toString())
+
   return NextResponse.json({
     step:       'verify',
     methods,
     hasPasskey,
     emailSent:  !user.totpEnabled,
+    preAuthToken,
     userId:     user._id.toString(),
     email:      user.email,
     firstName:  user.firstName,

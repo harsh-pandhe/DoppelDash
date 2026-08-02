@@ -53,7 +53,12 @@ export default function FileUploader({
   const [error,     setError]         = useState('')
 
   useEffect(() => {
-    if (!value) {
+    // Uncontrolled usage (no `value` passed — most callers): local `files`
+    // state is authoritative. Resetting it here whenever `value` is undefined
+    // wiped out every just-uploaded file the instant setFiles ran, since that
+    // state change re-triggers this effect and !value is still true.
+    if (value === undefined) return
+    if (value.length === 0) {
       if (files.length > 0) setFiles([])
       return
     }

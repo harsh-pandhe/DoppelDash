@@ -4,6 +4,8 @@ import Expense from '@/models/Expense'
 import { emailExpenseSubmitted } from '@/lib/email'
 import { getUser } from '@/lib/auth'
 import { notifyTargetsFor } from '@/lib/notify-targets'
+import { pick } from '@/lib/pick'
+import { EXPENSE_CREATE_FIELDS } from '@/lib/apiFields'
 
 export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
   await connectDB()
   const body    = await req.json()
   const expense = await Expense.create({
-    ...body,
+    ...pick(body, EXPENSE_CREATE_FIELDS),
     userId,
     userName: user?.fullName || user?.firstName || 'Unknown',
     status: 'pending_manager',

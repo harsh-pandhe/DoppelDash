@@ -5,6 +5,8 @@ import LeaveBalance from '@/models/LeaveBalance'
 import { emailLeaveSubmitted } from '@/lib/email'
 import { getUser } from '@/lib/auth'
 import { notifyTargetsFor } from '@/lib/notify-targets'
+import { pick } from '@/lib/pick'
+import { LEAVE_CREATE_FIELDS } from '@/lib/apiFields'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest) {
   }
 
   const leave = await Leave.create({
-    ...body,
+    ...pick(body, LEAVE_CREATE_FIELDS),
     userId,
     userName: user?.fullName || user?.firstName || 'Unknown',
     status: 'pending',

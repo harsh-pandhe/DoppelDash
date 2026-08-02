@@ -48,6 +48,30 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
   }
 }
 
+// Short-lived token proving the password (or passkey) step already
+// succeeded for this userId. send-otp/verify-otp require this instead of
+// trusting a client-supplied userId — otherwise anyone who knows a
+// colleague's ObjectId could request/verify an OTP for them directly.
+const PREAUTH_EXPIRES = '10m'
+
+export async function signPreAuthToken(userId: string): Promise<string> {
+  return new SignJWT({ userId, purpose: 'preauth' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(PREAUTH_EXPIRES)
+    .sign(getSecret())
+}
+
+export async function verifyPreAuthToken(token: string): Promise<string | null> {
+  try {
+    const { payload } = await jwtVerify(token, getSecret())
+    if (payload.purpose !== 'preauth' || typeof payload.userId !== 'string') return null
+    return payload.userId
+  } catch {
+    return null
+  }
+}
+
 export const COOKIE_NAME = 'dd_session'
 export const COOKIE_OPTS = {
   httpOnly: true,

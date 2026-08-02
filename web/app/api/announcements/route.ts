@@ -4,6 +4,8 @@ import Announcement from '@/models/Announcement'
 import { emailUrgentAnnouncement } from '@/lib/email'
 import { getUser, listUsers } from '@/lib/auth'
 import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
+import { pick } from '@/lib/pick'
+import { ANNOUNCEMENT_CREATE_FIELDS } from '@/lib/apiFields'
 
 export async function GET() {
   const { userId } = await getUser()
@@ -34,8 +36,8 @@ export async function POST(req: NextRequest) {
   const isFutureScheduled = !!(scheduledFor && scheduledFor.getTime() > Date.now())
   if (typeof body.body === 'string') body.body = sanitizeMailHtml(body.body)
   const item = await Announcement.create({
-    ...body,
-    scheduledFor,
+    ...pick(body, ANNOUNCEMENT_CREATE_FIELDS),
+    scheduledFor: scheduledFor ?? undefined,
     // Mark immediate urgent posts as already-emailed so the publish cron skips them
     urgentEmailSent: body.priority === 'urgent' && !isFutureScheduled,
     authorId:   userId,

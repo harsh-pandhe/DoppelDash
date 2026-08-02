@@ -1,5 +1,5 @@
 export { getUser, getUserId, type AuthResult } from './getUser'
-export { signToken, verifyToken, COOKIE_NAME, COOKIE_OPTS, type JWTPayload } from './jwt'
+export { signToken, verifyToken, signPreAuthToken, verifyPreAuthToken, COOKIE_NAME, COOKIE_OPTS, type JWTPayload } from './jwt'
 export { generateOTP, verifyOTP } from './otp'
 export { sendOTP } from './sendOtp'
 export { beginTotpSetup, confirmTotpSetup, verifyTotp, disableTotp } from './totp'

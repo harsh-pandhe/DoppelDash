@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 const STEPS = [
   { id: 0, label: 'Personal',   icon: User,       desc: 'Basic info & photo' },
@@ -139,10 +140,12 @@ export default function OnboardingPage() {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const fd = new FormData(); fd.append('file', file)
-    const res = await fetch('/api/upload', { method: 'POST', body: fd })
-    const d   = await res.json()
-    if (d.url) { setPhoto(d.url); toast('Photo uploaded', 'success') }
+    try {
+      const url = await uploadToCloudinary(file)
+      setPhoto(url); toast('Photo uploaded', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Photo upload failed', 'error')
+    }
   }
 
   if (loading) return (

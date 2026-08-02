@@ -1,18 +1,27 @@
-interface RateLimitEntry { count: number; resetAt: number }
+import { connectDB } from '@/lib/db'
+import RateLimit from '@/models/RateLimit'
 
-const store = new Map<string, RateLimitEntry>()
+// Mongo-backed — an in-memory Map doesn't work on serverless (Netlify):
+// every lambda instance gets its own, so limits are effectively disabled
+// across concurrent instances / cold starts.
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  await connectDB()
+  const now = new Date()
 
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now()
-  const entry = store.get(key)
+  const doc = await RateLimit.findOneAndUpdate(
+    { key },
+    { $inc: { count: 1 }, $setOnInsert: { resetAt: new Date(now.getTime() + windowMs) } },
+    { upsert: true, new: true }
+  )
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs })
-    return true
+  if (doc.resetAt <= now) {
+    const reset = await RateLimit.findOneAndUpdate(
+      { key },
+      { count: 1, resetAt: new Date(now.getTime() + windowMs) },
+      { new: true }
+    )
+    return (reset?.count ?? 1) <= limit
   }
 
-  if (entry.count >= limit) return false
-
-  entry.count++
-  return true
+  return doc.count <= limit
 }
