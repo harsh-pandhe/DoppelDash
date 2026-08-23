@@ -6,7 +6,7 @@
  *   if (!userId) return 401
  *   const role = user?.role   (or user?.unsafeMetadata?.role for compat)
  */
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { verifyToken } from './jwt'
 import { connectDB } from '@/lib/db'
 import User, { type IUserPublic } from '@/models/User'
@@ -16,9 +16,17 @@ export interface AuthResult {
   user:   IUserPublic | null
 }
 
-export async function getUser(): Promise<AuthResult> {
+/** Cookie for web, `Authorization: Bearer <token>` for mobile (no cookie jar). */
+async function readToken(): Promise<string | undefined> {
   const cookieStore = await cookies()
-  const token = cookieStore.get('dd_session')?.value
+  const cookieToken = cookieStore.get('dd_session')?.value
+  if (cookieToken) return cookieToken
+  const headerStore = await headers()
+  return headerStore.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
+}
+
+export async function getUser(): Promise<AuthResult> {
+  const token = await readToken()
   if (!token) return { userId: null, user: null }
 
   const payload = await verifyToken(token)
@@ -52,8 +60,7 @@ export async function getUser(): Promise<AuthResult> {
 
 /** Short-hand: just get userId (no DB hit, from token only) */
 export async function getUserId(): Promise<string | null> {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('dd_session')?.value
+  const token = await readToken()
   if (!token) return null
   const payload = await verifyToken(token)
   return payload?.userId || null

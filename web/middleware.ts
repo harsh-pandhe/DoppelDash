@@ -12,6 +12,7 @@ const PUBLIC_EXACT = [
   '/api/auth/passkey/login',
   '/api/auth/logout',
   '/api/auth/setup',
+  '/api/auth/refresh', // mobile-only: authenticated by the refresh token in the body, not a cookie
   '/api/support/chat',
   '/api/dev/seed',       // secret-gated inside route (DEV_SEED_SECRET)
   '/api/dev/migrate',    // secret-gated inside route (DEV_SEED_SECRET) — non-destructive data migration
@@ -52,7 +53,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  const token = req.cookies.get(COOKIE_NAME)?.value
+  // Mobile has no cookie jar — it authenticates with a short-lived Bearer
+  // access token instead (minted by /api/auth/verify-otp and renewed by
+  // /api/auth/refresh). Cookie takes priority since only the web client
+  // can send one.
+  const bearer = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
+  const token = req.cookies.get(COOKIE_NAME)?.value || bearer
   if (!token) {
     // API routes → 401 JSON
     if (pathname.startsWith('/api/')) {

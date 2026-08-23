@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
-import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, COOKIE_NAME, COOKIE_OPTS } from '@/lib/auth'
+import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, COOKIE_NAME, COOKIE_OPTS, signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
@@ -39,9 +39,16 @@ export async function POST(req: NextRequest) {
   const pub   = user.toPublic()
   const token = await signToken(pub)
 
+  // Web uses the cookie above; the mobile app has no cookie jar, so it also
+  // gets a short-lived Bearer access token + rotating opaque refresh token.
+  const accessToken  = await signMobileAccessToken(pub)
+  const refreshToken = await issueMobileRefreshToken(pub.id)
+
   const res = NextResponse.json({
     user: pub,
     mustChangePassword: user.mustChangePassword,
+    accessToken,
+    refreshToken,
   })
   res.cookies.set(COOKIE_NAME, token, COOKIE_OPTS)
   return res
