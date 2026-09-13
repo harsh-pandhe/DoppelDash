@@ -32,7 +32,7 @@ function indiaHolidays(year: number) {
 }
 
 export async function GET(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
 
@@ -40,17 +40,17 @@ export async function GET(req: NextRequest) {
   const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()))
 
   // Seed India defaults if none exist for this year
-  const count = await PublicHoliday.countDocuments({ year, orgId: null })
+  const count = await PublicHoliday.countDocuments({ year, $or: [{ orgId }, { orgId: null }] })
   if (count === 0) {
-    await PublicHoliday.insertMany(indiaHolidays(year))
+    await PublicHoliday.insertMany(indiaHolidays(year).map(h => ({ ...h, orgId })))
   }
 
-  const holidays = await PublicHoliday.find({ year }).sort({ date: 1 }).lean()
+  const holidays = await PublicHoliday.find({ year, $or: [{ orgId }, { orgId: null }] }).sort({ date: 1 }).lean()
   return NextResponse.json(holidays)
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -64,18 +64,19 @@ export async function POST(req: NextRequest) {
   const holiday = await PublicHoliday.create({
     name, date: d, type: type || 'optional', description,
     year: d.getFullYear(), isRecurringYearly: false, createdBy: userId,
+    orgId,
   })
   return NextResponse.json(holiday)
 }
 
 export async function DELETE(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const { id } = await req.json()
-  await PublicHoliday.findByIdAndDelete(id)
+  await PublicHoliday.findOneAndDelete({ _id: id, orgId })
   return NextResponse.json({ success: true })
 }

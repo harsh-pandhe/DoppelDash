@@ -8,7 +8,7 @@ import Employee from '@/models/Employee'
 import { getUser } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (from) dateFilter.$gte = new Date(from)
   if (to)   dateFilter.$lte = new Date(to + 'T23:59:59')
 
-  const ownerFilter: Record<string, unknown> = isManager ? {} : { userId }
+  const ownerFilter: Record<string, unknown> = isManager ? { orgId } : { userId, orgId }
   const match: Record<string, unknown> = { ...ownerFilter }
   if (from || to) match.createdAt = dateFilter
 
@@ -88,8 +88,9 @@ export async function GET(req: NextRequest) {
     return diff < 0 ? diff + 365 : diff
   }
 
-  // Employees — visible to everyone (so all can wish each other)
+  // Employees — visible to everyone in org (so all can wish each other)
   const employees = await Employee.find({
+    orgId,
     $or: [
       { dateOfBirth:        { $exists: true, $ne: null } },
       { workAnniversary:    { $exists: true, $ne: null } },
@@ -125,7 +126,7 @@ export async function GET(req: NextRequest) {
     .filter(e => e.daysUntil >= 0 && e.daysUntil <= 30)
 
   // CRM contacts (owner-scoped)
-  const contacts = await Contact.find({ createdBy: userId, birthday: { $exists: true, $ne: null } })
+  const contacts = await Contact.find({ orgId, createdBy: userId, birthday: { $exists: true, $ne: null } })
     .select('name birthday company').lean()
   const contactBirthdays = contacts
     .map(c => ({

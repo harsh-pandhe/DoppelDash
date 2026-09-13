@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -14,11 +15,10 @@ import {
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
-  // Option A: Temporarily disabled during Phase 0 tenant-isolation migration
-  return NextResponse.json(
-    { error: 'Registration is temporarily paused for scheduled multi-tenant isolation maintenance. Please check back shortly.' },
-    { status: 503 }
-  )
+  const ip = req.headers.get('x-forwarded-for') || 'unknown'
+  if (!(await rateLimit(`register:${ip}`, 5, 60_000))) {
+    return NextResponse.json({ error: 'Too many registration attempts — please wait 1 minute' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()
@@ -53,8 +53,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
     }
 
+    // Generate unique, cryptographically distinct orgId
+    const orgId = `org_${new mongoose.Types.ObjectId().toHexString()}`
+
     const hash = await User.hashPassword(password)
     const newUser = await User.create({
+      orgId,
       email: normalizedEmail,
       passwordHash: hash,
       role: 'admin',
@@ -82,20 +86,18 @@ export async function POST(req: NextRequest) {
 
     const uid = newUser._id.toString()
 
-    // Initialize or update organization settings
-    await OrgSettings.findOneAndUpdate(
-      {},
-      {
-        name: companyName.trim(),
-        phone: phone?.trim() || '',
-        updatedBy: uid,
-      },
-      { upsert: true, new: true }
-    )
+    // Initialize organization settings for this specific org
+    await OrgSettings.create({
+      orgId,
+      name: companyName.trim(),
+      phone: phone?.trim() || '',
+      updatedBy: uid,
+    })
 
     // Create Employee record for this admin
     await Employee.create({
       clerkUserId: uid,
+      orgId,
       createdByUserId: uid,
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -118,11 +120,12 @@ export async function POST(req: NextRequest) {
 
     // Initialise standard leave balance
     const year = new Date().getFullYear()
-    await LeaveBalance.findOneAndUpdate(
-      { userId: uid, year },
-      { $setOnInsert: { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 } },
-      { upsert: true }
-    )
+    await LeaveBalance.create({
+      userId: uid,
+      orgId,
+      year,
+      casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0,
+    })
 
     const pub = newUser.toPublic()
     const token = await signToken(pub)

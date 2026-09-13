@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose'
 export type LeaveType = 'casual' | 'sick' | 'earned' | 'lwp' | 'privilege' | 'restricted'
 
 export interface ILeave extends Document {
+  orgId: string
   userId: string
   userName: string
   type: LeaveType
@@ -23,6 +24,7 @@ export interface ILeave extends Document {
 
 const LeaveSchema = new Schema<ILeave>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:      { type: String, required: true, index: true },
     userName:    { type: String, required: true },
     type:        { type: String, enum: ['casual','sick','earned','lwp','privilege','restricted'], required: true },

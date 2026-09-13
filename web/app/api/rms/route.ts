@@ -8,13 +8,13 @@ import { pick } from '@/lib/pick'
 import { EXPENSE_CREATE_FIELDS } from '@/lib/apiFields'
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   try {
     await connectDB()
     const { searchParams } = new URL(req.url)
-    const filter: Record<string, unknown> = role === 'employee' ? { userId } : {}
+    const filter: Record<string, unknown> = role === 'employee' ? { userId, orgId } : { orgId }
     const status = searchParams.get('status')
     const from   = searchParams.get('from')
     const to     = searchParams.get('to')
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const body    = await req.json()
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     ...pick(body, EXPENSE_CREATE_FIELDS),
     userId,
     userName: user?.fullName || user?.firstName || 'Unknown',
+    orgId,
     status: 'pending_manager',
   })
 

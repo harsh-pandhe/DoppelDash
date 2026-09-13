@@ -4,14 +4,14 @@ import Employee from '@/models/Employee'
 import { getUser, listUsers } from '@/lib/auth'
 
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const clerkUsers = await listUsers({ limit: 500 })
+  const clerkUsers = await listUsers({ limit: 500, orgId })
 
   const employees = await Employee.find(
-    { isActive: true },
+    { orgId, isActive: true },
     'clerkUserId firstName lastName email phone photo department designation employeeId joiningDate'
   ).lean()
   const empMap = new Map(employees.map(e => [e.clerkUserId, e]))

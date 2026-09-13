@@ -33,8 +33,9 @@ function buildMonths(start: Date, end: Date) {
  * Core analytics aggregation. Scoped by (userId, role). Used by the authed dashboard
  * route AND the public shared-dashboard route (which passes the share owner's identity).
  */
-export async function computeAnalytics(userId: string, role: string, p: AnalyticsParams) {
+export async function computeAnalytics(userId: string, role: string, p: AnalyticsParams, orgId?: string | null) {
   const isManager = role === 'manager' || role === 'admin'
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
 
   const now = new Date()
@@ -45,10 +46,10 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
 
   const deptQS = p.dept || '', employeeQS = p.employee || '', statusQS = p.status || ''
 
-  const employees = await Employee.find({ isActive: true }, 'clerkUserId department firstName lastName').lean()
+  const employees = await Employee.find({ orgId: effectiveOrgId, isActive: true }, 'clerkUserId department firstName lastName').lean()
   const departments = Array.from(new Set(employees.map(e => e.department).filter(Boolean))).sort()
 
-  const ownerFilter: Record<string, unknown> = isManager ? {} : { userId }
+  const ownerFilter: Record<string, unknown> = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
   if (isManager) {
     if (employeeQS) ownerFilter.userId = employeeQS
     else if (deptQS) {
@@ -82,12 +83,12 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     Leave.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
     Expense.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
     TravelRequest.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
-    isManager ? Contact.countDocuments({}) : Contact.countDocuments({ createdBy: userId }),
-    isManager ? Contact.countDocuments({ email: { $exists: true, $ne: '' } }) : Contact.countDocuments({ createdBy: userId, email: { $exists: true, $ne: '' } }),
+    isManager ? Contact.countDocuments({ orgId: effectiveOrgId }) : Contact.countDocuments({ orgId: effectiveOrgId, createdBy: userId }),
+    isManager ? Contact.countDocuments({ orgId: effectiveOrgId, email: { $exists: true, $ne: '' } }) : Contact.countDocuments({ orgId: effectiveOrgId, createdBy: userId, email: { $exists: true, $ne: '' } }),
     Leave.countDocuments({ status: 'pending', ...ownerFilter }),
     Expense.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
     TravelRequest.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
-    isManager ? AuditLog.find({}).sort({ createdAt: -1 }).limit(10).lean() : Promise.resolve([]),
+    isManager ? AuditLog.find({ orgId: effectiveOrgId }).sort({ createdAt: -1 }).limit(10).lean() : Promise.resolve([]),
   ])
 
   const leaveByMonth = months.map(m => {
@@ -106,7 +107,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
   const paidExpense       = expenseAmountAgg[0]?.total || 0
   const pendingPayout     = expenseStatus.find((s: { _id: string; total?: number }) => s._id === 'pending_admin')?.total || 0
   const travelApproved    = travelStatus.find((s: { _id: string; count: number }) => s._id === 'approved')?.count || 0
-  const announcementCount = await Announcement.countDocuments({})
+  const announcementCount = await Announcement.countDocuments({ orgId: effectiveOrgId })
 
   // Compare period
   let previous: { totalLeaves: number; approvedLeaves: number; totalExpenses: number; paidExpense: number } | undefined
@@ -136,7 +137,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
   // Filter options (interactive dashboard only)
   let filterOptions: { departments: string[]; employees: { userId: string; name: string; department: string }[] } | undefined
   if (isManager && p.includeFilterOptions) {
-    const clerkUsers = await listUsers({ limit: 500 }).catch(() => [])
+    const clerkUsers = await listUsers({ limit: 500, orgId: effectiveOrgId }).catch(() => [])
     const nameById = new Map(clerkUsers.map(u => [u.id, u.fullName || `${u.firstName} ${u.lastName}`.trim()]))
     filterOptions = {
       departments,

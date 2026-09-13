@@ -15,6 +15,7 @@ export interface IInboxAttachment {
 }
 
 export interface IInboxMessage extends Document {
+  orgId: string
   uid: number                 // IMAP UID within the mailbox
   mailbox: string             // e.g. 'INBOX'
   messageId?: string          // RFC Message-ID header
@@ -42,6 +43,7 @@ const AttachmentSchema = new Schema<IInboxAttachment>({
 
 const InboxMessageSchema = new Schema<IInboxMessage>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     uid:         { type: Number, required: true },
     mailbox:     { type: String, required: true, default: 'INBOX' },
     messageId:   { type: String },

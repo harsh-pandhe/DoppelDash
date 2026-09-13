@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IOrgSettings extends Document {
+  orgId: string
   name: string
   address?: string
   website?: string
@@ -13,6 +14,7 @@ export interface IOrgSettings extends Document {
 
 const OrgSettingsSchema = new Schema<IOrgSettings>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true, unique: true },
     name:      { type: String, required: true, default: 'My Organization' },
     address:   { type: String },
     website:   { type: String },

@@ -9,11 +9,11 @@ import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
 import { EXPENSE_CREATE_FIELDS, EXPENSE_REVIEW_FIELDS } from '@/lib/apiFields'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const role = user?.role || 'employee'
-  const expense = await Expense.findById(params.id).lean()
+  const expense = await Expense.findOne({ _id: params.id, orgId }).lean()
   if (!expense) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (role === 'employee' && (expense as unknown as { userId: string }).userId !== userId)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -21,12 +21,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
 
   await connectDB()
-  const existingExpense = await Expense.findById(params.id)
+  const existingExpense = await Expense.findOne({ _id: params.id, orgId })
   if (!existingExpense) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (role === 'employee') {
     if ((existingExpense as unknown as { userId: string }).userId !== userId)
@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     selfApproved = check.selfApproved
   }
 
-  const expense = await Expense.findByIdAndUpdate(params.id, updates, { returnDocument: 'after' })
+  const expense = await Expense.findOneAndUpdate({ _id: params.id, orgId }, updates, { returnDocument: 'after' })
   if (!expense) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const actorName = user?.fullName || user?.firstName || 'Manager'
@@ -104,13 +104,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     targetId:        params.id,
     targetType:      'expense',
     metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote, ...(selfApproved ? { selfApproved: true } : {}) },
+    orgId,
   })
 
   // Notify boss(es) when manager approves (pending_admin)
   if (updates.status === 'pending_admin') {
     ;(async () => {
       try {
-        const users = await listUsers({ limit: 500 })
+        const users = await listUsers({ limit: 500, orgId })
         const bosses = users.filter(u => u.role === 'admin')
         for (const b of bosses) {
           if (b.email) {
@@ -144,11 +145,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 // Employee withdraws their own returned/pending_manager request; managers/boss can delete any.
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const role = user?.role || 'employee'
-  const expense = await Expense.findById(params.id)
+  const expense = await Expense.findOne({ _id: params.id, orgId })
   if (!expense) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = expense.userId === userId
@@ -166,6 +167,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     targetId:        params.id,
     targetType:      'expense',
     metadata:        { title: expense.title, amount: expense.amount, status: expense.status, employeeName: expense.userName },
+    orgId,
   })
   return NextResponse.json({ success: true })
 }

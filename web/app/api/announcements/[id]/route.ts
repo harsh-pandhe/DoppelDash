@@ -5,7 +5,7 @@ import { getUser } from '@/lib/auth'
 import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -16,18 +16,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     body.scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
   }
   if (typeof body.body === 'string') body.body = sanitizeMailHtml(body.body)
-  const item = await Announcement.findByIdAndUpdate(params.id, body, { returnDocument: 'after' })
+  const item = await Announcement.findOneAndUpdate({ _id: params.id, orgId }, body, { returnDocument: 'after' })
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(item)
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
-  await Announcement.findByIdAndDelete(params.id)
+  await Announcement.findOneAndDelete({ _id: params.id, orgId })
   return NextResponse.json({ success: true })
 }

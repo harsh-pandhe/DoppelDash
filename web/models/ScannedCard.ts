@@ -12,6 +12,7 @@ export interface IScannedCardFields {
 }
 
 export interface IScannedCard extends Document {
+  orgId: string
   uploadedBy: string          // userId of scanner
   uploadedByName: string
   imageData: string           // compressed base64 data-URI (works on Netlify; /api/upload local-FS is broken there)
@@ -36,6 +37,7 @@ const FieldsSchema = new Schema<IScannedCardFields>({
 
 const ScannedCardSchema = new Schema<IScannedCard>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     uploadedBy:     { type: String, required: true, index: true },
     uploadedByName: { type: String, required: true },
     imageData:      { type: String, required: true },

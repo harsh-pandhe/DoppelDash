@@ -6,7 +6,7 @@ import { emailTravelSubmitted } from '@/lib/email'
 import { notifyTargetsFor } from '@/lib/notify-targets'
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
   await connectDB()
   const { searchParams } = new URL(req.url)
   const status = searchParams.get('status')
-  const query: Record<string, unknown> = isManager ? {} : { userId }
+  const query: Record<string, unknown> = isManager ? { orgId } : { userId, orgId }
   if (status && status !== 'all') query.status = status
   const requests = await TravelRequest.find(query).sort({ createdAt: -1 }).limit(200).lean()
   return NextResponse.json(requests)
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const userName = user?.fullName || user?.firstName || 'Employee'
 
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
 
   const tr = await TravelRequest.create({
     userId, userName,
+    orgId,
     purpose, destination,
     departureDate: new Date(departureDate),
     returnDate:    new Date(returnDate),

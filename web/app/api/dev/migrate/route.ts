@@ -41,6 +41,42 @@ export async function POST(req: NextRequest) {
   result.expenseNote   = (await db.collection('expenses').updateMany({ bossNote: { $exists: true } }, { $rename: { bossNote: 'adminNote' } })).modifiedCount
   result.travelNote    = (await db.collection('travelrequests').updateMany({ bossNote: { $exists: true } }, { $rename: { bossNote: 'adminNote' } })).modifiedCount
 
+  // Phase 0 — Multi-tenant orgId backfill to 'org_doppelmayr'
+  const tenantCollections = [
+    'users',
+    'employees',
+    'leaves',
+    'leavebalances',
+    'expenses',
+    'travelrequests',
+    'contacts',
+    'scannedcards',
+    'campaignlogs',
+    'announcements',
+    'inboxmessages',
+    'maildrafts',
+    'useremailconfigs',
+    'outlooktokens',
+    'syncstates',
+    'passkeycredentials',
+    'auditlogs',
+    'shareddashboards',
+    'publicholidays',
+    'orgsettings',
+  ]
+
+  for (const coll of tenantCollections) {
+    try {
+      const r = await db.collection(coll).updateMany(
+        { $or: [{ orgId: { $exists: false } }, { orgId: null }, { orgId: '' }] },
+        { $set: { orgId: 'org_doppelmayr' } }
+      )
+      result[`org_${coll}`] = r.modifiedCount
+    } catch {
+      result[`org_${coll}`] = 0
+    }
+  }
+
   // sanity: current role distribution
   const roles = await db.collection('users').aggregate([{ $group: { _id: '$role', n: { $sum: 1 } } }]).toArray()
 

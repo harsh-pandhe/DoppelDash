@@ -15,6 +15,7 @@ export interface IMailDraftVersion {
 }
 
 export interface IMailDraft extends Document {
+  orgId: string
   ownerId: string
   subject: string
   bodyHtml: string
@@ -40,6 +41,7 @@ const VersionSchema = new Schema<IMailDraftVersion>({
 
 const MailDraftSchema = new Schema<IMailDraft>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     ownerId:    { type: String, required: true, index: true },
     subject:    { type: String, default: '' },
     bodyHtml:   { type: String, default: '' },

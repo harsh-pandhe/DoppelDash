@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface ISharedDashboard extends Document {
+  orgId: string
   token:     string
   ownerId:   string
   ownerName: string
@@ -14,6 +15,7 @@ export interface ISharedDashboard extends Document {
 
 const SharedDashboardSchema = new Schema<ISharedDashboard>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     token:     { type: String, required: true, unique: true, index: true },
     ownerId:   { type: String, required: true, index: true },
     ownerName: { type: String, required: true },

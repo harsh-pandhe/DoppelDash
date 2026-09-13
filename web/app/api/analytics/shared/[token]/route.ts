@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     dept: f.dept || '', employee: f.employee || '', status: f.status || '',
     compare: 'none',
     includeFilterOptions: false,   // no interactive filters on a read-only share
-  })
+  }, share.orgId || 'org_doppelmayr')
 
   return NextResponse.json({
     readOnly:  true,

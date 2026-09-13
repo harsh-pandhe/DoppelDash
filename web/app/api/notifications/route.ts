@@ -21,7 +21,7 @@ export interface NotifItem {
 }
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role  = user?.role || 'employee'
   const isMgr = role === 'manager' || role === 'admin'
@@ -32,7 +32,7 @@ export async function GET() {
 
   if (isMgr) {
     // Pending leaves needing approval
-    const pendingLeaves = await Leave.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingLeaves = await Leave.find({ orgId, status: 'pending' }).sort({ createdAt: -1 }).limit(10).lean()
     pendingLeaves.forEach(l => items.push({
       id: `leave-${String(l._id)}`, kind: 'leave',
       title: `${l.userName} — ${l.type} leave`,
@@ -43,7 +43,7 @@ export async function GET() {
 
     // Expenses awaiting manager approval (non-boss) or pending_admin (boss)
     const expStatus = isBoss ? 'pending_admin' : 'pending_manager'
-    const pendingExp = await Expense.find({ status: expStatus }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingExp = await Expense.find({ orgId, status: expStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingExp.forEach(e => items.push({
       id: `exp-${String(e._id)}`, kind: 'expense',
       title: `${e.userName} — ${e.title}`,
@@ -54,7 +54,7 @@ export async function GET() {
 
     // Travel requests
     const trStatus = isBoss ? 'pending_admin' : 'pending_manager'
-    const pendingTr = await TravelRequest.find({ status: trStatus }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingTr = await TravelRequest.find({ orgId, status: trStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingTr.forEach(t => items.push({
       id: `tr-${String(t._id)}`, kind: 'travel',
       title: `${t.userName} → ${t.destination}`,
@@ -65,7 +65,7 @@ export async function GET() {
   }
 
   // Status changes on MY items (employee + manager + boss)
-  const myReturned = await Expense.find({ userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(5).lean()
+  const myReturned = await Expense.find({ orgId, userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(5).lean()
   myReturned.forEach(e => items.push({
     id: `exp-ret-${String(e._id)}`, kind: 'expense',
     title: `${e.title} returned for revision`,
@@ -77,7 +77,7 @@ export async function GET() {
 
   // Pinned + recent announcements (7 days)
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const annos = await Announcement.find({ $or: [{ pinned: true }, { createdAt: { $gte: since } }] })
+  const annos = await Announcement.find({ orgId, $or: [{ pinned: true }, { createdAt: { $gte: since } }] })
     .sort({ pinned: -1, createdAt: -1 }).limit(5).lean()
   annos.forEach(a => items.push({
     id: `ann-${String(a._id)}`, kind: 'announcement',
@@ -91,6 +91,7 @@ export async function GET() {
   // Contact reminders due in next 7 days (mine only)
   const dueSoon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const reminders = await Contact.find({
+    orgId,
     createdBy: userId,
     reminderDate: { $exists: true, $lte: dueSoon }
   }, 'name company reminderDate reminderNote').sort({ reminderDate: 1 }).limit(5).lean()
@@ -110,6 +111,7 @@ export async function GET() {
   const today = new Date(); today.setHours(0,0,0,0)
   const employees = await Employee.find(
     {
+      orgId,
       $or: [
         { dateOfBirth:     { $exists: true, $ne: null } },
         { workAnniversary: { $exists: true, $ne: null } },
@@ -171,7 +173,7 @@ export async function GET() {
 // Bulk-approve pending expenses straight from the notifications panel.
 // Manager: pending_manager -> pending_admin. Boss: pending_admin -> paid.
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -186,7 +188,7 @@ export async function POST(req: NextRequest) {
   const toStatus   = isBoss ? 'paid' : 'pending_admin'
   const actorName  = user?.fullName || user?.firstName || (isBoss ? 'Boss' : 'Manager')
 
-  const expenses = await Expense.find({ _id: { $in: ids }, status: fromStatus })
+  const expenses = await Expense.find({ _id: { $in: ids }, orgId, status: fromStatus })
   let approved = 0
   for (const e of expenses) {
     e.status = toStatus
@@ -198,6 +200,7 @@ export async function POST(req: NextRequest) {
       performedBy: userId, performedByName: actorName,
       targetId: String(e._id), targetType: 'expense',
       metadata: { status: toStatus, employeeName: e.userName, amount: e.amount, bulk: true },
+      orgId,
     })
     if (isBoss) {
       getUserEmail(e.userId).then(email => {
@@ -210,7 +213,7 @@ export async function POST(req: NextRequest) {
   if (!isBoss && approved > 0) {
     ;(async () => {
       try {
-        const users = await listUsers({ limit: 500 })
+        const users = await listUsers({ limit: 500, orgId })
         const bosses = users.filter(u => u.role === 'admin')
         for (const e of expenses) {
           for (const b of bosses) {

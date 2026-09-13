@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Find which user this subscription belongs to
     const tokenDoc = await OutlookToken.findOne({ subscriptionId: n.subscriptionId }).lean() as {
-      userId: string; accessToken: string; expiresAt: Date; refreshToken: string
+      userId: string; orgId?: string; accessToken: string; expiresAt: Date; refreshToken: string
     } | null
     if (!tokenDoc) continue
 
@@ -73,11 +73,12 @@ export async function POST(req: NextRequest) {
     if (!senderEmail) continue
 
     // Find matching contact by sender email (deduplication-aware lookup)
-    const contact = await Contact.findOne({ createdBy: tokenDoc.userId, email: senderEmail })
+    const orgId = tokenDoc.orgId || 'org_doppelmayr'
+    const contact = await Contact.findOne({ orgId, createdBy: tokenDoc.userId, email: senderEmail })
     if (!contact) continue
 
     // Add to timeline
-    await Contact.findByIdAndUpdate(contact._id, {
+    await Contact.findOneAndUpdate({ _id: contact._id, orgId }, {
       $push: {
         timeline: {
           $each: [{

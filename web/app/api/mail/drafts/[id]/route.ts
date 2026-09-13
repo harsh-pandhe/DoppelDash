@@ -7,22 +7,22 @@ const MAX_VERSIONS = 20
 
 // GET — full draft incl. version history
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const draft = await MailDraft.findOne({ _id: params.id, ownerId: userId }).lean()
+  const draft = await MailDraft.findOne({ _id: params.id, ownerId: userId, orgId }).lean()
   if (!draft) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(draft)
 }
 
 // PATCH — save: snapshot the current content as a version, then overwrite
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const draft = await MailDraft.findOne({ _id: params.id, ownerId: userId })
+  const draft = await MailDraft.findOne({ _id: params.id, ownerId: userId, orgId })
   if (!draft) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const body = await req.json() as { subject?: string; bodyHtml?: string; recipients?: unknown[] }
@@ -46,11 +46,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 // DELETE — remove draft
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const res = await MailDraft.deleteOne({ _id: params.id, ownerId: userId })
+  const res = await MailDraft.deleteOne({ _id: params.id, ownerId: userId, orgId })
   if (res.deletedCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ ok: true })
 }

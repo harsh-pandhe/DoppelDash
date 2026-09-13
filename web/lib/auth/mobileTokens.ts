@@ -24,6 +24,7 @@ const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 export async function signMobileAccessToken(user: IUserPublic): Promise<string> {
   return new SignJWT({
     userId:    user.id,
+    orgId:     user.orgId || 'org_doppelmayr',
     email:     user.email,
     role:      user.role,
     firstName: user.firstName,

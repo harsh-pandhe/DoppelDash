@@ -6,13 +6,15 @@ import { pick } from '@/lib/pick'
 import { ORG_SETTINGS_FIELDS } from '@/lib/apiFields'
 
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
-  const settings = await OrgSettings.findOne().lean()
+  const settings = await OrgSettings.findOne({ orgId }).lean()
   return NextResponse.json(settings || {
-    name: 'Doppelmayr India Pvt Ltd',
+    orgId,
+    name: orgId === 'org_doppelmayr' ? 'Doppelmayr India Pvt Ltd' : 'My Organization',
     address: '', website: '', phone: '', email: '', logo: '',
   })
 }
@@ -23,12 +25,13 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
   const body = await req.json()
 
   const settings = await OrgSettings.findOneAndUpdate(
-    {},
-    { ...pick(body, ORG_SETTINGS_FIELDS), updatedBy: userId },
+    { orgId },
+    { ...pick(body, ORG_SETTINGS_FIELDS), orgId, updatedBy: userId },
     { upsert: true, returnDocument: 'after' }
   ).lean()
 

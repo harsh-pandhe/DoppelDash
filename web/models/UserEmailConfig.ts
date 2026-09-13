@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, models } from 'mongoose'
 
 export interface IUserEmailConfig extends Document {
+  orgId: string
   userId:       string
   emailAddress: string
   smtpHost:     string
@@ -13,6 +14,7 @@ export interface IUserEmailConfig extends Document {
 
 const UserEmailConfigSchema = new Schema<IUserEmailConfig>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:       { type: String, required: true, unique: true, index: true },
     emailAddress: { type: String, required: true },
     smtpHost:     { type: String, required: true },

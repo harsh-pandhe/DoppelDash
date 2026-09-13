@@ -13,6 +13,7 @@ export interface ITravelLeg {
 }
 
 export interface ITravelRequest extends Document {
+  orgId: string
   userId: string
   userName: string
   employeeId?: string
@@ -61,6 +62,7 @@ const TravelLegSchema = new Schema<ITravelLeg>({
 
 const TravelRequestSchema = new Schema<ITravelRequest>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:     { type: String, required: true, index: true },
     userName:   { type: String, required: true },
     employeeId: { type: String },

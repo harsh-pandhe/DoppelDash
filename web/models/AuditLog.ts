@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IAuditLog extends Document {
+  orgId: string
   action: string
   performedBy: string
   performedByName: string
@@ -12,6 +13,7 @@ export interface IAuditLog extends Document {
 
 const AuditLogSchema = new Schema<IAuditLog>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     action:          { type: String, required: true },
     performedBy:     { type: String, required: true, index: true },
     performedByName: { type: String, required: true },

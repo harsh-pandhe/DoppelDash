@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IAnnouncement extends Document {
+  orgId: string
   authorId:   string
   authorName: string
   title:      string
@@ -15,6 +16,7 @@ export interface IAnnouncement extends Document {
 
 const AnnouncementSchema = new Schema<IAnnouncement>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     authorId:   { type: String, required: true },
     authorName: { type: String, required: true },
     title:      { type: String, required: true, trim: true },

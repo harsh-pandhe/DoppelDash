@@ -5,12 +5,12 @@ import { getUser } from '@/lib/auth'
 
 // GET — list the caller's drafts (no bodies, keep payload light)
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
   const drafts = await MailDraft.find(
-    { ownerId: userId },
+    { ownerId: userId, orgId },
     'subject recipients updatedAt createdAt versions.savedAt'
   ).sort({ updatedAt: -1 }).limit(100).lean()
 
@@ -26,13 +26,14 @@ export async function GET() {
 
 // POST — create a new draft
 export async function POST(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
   const body = await req.json() as { subject?: string; bodyHtml?: string; recipients?: IMailRecipient[] }
   const draft = await MailDraft.create({
     ownerId:    userId,
+    orgId,
     subject:    body.subject || '',
     bodyHtml:   body.bodyHtml || '',
     recipients: body.recipients || [],

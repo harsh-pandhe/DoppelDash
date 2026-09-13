@@ -126,7 +126,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     clerkUserId:      { type: String, required: true, unique: true, index: true },
     employeeId:       { type: String, required: true, unique: true },
     createdByUserId:  { type: String, required: true },
-    orgId:            { type: String },
+    orgId:            { type: String, required: true, default: 'org_doppelmayr', index: true },
 
     firstName:        { type: String, required: true, trim: true },
     lastName:         { type: String, required: true, trim: true },

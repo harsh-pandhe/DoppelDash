@@ -5,10 +5,10 @@ import { getUser, getUserById } from '@/lib/auth'
 import { encryptBankDetails, decryptBankDetails } from '@/lib/encrypt'
 
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
-  const emp = await Employee.findOne({ clerkUserId: userId }).lean()
+  const emp = await Employee.findOne({ clerkUserId: userId, orgId }).lean()
   if (!emp) return NextResponse.json(null)
 
   // Decrypt bank details for the owner
@@ -22,7 +22,7 @@ export async function GET() {
   if (emp.reportingManagerId) {
     const mgr = await getUserById(emp.reportingManagerId)
     if (mgr) {
-      const mgrEmp = await Employee.findOne({ clerkUserId: emp.reportingManagerId }, 'designation').lean()
+      const mgrEmp = await Employee.findOne({ clerkUserId: emp.reportingManagerId, orgId }, 'designation').lean()
       reportingManager = {
         id:          mgr.id,
         name:        mgr.fullName,
@@ -36,7 +36,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
 
@@ -49,6 +49,7 @@ export async function PATCH(req: NextRequest) {
   delete body.employeeId
   delete body.isActive
   delete body.reportingManagerId
+  delete body.orgId
 
   // Encrypt bank details before persisting (account number / IFSC / holder name)
   if (body.bankDetails) {
@@ -56,7 +57,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const emp = await Employee.findOneAndUpdate(
-    { clerkUserId: userId },
+    { clerkUserId: userId, orgId },
     { $set: body },
     { returnDocument: 'after' }
   )
@@ -64,7 +65,7 @@ export async function PATCH(req: NextRequest) {
 
   // Mark onboarding complete if step reaches 4
   if (body.onboardingStep >= 4 && !emp.onboardingComplete) {
-    await Employee.updateOne({ clerkUserId: userId }, { onboardingComplete: true })
+    await Employee.updateOne({ clerkUserId: userId, orgId }, { onboardingComplete: true })
   }
 
   // Return with decrypted bank details so the form refresh stays valid

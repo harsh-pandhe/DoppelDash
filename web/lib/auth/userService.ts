@@ -23,9 +23,10 @@ export interface ListedUser {
   createdAt: number
 }
 
-export async function listUsers(opts: { limit?: number } = {}): Promise<ListedUser[]> {
+export async function listUsers(opts: { limit?: number; orgId?: string | null } = {}): Promise<ListedUser[]> {
   await connectDB()
-  const docs = await User.find({}).sort({ createdAt: -1 }).limit(opts.limit ?? 200).lean()
+  const filter = opts.orgId ? { orgId: opts.orgId } : {}
+  const docs = await User.find(filter).sort({ createdAt: -1 }).limit(opts.limit ?? 200).lean()
   return docs.map(u => ({
     id:        String(u._id),
     firstName: u.firstName,

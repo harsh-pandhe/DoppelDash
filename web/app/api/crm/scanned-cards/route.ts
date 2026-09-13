@@ -5,10 +5,11 @@ import { getUser } from '@/lib/auth'
 
 // GET — list the caller's scanned cards (newest first)
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
-  const cards = await ScannedCard.find({ uploadedBy: userId }).sort({ createdAt: -1 }).limit(200).lean()
+  const cards = await ScannedCard.find({ orgId, uploadedBy: userId }).sort({ createdAt: -1 }).limit(200).lean()
   return NextResponse.json(cards)
 }
 
@@ -16,6 +17,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
 
   const body = await req.json() as {
     imageData?: string
@@ -35,6 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   const card = await ScannedCard.create({
+    orgId,
     uploadedBy:     userId,
     uploadedByName: user?.fullName || user?.firstName || 'Unknown',
     imageData:      body.imageData,

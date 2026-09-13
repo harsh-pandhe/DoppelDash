@@ -15,6 +15,7 @@ export interface IExpenseLineItem {
 }
 
 export interface IExpense extends Document {
+  orgId: string
   userId: string
   userName: string
   title: string
@@ -61,6 +62,7 @@ const LineItemSchema = new Schema<IExpenseLineItem>({
 
 const ExpenseSchema = new Schema<IExpense>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:       { type: String, required: true, index: true },
     userName:     { type: String, required: true },
     title:        { type: String, required: true },

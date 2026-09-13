@@ -13,7 +13,7 @@ export async function POST() {
 
 /** Confirm setup with a code from the authenticator app. */
 export async function PUT(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { code } = await req.json()
@@ -26,13 +26,14 @@ export async function PUT(req: NextRequest) {
     action: 'user.totp_enabled', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: {},
+    orgId,
   })
   return NextResponse.json({ ok: true })
 }
 
 /** Disable TOTP for the signed-in user. */
 export async function DELETE() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await disableTotp(userId)
@@ -40,6 +41,7 @@ export async function DELETE() {
     action: 'user.totp_disabled', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: {},
+    orgId,
   })
   return NextResponse.json({ ok: true })
 }

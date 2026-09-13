@@ -11,13 +11,13 @@ import { LEAVE_CREATE_FIELDS } from '@/lib/apiFields'
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   try {
     await connectDB()
     const { searchParams } = new URL(req.url)
-    const filter: Record<string, unknown> = role === 'employee' ? { userId } : {}
+    const filter: Record<string, unknown> = role === 'employee' ? { userId, orgId } : { orgId }
     const status = searchParams.get('status')
     const from   = searchParams.get('from')
     const to     = searchParams.get('to')
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const body  = await req.json()
@@ -57,11 +57,11 @@ export async function POST(req: NextRequest) {
     const yearStart = new Date(year, 0, 1)
     const yearEnd   = new Date(year + 1, 0, 1)
 
-    const balanceDoc = await LeaveBalance.findOne({ userId, year }).lean()
+    const balanceDoc = await LeaveBalance.findOne({ userId, orgId, year }).lean()
     const entitlement = (balanceDoc as unknown as Record<string, number> | null)?.[type] ?? DEFAULTS[type]
 
     const usedAgg = await Leave.aggregate([
-      { $match: { userId, type, status: { $in: ['approved', 'pending'] }, startDate: { $gte: yearStart, $lt: yearEnd } } },
+      { $match: { userId, orgId, type, status: { $in: ['approved', 'pending'] }, startDate: { $gte: yearStart, $lt: yearEnd } } },
       { $group: { _id: null, days: { $sum: '$days' } } },
     ])
     const used = usedAgg[0]?.days || 0
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
     ...pick(body, LEAVE_CREATE_FIELDS),
     userId,
     userName: user?.fullName || user?.firstName || 'Unknown',
+    orgId,
     status: 'pending',
   })
 

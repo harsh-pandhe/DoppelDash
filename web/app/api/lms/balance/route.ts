@@ -14,15 +14,15 @@ const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2,
  * `medical` is legacy data — counted as `sick` for backwards compatibility.
  */
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
   const year = new Date().getFullYear()
 
   const balance = await LeaveBalance.findOneAndUpdate(
-    { userId, year },
-    { $setOnInsert: { ...DEFAULTS, userId, year } },
+    { userId, orgId, year },
+    { $setOnInsert: { ...DEFAULTS, userId, orgId, year } },
     { upsert: true, returnDocument: 'after' },
   ).lean()
 
@@ -30,7 +30,7 @@ export async function GET() {
   const yearEnd   = new Date(year + 1, 0, 1)
 
   const usedAgg = await Leave.aggregate([
-    { $match: { userId, status: 'approved', startDate: { $gte: yearStart, $lt: yearEnd } } },
+    { $match: { userId, orgId, status: 'approved', startDate: { $gte: yearStart, $lt: yearEnd } } },
     { $group: { _id: '$type', days: { $sum: '$days' } } },
   ])
 

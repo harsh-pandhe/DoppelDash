@@ -26,7 +26,7 @@ const fold = (line: string) => {
 }
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   const isManager = role === 'manager' || role === 'admin'
@@ -35,10 +35,10 @@ export async function GET(req: NextRequest) {
   const scope = new URL(req.url).searchParams.get('scope') || 'me'
   const teamScope = scope === 'team' && isManager
 
-  const leaveQuery: Record<string, unknown> = { status: 'approved' }
+  const leaveQuery: Record<string, unknown> = { status: 'approved', orgId }
   if (!teamScope) leaveQuery.userId = userId
   const leaves = await Leave.find(leaveQuery).sort({ startDate: 1 }).limit(500).lean()
-  const holidays = await PublicHoliday.find({}).sort({ date: 1 }).limit(500).lean()
+  const holidays = await PublicHoliday.find({ $or: [{ orgId }, { orgId: null }] }).sort({ date: 1 }).limit(500).lean()
 
   const stamp = `${icsDate(new Date())}T000000Z`
   const lines: string[] = [

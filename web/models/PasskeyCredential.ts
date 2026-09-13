@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IPasskeyCredential extends Document {
+  orgId: string
   _id: mongoose.Types.ObjectId
   userId: string
   credentialId: string        // base64url
@@ -17,6 +18,7 @@ export interface IPasskeyCredential extends Document {
 
 const PasskeyCredentialSchema = new Schema<IPasskeyCredential>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:       { type: String, required: true, index: true },
     credentialId: { type: String, required: true, unique: true },
     publicKey:    { type: String, required: true },

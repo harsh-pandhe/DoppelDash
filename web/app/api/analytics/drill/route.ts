@@ -14,7 +14,7 @@ import { getUser } from '@/lib/auth'
 const PAGE_SIZE = 50
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const role = user?.role || 'employee'
@@ -37,12 +37,12 @@ export async function GET(req: NextRequest) {
   rangeEnd.setHours(23, 59, 59, 999)
 
   // Owner scope (same rules as analytics route)
-  const ownerFilter: Record<string, unknown> = isManager ? {} : { userId }
+  const ownerFilter: Record<string, unknown> = isManager ? { orgId } : { userId, orgId }
   if (isManager) {
     if (employeeQS) {
       ownerFilter.userId = employeeQS
     } else if (deptQS) {
-      const emps = await Employee.find({ isActive: true, department: deptQS }, 'clerkUserId').lean()
+      const emps = await Employee.find({ orgId, isActive: true, department: deptQS }, 'clerkUserId').lean()
       const ids = emps.map(e => e.clerkUserId)
       ownerFilter.userId = { $in: ids.length ? ids : ['__none__'] }
     }

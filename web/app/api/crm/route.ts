@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
     if (role === 'manager' || role === 'admin') visClauses.push({ visibility: 'team' })
     if (role === 'admin')                       visClauses.push({ visibility: 'boss_only' })
 
-    const filter: Record<string, unknown> = { $or: visClauses }
+    const orgId = user?.orgId || 'org_doppelmayr'
+    const filter: Record<string, unknown> = { orgId, $or: visClauses }
     if (q) filter.name = { $regex: q, $options: 'i' }
     // List view only needs lightweight card fields — skip heavy/encrypted ones
     // (notes, activity, gender/caste/religion). No decrypt pass needed.
@@ -54,13 +55,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
   // sanitize() only strips $-operators — it does not whitelist, so pick() is
   // what stops a client seeding its own shareToken or faking isEmployee.
   const raw  = pick(sanitize(await req.json()), CONTACT_CREATE_FIELDS)
   const body = encryptContact(raw as Record<string, unknown>)
-  const contact = await Contact.create({ ...body, createdBy: userId })
+  const contact = await Contact.create({ ...body, orgId, createdBy: userId })
   return NextResponse.json(decryptContact(contact.toObject()), { status: 201 })
 }

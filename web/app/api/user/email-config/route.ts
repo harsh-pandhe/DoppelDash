@@ -5,11 +5,11 @@ import { encrypt } from '@/lib/encrypt'
 import { getUser } from '@/lib/auth'
 
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const config = await UserEmailConfig.findOne({ userId }).lean() as Record<string, unknown> | null
+  const config = await UserEmailConfig.findOne({ userId, orgId }).lean() as Record<string, unknown> | null
   if (!config) return NextResponse.json(null)
 
   return NextResponse.json({
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { emailAddress?: string; smtpHost?: string; smtpPort?: number; appPassword?: string }
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
   await connectDB()
   const encrypted = encrypt(appPassword)
   await UserEmailConfig.findOneAndUpdate(
-    { userId },
-    { userId, emailAddress, smtpHost, smtpPort, appPassword: encrypted, isVerified: false },
+    { userId, orgId },
+    { userId, orgId, emailAddress, smtpHost, smtpPort, appPassword: encrypted, isVerified: false },
     { upsert: true, returnDocument: 'after' }
   )
 
@@ -46,10 +46,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  await UserEmailConfig.deleteOne({ userId })
+  await UserEmailConfig.deleteOne({ userId, orgId })
   return NextResponse.json({ ok: true })
 }

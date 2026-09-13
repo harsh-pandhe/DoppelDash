@@ -66,7 +66,7 @@ export async function passkeyRegistrationOptions(userId: string, email: string, 
 }
 
 /** Verify a registration response and persist the credential. */
-export async function passkeyRegistrationVerify(userId: string, response: RegistrationResponseJSON, nickname?: string) {
+export async function passkeyRegistrationVerify(userId: string, response: RegistrationResponseJSON, nickname?: string, orgId?: string) {
   await connectDB()
   const { rpID, origin } = rpConfig()
   const expectedChallenge = await consumeChallenge(userId)
@@ -88,10 +88,17 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
     return { ok: false as const, reason: 'Verification failed' }
   }
 
+  let targetOrgId = orgId
+  if (!targetOrgId) {
+    const userDoc = await User.findById(userId).select('orgId').lean()
+    targetOrgId = userDoc?.orgId || 'org_doppelmayr'
+  }
+
   const info = verification.registrationInfo
   try {
     await PasskeyCredential.create({
       userId,
+      orgId: targetOrgId,
       credentialId: info.credentialID,
       publicKey: isoBase64URL.fromBuffer(info.credentialPublicKey),
       counter: info.counter,

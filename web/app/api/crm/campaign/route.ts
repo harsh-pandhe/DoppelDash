@@ -8,20 +8,21 @@ import CampaignLog from '@/models/CampaignLog'
 
 // GET — preview contacts for a tag, OR ?history=1 for the caller's sent-campaign log
 export async function GET(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
 
   await connectDB()
   const url = new URL(req.url)
 
   if (url.searchParams.get('history')) {
-    const logs = await CampaignLog.find({ sentBy: userId }).sort({ createdAt: -1 }).limit(50).lean()
+    const logs = await CampaignLog.find({ orgId, sentBy: userId }).sort({ createdAt: -1 }).limit(50).lean()
     return NextResponse.json({ history: logs })
   }
 
   const tag   = url.searchParams.get('tag') || ''
-  const query = tag ? { createdBy: userId, tags: tag, email: { $exists: true, $ne: '' } }
-                    : { createdBy: userId, email: { $exists: true, $ne: '' } }
+  const query = tag ? { orgId, createdBy: userId, tags: tag, email: { $exists: true, $ne: '' } }
+                    : { orgId, createdBy: userId, email: { $exists: true, $ne: '' } }
 
   const contacts = await Contact.find(query, 'name email company designation tags').lean()
   return NextResponse.json({ contacts, count: contacts.length })
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
           <div style="font-family:Calibri,'Segoe UI',Inter,system-ui,sans-serif; max-width:640px; margin:0 auto; padding:32px 24px">
             ${inner}
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-            <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash — Doppelmayr India</p>
+            <p style="font-size:11px;color:#9ca3af">Sent via DoppelDash</p>
           </div>`
 
         try {
@@ -110,7 +111,9 @@ export async function POST(req: NextRequest) {
   // Log non-test campaigns for history
   if (!body.testEmail) {
     try {
+      const orgId = user?.orgId || 'org_doppelmayr'
       await CampaignLog.create({
+        orgId,
         sentBy: userId, sentByName: user?.fullName || user?.firstName || 'User',
         subject: body.subject, tag: body.tag,
         recipientCount: contacts.length, sent, failed, channel,

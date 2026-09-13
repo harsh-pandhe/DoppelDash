@@ -3,7 +3,7 @@ import { getUser } from '@/lib/auth'
 import { computeAnalytics } from '@/lib/analytics/compute'
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(req.url)
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     status:   url.searchParams.get('status')   || '',
     compare:  url.searchParams.get('compare')  || 'none',
     includeFilterOptions: true,
-  })
+  }, orgId)
 
   return NextResponse.json(data)
 }

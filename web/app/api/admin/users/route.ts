@@ -13,10 +13,11 @@ export async function GET() {
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
+  const orgId     = user?.orgId || 'org_doppelmayr'
   const year      = new Date().getFullYear()
-  const allUsers  = await User.find({}).lean()
-  const balances  = await LeaveBalance.find({ year }).lean()
-  const employees = await Employee.find({}).lean()
+  const allUsers  = await User.find({ orgId }).lean()
+  const balances  = await LeaveBalance.find({ orgId, year }).lean()
+  const employees = await Employee.find({ orgId }).lean()
   const balMap    = new Map(balances.map(b => [b.userId, b]))
   const empMap    = new Map(employees.map(e => [e.clerkUserId, e]))
 
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
   }
 
   await connectDB()
+  const orgId = user?.orgId || 'org_doppelmayr'
 
   const existing = await User.findOne({ email: email.toLowerCase() })
   if (existing) return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
@@ -93,6 +95,7 @@ export async function POST(req: NextRequest) {
   const hash = await User.hashPassword(tempPassword)
 
   const newUser = await User.create({
+    orgId,
     email:              email.toLowerCase().trim(),
     passwordHash:       hash,
     role:               newRole,
@@ -107,6 +110,7 @@ export async function POST(req: NextRequest) {
   // Create Employee profile
   const emp = await Employee.create({
     clerkUserId:     newUid,    // reuse field for our userId
+    orgId,
     createdByUserId: userId,
     firstName, lastName, email,
     department:      department    || 'General',
@@ -127,8 +131,8 @@ export async function POST(req: NextRequest) {
   // Initialise leave balance
   const year = new Date().getFullYear()
   await LeaveBalance.findOneAndUpdate(
-    { userId: newUid, year },
-    { $setOnInsert: { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 } },
+    { orgId, userId: newUid, year },
+    { $setOnInsert: { orgId, casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 } },
     { upsert: true }
   )
 

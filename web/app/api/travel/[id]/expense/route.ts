@@ -11,17 +11,17 @@ const MODE_CATEGORY: Record<string, string> = {
 
 // Auto-create an expense claim from a completed (approved + returned) travel request.
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const tr = await TravelRequest.findById(params.id)
+  const tr = await TravelRequest.findOne({ _id: params.id, orgId })
   if (!tr) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (tr.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (tr.status !== 'approved') return NextResponse.json({ error: 'Travel not approved' }, { status: 409 })
   if (tr.returnDate > new Date()) return NextResponse.json({ error: 'Trip not finished yet' }, { status: 409 })
   if (tr.expenseId) {
-    const existing = await Expense.findById(tr.expenseId).lean()
+    const existing = await Expense.findOne({ _id: tr.expenseId, orgId }).lean()
     if (existing) return NextResponse.json(existing)
   }
 
@@ -47,6 +47,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   const expense = await Expense.create({
     userId: tr.userId,
     userName: tr.userName,
+    orgId,
     title: `Travel — ${tr.destination}`,
     reason: tr.purpose,
     amount: total,

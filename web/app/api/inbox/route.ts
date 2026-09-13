@@ -19,7 +19,7 @@ function canAccessMail(user: { role?: string; mailAccess?: boolean } | null): bo
 
 // GET — list synced inbox messages (newest first). ?sync=1 polls IMAP first.
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canAccessMail(user)) return NextResponse.json({ error: 'Mail access not granted' }, { status: 403 })
 
@@ -39,13 +39,13 @@ export async function GET(req: NextRequest) {
   const skip  = Number(req.nextUrl.searchParams.get('skip')) || 0
 
   const [messages, total, unread] = await Promise.all([
-    InboxMessage.find({ mailbox: 'INBOX' })
+    InboxMessage.find({ orgId, mailbox: 'INBOX' })
       .sort({ date: -1 })
       .skip(skip).limit(limit)
       .select('-text -html') // list view — bodies fetched in detail
       .lean(),
-    InboxMessage.countDocuments({ mailbox: 'INBOX' }),
-    InboxMessage.countDocuments({ mailbox: 'INBOX', readByApp: false }),
+    InboxMessage.countDocuments({ orgId, mailbox: 'INBOX' }),
+    InboxMessage.countDocuments({ orgId, mailbox: 'INBOX', readByApp: false }),
   ])
 
   return NextResponse.json({

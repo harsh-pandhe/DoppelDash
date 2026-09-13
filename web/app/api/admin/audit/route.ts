@@ -4,7 +4,7 @@ import AuditLog from '@/models/AuditLog'
 import { getUser } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if ((user?.role) !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -17,9 +17,8 @@ export async function GET(req: NextRequest) {
   const from       = searchParams.get('from')
   const to         = searchParams.get('to')
   const limit      = Math.min(Number(searchParams.get('limit') || 50), 200)
-  const skip       = Math.max(Number(searchParams.get('skip') || 0), 0)
-
-  const match: Record<string, unknown> = {}
+  const skip       = Math.max(0, Number(searchParams.get('skip') || 0))
+  const match: Record<string, unknown> = { orgId }
   // UI filter 'travel' maps to the travel_request targetType
   if (targetType) match.targetType = targetType === 'travel' ? 'travel_request' : targetType
   if (action)     match.action     = action

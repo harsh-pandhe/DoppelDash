@@ -6,6 +6,7 @@ export type UserRole = 'admin' | 'manager' | 'employee'
 export interface IUserPublic {
   id: string
   email: string
+  orgId: string
   role: UserRole
   firstName: string
   lastName: string
@@ -25,6 +26,7 @@ export interface IUserPublic {
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId
   email: string
+  orgId: string
   passwordHash: string
   role: UserRole
   firstName: string
@@ -56,9 +58,12 @@ interface UserModel extends Model<IUser> {
   hashPassword(plain: string): Promise<string>
 }
 
+export const DEFAULT_ORG_ID = 'org_doppelmayr'
+
 const UserSchema = new Schema<IUser, UserModel>(
   {
     email:              { type: String, required: true, unique: true, lowercase: true, trim: true },
+    orgId:              { type: String, required: true, default: DEFAULT_ORG_ID, index: true },
     passwordHash:       { type: String, required: true },
     role:               { type: String, enum: ['admin','manager','employee'], required: true },
     mailAccess:         { type: Boolean, default: false },  // 10B: grant employee mass-mail access
@@ -92,6 +97,7 @@ UserSchema.methods.toPublic = function (): IUserPublic {
   return {
     id:                 this._id.toString(),
     email:              this.email,
+    orgId:              this.orgId || DEFAULT_ORG_ID,
     role:               this.role,
     firstName:          this.firstName,
     lastName:           this.lastName,

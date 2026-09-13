@@ -6,7 +6,7 @@ import { getUser, listUsers } from '@/lib/auth'
 import { getUserTransporter } from '@/lib/userEmail'
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -15,12 +15,12 @@ export async function POST(req: NextRequest) {
   if (!announcementId) return NextResponse.json({ error: 'announcementId required' }, { status: 400 })
 
   await connectDB()
-  const ann = await Announcement.findById(announcementId).lean() as {
+  const ann = await Announcement.findOne({ _id: announcementId, orgId }).lean() as {
     title: string; body: string; priority?: string
   } | null
   if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const users  = await listUsers({ limit: 500 })
+  const users  = await listUsers({ limit: 500, orgId })
   const roles: string[] = Array.isArray(targetRoles) && targetRoles.length
     ? targetRoles
     : ['employee', 'manager', 'admin']

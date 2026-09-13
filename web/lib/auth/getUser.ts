@@ -11,10 +11,9 @@ import { verifyToken } from './jwt'
 import { connectDB } from '@/lib/db'
 import User, { type IUserPublic } from '@/models/User'
 
-export interface AuthResult {
-  userId: string | null
-  user:   IUserPublic | null
-}
+export type AuthResult =
+  | { userId: string; user: IUserPublic; orgId: string }
+  | { userId: null; user: null; orgId: null }
 
 /** Cookie for web, `Authorization: Bearer <token>` for mobile (no cookie jar). */
 async function readToken(): Promise<string | undefined> {
@@ -27,19 +26,22 @@ async function readToken(): Promise<string | undefined> {
 
 export async function getUser(): Promise<AuthResult> {
   const token = await readToken()
-  if (!token) return { userId: null, user: null }
+  if (!token) return { userId: null, user: null, orgId: null }
 
   const payload = await verifyToken(token)
-  if (!payload) return { userId: null, user: null }
+  if (!payload) return { userId: null, user: null, orgId: null }
 
   // Fetch fresh user from DB (captures ban, role changes, etc.)
   await connectDB()
-  const dbUser = await User.findById(payload.userId).lean() as (IUserPublic & { _id: unknown; passwordHash?: string }) | null
-  if (!dbUser || !dbUser.isActive || dbUser.isBanned) return { userId: null, user: null }
+  const dbUser = await User.findById(payload.userId).lean() as (IUserPublic & { _id: unknown; passwordHash?: string; orgId?: string }) | null
+  if (!dbUser || !dbUser.isActive || dbUser.isBanned) return { userId: null, user: null, orgId: null }
+
+  const orgId = dbUser.orgId || payload.orgId || 'org_doppelmayr'
 
   const pub: IUserPublic = {
     id:                 String(dbUser._id),
     email:              dbUser.email,
+    orgId,
     role:               dbUser.role,
     firstName:          dbUser.firstName,
     lastName:           dbUser.lastName,
@@ -55,7 +57,7 @@ export async function getUser(): Promise<AuthResult> {
     loginCount:         dbUser.loginCount,
     unsafeMetadata:     { role: dbUser.role, permissions: dbUser.permissions || [] },
   }
-  return { userId: pub.id, user: pub }
+  return { userId: pub.id, user: pub, orgId: pub.orgId }
 }
 
 /** Short-hand: just get userId (no DB hit, from token only) */
@@ -64,4 +66,12 @@ export async function getUserId(): Promise<string | null> {
   if (!token) return null
   const payload = await verifyToken(token)
   return payload?.userId || null
+}
+
+/** Short-hand: get orgId from token only without DB hit */
+export async function getOrgId(): Promise<string | null> {
+  const token = await readToken()
+  if (!token) return null
+  const payload = await verifyToken(token)
+  return payload?.orgId || 'org_doppelmayr'
 }

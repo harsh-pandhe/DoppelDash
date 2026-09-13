@@ -11,7 +11,7 @@ export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!imapConfigured()) {
@@ -21,8 +21,8 @@ export async function POST() {
   await connectDB()
 
   const state = await SyncState.findOneAndUpdate(
-    { type: 'email' },
-    { $setOnInsert: { type: 'email' } },
+    { type: 'email', orgId },
+    { $setOnInsert: { type: 'email', orgId } },
     { upsert: true, returnDocument: 'after' }
   )
 
@@ -40,8 +40,8 @@ export async function POST() {
   for (const email of emails) {
     if (email.uid > maxUid) maxUid = email.uid
 
-    // Match sender email to any contact owned by any user
-    const contact = await Contact.findOne({ email: email.fromEmail })
+    // Match sender email to any contact owned by any user in this org
+    const contact = await Contact.findOne({ orgId, email: email.fromEmail })
     if (!contact) continue
 
     // Avoid duplicate timeline entries
@@ -51,7 +51,7 @@ export async function POST() {
     )
     if (alreadyLogged) continue
 
-    await Contact.findByIdAndUpdate(contact._id, {
+    await Contact.findOneAndUpdate({ _id: contact._id, orgId }, {
       $push: {
         timeline: {
           $each: [{
@@ -69,7 +69,7 @@ export async function POST() {
   }
 
   await SyncState.updateOne(
-    { type: 'email' },
+    { type: 'email', orgId },
     { lastSyncedAt: new Date(), lastUid: maxUid }
   )
 
@@ -81,11 +81,11 @@ export async function POST() {
 }
 
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const state = await SyncState.findOne({ type: 'email' }).lean()
+  const state = await SyncState.findOne({ type: 'email', orgId }).lean()
 
   return NextResponse.json({
     configured: imapConfigured(),

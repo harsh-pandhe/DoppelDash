@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface IOutlookToken extends Document {
+  orgId: string
   userId: string       // Clerk userId
   email: string        // Outlook email address
   accessToken: string
@@ -12,6 +13,7 @@ export interface IOutlookToken extends Document {
 
 const OutlookTokenSchema = new Schema<IOutlookToken>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     userId:              { type: String, required: true, unique: true, index: true },
     email:               { type: String, required: true },
     accessToken:         { type: String, required: true },

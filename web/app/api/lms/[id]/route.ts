@@ -12,11 +12,11 @@ import { LEAVE_REVIEW_FIELDS } from '@/lib/apiFields'
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const role = user?.role || 'employee'
-  const leave = await Leave.findById(params.id).lean()
+  const leave = await Leave.findOne({ _id: params.id, orgId }).lean()
   if (!leave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (role === 'employee' && (leave as unknown as { userId: string }).userId !== userId)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   await connectDB()
   const body  = await req.json()
 
-  const existingLeave = await Leave.findById(params.id)
+  const existingLeave = await Leave.findOne({ _id: params.id, orgId })
   if (!existingLeave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   let selfApproved = false
@@ -56,11 +56,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       const yearStart = new Date(year, 0, 1)
       const yearEnd   = new Date(year + 1, 0, 1)
 
-      const balanceDoc = await LeaveBalance.findOne({ userId: existingLeave.userId, year }).lean()
+      const balanceDoc = await LeaveBalance.findOne({ userId: existingLeave.userId, orgId, year }).lean()
       const entitlement = (balanceDoc as unknown as Record<string, number> | null)?.[type] ?? DEFAULTS[type]
 
       const usedAgg = await Leave.aggregate([
-        { $match: { userId: existingLeave.userId, type, status: 'approved', startDate: { $gte: yearStart, $lt: yearEnd }, _id: { $ne: existingLeave._id } } },
+        { $match: { userId: existingLeave.userId, orgId, type, status: 'approved', startDate: { $gte: yearStart, $lt: yearEnd }, _id: { $ne: existingLeave._id } } },
         { $group: { _id: null, days: { $sum: '$days' } } },
       ])
       const used = usedAgg[0]?.days || 0
@@ -71,8 +71,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
-  const leave = await Leave.findByIdAndUpdate(
-    params.id,
+  const leave = await Leave.findOneAndUpdate(
+    { _id: params.id, orgId },
     {
       ...pick(body, LEAVE_REVIEW_FIELDS),
       // Only an approval records an approver — a rejection must not look approved.
@@ -91,6 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     targetId:        params.id,
     targetType:      'leave',
     metadata:        { status: body.status, employeeName: leave.userName, days: leave.days, note: body.managerNote, ...(selfApproved ? { selfApproved: true } : {}) },
+    orgId,
   })
 
   if (body.status === 'approved' || body.status === 'rejected') {
@@ -110,11 +111,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 // Employee can withdraw their own pending request; managers/boss can delete any.
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const role = user?.role || 'employee'
-  const leave = await Leave.findById(params.id)
+  const leave = await Leave.findOne({ _id: params.id, orgId })
   if (!leave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const isOwner = leave.userId === userId
@@ -131,6 +132,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     targetId:        params.id,
     targetType:      'leave',
     metadata:        { type: leave.type, days: leave.days, status: leave.status, employeeName: leave.userName },
+    orgId,
   })
   return NextResponse.json({ success: true })
 }

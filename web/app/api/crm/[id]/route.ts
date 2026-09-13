@@ -18,8 +18,10 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   if (role === 'manager' || role === 'admin') visClauses.push({ visibility: 'team' })
   if (role === 'admin') visClauses.push({ visibility: 'boss_only' })
 
+  const orgId = user?.orgId || 'org_doppelmayr'
   const contact = await Contact.findOne({
     _id: params.id,
+    orgId,
     $or: visClauses,
   }).lean()
   if (!contact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -30,10 +32,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
+  const orgId = user?.orgId || 'org_doppelmayr'
   const role = user?.role || 'employee'
   const filter = role === 'admin'
-    ? { _id: params.id }
-    : { _id: params.id, createdBy: userId }
+    ? { _id: params.id, orgId }
+    : { _id: params.id, orgId, createdBy: userId }
 
   const body = sanitize(await req.json()) as Record<string, unknown>
 
@@ -64,10 +67,11 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
+  const orgId = user?.orgId || 'org_doppelmayr'
   const role = user?.role || 'employee'
   const filter = role === 'admin'
-    ? { _id: params.id }
-    : { _id: params.id, createdBy: userId }
+    ? { _id: params.id, orgId }
+    : { _id: params.id, orgId, createdBy: userId }
 
   await Contact.findOneAndDelete(filter)
   return NextResponse.json({ success: true })

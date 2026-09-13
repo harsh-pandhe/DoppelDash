@@ -4,10 +4,11 @@ import Employee from '@/models/Employee'
 import { getUser } from '@/lib/auth'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const emp = await Employee.findOne({
+    orgId,
     $or: [{ clerkUserId: params.id }, { employeeId: params.id }]
   }).lean()
   if (!emp) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -16,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 // Manager/boss can update employee record (privileges, designation, etc.)
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -25,9 +26,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = await req.json()
   delete body.clerkUserId   // immutable
   delete body.employeeId    // immutable
+  delete body.orgId         // immutable
 
   const emp = await Employee.findOneAndUpdate(
-    { $or: [{ clerkUserId: params.id }, { employeeId: params.id }] },
+    { orgId, $or: [{ clerkUserId: params.id }, { employeeId: params.id }] },
     { $set: body },
     { returnDocument: 'after' }
   )

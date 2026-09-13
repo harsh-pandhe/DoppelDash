@@ -16,6 +16,7 @@ const EXPIRES = '7d'
 
 export interface JWTPayload {
   userId: string
+  orgId:  string
   email:  string
   role:   string
   firstName: string
@@ -25,6 +26,7 @@ export interface JWTPayload {
 export async function signToken(user: IUserPublic): Promise<string> {
   return new SignJWT({
     userId:    user.id,
+    orgId:     user.orgId || 'org_doppelmayr',
     email:     user.email,
     role:      user.role,
     firstName: user.firstName,

@@ -11,11 +11,11 @@ import {
 } from '@/lib/email'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
   const role = user?.role || 'employee'
-  const tr = await TravelRequest.findById(params.id).lean()
+  const tr = await TravelRequest.findOne({ _id: params.id, orgId }).lean()
   if (!tr) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (role === 'employee' && (tr as unknown as { userId: string }).userId !== userId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = await req.json()
   const { status, managerNote, adminNote } = body
 
-  const tr = await TravelRequest.findById(params.id)
+  const tr = await TravelRequest.findOne({ _id: params.id, orgId })
   if (!tr) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // State machine
@@ -71,13 +71,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     targetId:        params.id,
     targetType:      'travel_request',
     metadata:        { employeeName: tr.userName, destination: tr.destination, amount: tr.estimatedTotal, note: managerNote || adminNote, ...(selfApproved ? { selfApproved: true } : {}) },
+    orgId,
   })
 
   // Notifications (fire-and-forget)
   if (status === 'pending_admin') {
     ;(async () => {
       try {
-        const users = await listUsers({ limit: 500 })
+        const users = await listUsers({ limit: 500, orgId })
         const bosses = users.filter(u => u.role === 'admin')
         for (const b of bosses) {
           if (b.email) {
@@ -115,10 +116,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
-  const tr = await TravelRequest.findById(params.id)
+  const tr = await TravelRequest.findOne({ _id: params.id, orgId })
   if (!tr) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (tr.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (tr.status !== 'pending_manager') return NextResponse.json({ error: 'Cannot cancel — already actioned' }, { status: 409 })
@@ -131,6 +132,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     targetId:        params.id,
     targetType:      'travel_request',
     metadata:        { destination: tr.destination, amount: tr.estimatedTotal },
+    orgId,
   })
   return NextResponse.json({ success: true })
 }

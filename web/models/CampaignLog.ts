@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
 export interface ICampaignLog extends Document {
+  orgId: string
   sentBy: string
   sentByName: string
   subject: string
@@ -15,6 +16,7 @@ export interface ICampaignLog extends Document {
 
 const CampaignLogSchema = new Schema<ICampaignLog>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     sentBy:         { type: String, required: true, index: true },
     sentByName:     { type: String, required: true },
     subject:        { type: String, required: true },

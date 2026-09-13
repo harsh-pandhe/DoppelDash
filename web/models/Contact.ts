@@ -16,6 +16,7 @@ export interface IColorLabel {
 }
 
 export interface IContact extends Document {
+  orgId: string
   createdBy: string
   name: string
   email?: string
@@ -69,6 +70,7 @@ const TimelineEntrySchema = new Schema<ITimelineEntry>(
 
 const ContactSchema = new Schema<IContact>(
   {
+    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
     createdBy:            { type: String, required: true, index: true },
     name:                 { type: String, required: true, trim: true },
     email:                { type: String, trim: true, lowercase: true },

@@ -7,7 +7,7 @@ import { getUser, listUsers } from '@/lib/auth'
 // Team workload heatmap: for each team member, which of the next N days they're
 // on approved leave. Manager/boss only.
 export async function GET(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
   const start = new Date(); start.setHours(0, 0, 0, 0)
   const end = new Date(start); end.setDate(end.getDate() + days - 1); end.setHours(23, 59, 59, 999)
 
-  const clerkUsers = await listUsers({ limit: 500 })
-  const employees = await Employee.find({ isActive: true }, 'clerkUserId firstName lastName').lean()
+  const clerkUsers = await listUsers({ limit: 500, orgId })
+  const employees = await Employee.find({ orgId, isActive: true }, 'clerkUserId firstName lastName').lean()
   const empMap = new Map(employees.map(e => [e.clerkUserId, e]))
 
   const roster = clerkUsers
@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
 
   // Approved leaves overlapping the window
   const leaves = await Leave.find({
+    orgId,
     status: 'approved',
     startDate: { $lte: end },
     endDate: { $gte: start },
