@@ -9,7 +9,6 @@ const PUBLIC_EXACT = [
   '/privacy',
   '/terms',
   '/api/auth/login',
-  '/api/auth/register',
   '/api/auth/verify-otp',
   '/api/auth/send-otp',
   '/api/auth/passkey/login',

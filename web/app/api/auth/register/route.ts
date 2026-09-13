@@ -14,10 +14,11 @@ import {
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  if (!(await rateLimit(`register:${ip}`, 5, 60_000))) {
-    return NextResponse.json({ error: 'Too many attempts — wait 1 minute' }, { status: 429 })
-  }
+  // Option A: Temporarily disabled during Phase 0 tenant-isolation migration
+  return NextResponse.json(
+    { error: 'Registration is temporarily paused for scheduled multi-tenant isolation maintenance. Please check back shortly.' },
+    { status: 503 }
+  )
 
   try {
     const body = await req.json()
