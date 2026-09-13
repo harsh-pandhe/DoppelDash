@@ -13,7 +13,7 @@ export interface IOrgSettings extends Document {
 
 const OrgSettingsSchema = new Schema<IOrgSettings>(
   {
-    name:      { type: String, required: true, default: 'Doppelmayr India Pvt Ltd' },
+    name:      { type: String, required: true, default: 'My Organization' },
     address:   { type: String },
     website:   { type: String },
     phone:     { type: String },

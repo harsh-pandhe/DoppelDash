@@ -6,7 +6,10 @@ import { verifyToken, COOKIE_NAME } from '@/lib/auth/jwt'
 const PUBLIC_EXACT = [
   '/sign-in',
   '/sign-up',
+  '/privacy',
+  '/terms',
   '/api/auth/login',
+  '/api/auth/register',
   '/api/auth/verify-otp',
   '/api/auth/send-otp',
   '/api/auth/passkey/login',
