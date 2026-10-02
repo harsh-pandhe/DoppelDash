@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         mustChangePassword: false,
+        isReviewer: false,
         isActive: true,
         sessionVersion: 1,
         permissions: [

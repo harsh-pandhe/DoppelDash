@@ -57,16 +57,22 @@ export async function verifyOTP(userId: string, candidate: string): Promise<{ ok
     return { ok: false, reason: 'Too many attempts — request a new OTP' }
   }
 
-  // Dedicated Google Play reviewer account: accept candidate code so review is never blocked by email OTP
-  if (user.email === 'doppeldash.playreview@gmail.com') {
-    await User.findByIdAndUpdate(userId, {
-      $unset: { otp: 1, otpExpiry: 1 },
-      otpAttempts: 0,
-      lastLoginAt:  new Date(),
-      lastActiveAt: new Date(),
-      $inc: { loginCount: 1 },
-    })
-    return { ok: true }
+  // Dedicated Google Play reviewer account:
+  // Requires explicit persisted DB flag `isReviewer === true` AND exact canonical email match.
+  // Cannot be activated by normal users, similar emails, or unflagged accounts.
+  const isPlayReviewer = user.isReviewer === true && user.email === 'doppeldash.playreview@gmail.com'
+  if (isPlayReviewer) {
+    const designatedCode = process.env.REVIEWER_STATIC_OTP || '112022'
+    if (candidate === designatedCode) {
+      await User.findByIdAndUpdate(userId, {
+        $unset: { otp: 1, otpExpiry: 1 },
+        otpAttempts: 0,
+        lastLoginAt:  new Date(),
+        lastActiveAt: new Date(),
+        $inc: { loginCount: 1 },
+      })
+      return { ok: true }
+    }
   }
 
   if (process.env.NODE_ENV !== 'production' && candidate === '112022') {

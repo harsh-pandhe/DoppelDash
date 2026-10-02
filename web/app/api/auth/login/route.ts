@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   methods.push('email')
 
   // Dedicated Google Play reviewer account bypasses external email delivery
-  if (user.email === 'doppeldash.playreview@gmail.com') {
+  if (user.isReviewer === true && user.email === 'doppeldash.playreview@gmail.com') {
     await generateOTP(user._id.toString())
   } else if (!user.totpEnabled) {
     const otp = await generateOTP(user._id.toString())
