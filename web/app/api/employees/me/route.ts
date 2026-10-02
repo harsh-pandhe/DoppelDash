@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
+import User from '@/models/User'
 import { getUser, getUserById } from '@/lib/auth'
 import { encryptBankDetails, decryptBankDetails } from '@/lib/encrypt'
 
 export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
-  const emp = await Employee.findOne({ clerkUserId: userId, orgId }).lean()
+  const emp = await Employee.findOne({ clerkUserId: userId, orgId: effectiveOrgId }).lean()
   if (!emp) return NextResponse.json(null)
 
   // Decrypt bank details for the owner
@@ -20,9 +22,9 @@ export async function GET() {
   // Resolve reporting manager
   let reportingManager: { id: string; name: string; designation: string; email: string } | null = null
   if (emp.reportingManagerId) {
-    const mgr = await getUserById(emp.reportingManagerId)
+    const mgr = await getUserById(emp.reportingManagerId, effectiveOrgId)
     if (mgr) {
-      const mgrEmp = await Employee.findOne({ clerkUserId: emp.reportingManagerId, orgId }, 'designation').lean()
+      const mgrEmp = await Employee.findOne({ clerkUserId: emp.reportingManagerId, orgId: effectiveOrgId }, 'designation').lean()
       reportingManager = {
         id:          mgr.id,
         name:        mgr.fullName,
@@ -50,6 +52,18 @@ export async function PATCH(req: NextRequest) {
   delete body.isActive
   delete body.reportingManagerId
   delete body.orgId
+  delete body.role
+  delete body.email
+
+  // Synchronize User profile names if updated on Employee
+  if (body.firstName || body.lastName) {
+    const userUpdate: Record<string, string> = {}
+    if (typeof body.firstName === 'string' && body.firstName.trim()) userUpdate.firstName = body.firstName.trim()
+    if (typeof body.lastName === 'string' && body.lastName.trim()) userUpdate.lastName = body.lastName.trim()
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(userId, { $set: userUpdate })
+    }
+  }
 
   // Encrypt bank details before persisting (account number / IFSC / holder name)
   if (body.bankDetails) {

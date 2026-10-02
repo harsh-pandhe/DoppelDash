@@ -28,7 +28,9 @@ export const LEAVE_REVIEW_FIELDS = ['status', 'managerNote'] as const
 
 export const ANNOUNCEMENT_CREATE_FIELDS = ['title', 'body', 'priority', 'pinned'] as const
 
-export const ORG_SETTINGS_FIELDS = ['name', 'address', 'website', 'phone', 'email', 'logo'] as const
+export const ORG_SETTINGS_FIELDS = [
+  'name', 'companyName', 'timezone', 'currency', 'address', 'website', 'phone', 'email', 'logo', 'workHours', 'fiscalYearStart',
+] as const
 
 export const BALANCE_FIELDS = [
   'casual', 'sick', 'earned', 'privilege', 'restricted', 'lwpDays',

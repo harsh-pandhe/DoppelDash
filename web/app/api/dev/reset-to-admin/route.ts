@@ -23,13 +23,11 @@ export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
     return NextResponse.json({ error: 'Destructive reset is disabled in production' }, { status: 403 })
   }
-  if (process.env.NODE_ENV === 'production' && !required) {
-    return NextResponse.json({ error: 'Disabled in production (no DEV_SEED_SECRET)' }, { status: 403 })
+  if (!required) {
+    return NextResponse.json({ error: 'DEV_SEED_SECRET must be configured to run reset' }, { status: 403 })
   }
-  if (required) {
-    const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
-    if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+  if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
   const db = mongoose.connection.db

@@ -21,7 +21,9 @@ function getSecret(): Uint8Array {
 const ACCESS_EXPIRES = '15m'
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 
-export async function signMobileAccessToken(user: IUserPublic): Promise<string> {
+export async function signMobileAccessToken(user: Partial<IUserPublic> & { id?: string; sessionVersion?: number }): Promise<string> {
+  const jti = crypto.randomUUID()
+  const sessionVersion = user.sessionVersion ?? 1
   return new SignJWT({
     userId:    user.id,
     orgId:     user.orgId || 'org_doppelmayr',
@@ -29,6 +31,8 @@ export async function signMobileAccessToken(user: IUserPublic): Promise<string> 
     role:      user.role,
     firstName: user.firstName,
     lastName:  user.lastName,
+    sessionVersion,
+    jti,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

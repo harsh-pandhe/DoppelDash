@@ -21,9 +21,15 @@ export interface JWTPayload {
   role:   string
   firstName: string
   lastName:  string
+  sessionVersion?: number
+  jti?: string
+  exp?: number
+  iat?: number
 }
 
-export async function signToken(user: IUserPublic): Promise<string> {
+export async function signToken(user: Partial<IUserPublic> & { id?: string; sessionVersion?: number; jti?: string }): Promise<string> {
+  const jti = user.jti || crypto.randomUUID()
+  const sessionVersion = user.sessionVersion ?? 1
   return new SignJWT({
     userId:    user.id,
     orgId:     user.orgId || 'org_doppelmayr',
@@ -31,6 +37,8 @@ export async function signToken(user: IUserPublic): Promise<string> {
     role:      user.role,
     firstName: user.firstName,
     lastName:  user.lastName,
+    sessionVersion,
+    jti,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -7,11 +7,12 @@ export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
-  const clerkUsers = await listUsers({ limit: 500, orgId })
+  const clerkUsers = await listUsers({ limit: 500, orgId: effectiveOrgId })
 
   const employees = await Employee.find(
-    { orgId, isActive: true },
+    { orgId: effectiveOrgId, isActive: true },
     'clerkUserId firstName lastName email phone photo department designation employeeId joiningDate'
   ).lean()
   const empMap = new Map(employees.map(e => [e.clerkUserId, e]))

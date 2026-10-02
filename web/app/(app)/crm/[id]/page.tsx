@@ -333,7 +333,7 @@ function GenerateMessageDialog({ contactId, contactEmail, contactName }: {
   const sendEmail = () => {
     if (!contactEmail || !message) return
     const subjectMap: Record<string, string> = {
-      birthday: 'Birthday Greetings', 'follow-up': 'Follow-Up', 'meeting-request': 'Meeting Request', introduction: 'Introduction — Doppelmayr India',
+      birthday: 'Birthday Greetings', 'follow-up': 'Follow-Up', 'meeting-request': 'Meeting Request', introduction: 'Introduction',
     }
     const subjectEnc = encodeURIComponent(subject.trim() || subjectMap[type] || 'Message')
     let body = encodeURIComponent(message)

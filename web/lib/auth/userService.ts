@@ -12,11 +12,13 @@ export interface ListedUser {
   lastName: string
   fullName: string
   email: string
+  orgId: string
   role: UserRole
   permissions: string[]
   banned: boolean
   isActive: boolean
   mailAccess: boolean
+  sessionVersion?: number
   primaryEmailAddress: { emailAddress: string }
   unsafeMetadata: { role: UserRole; permissions: string[] }
   lastActiveAt: number | null
@@ -33,11 +35,13 @@ export async function listUsers(opts: { limit?: number; orgId?: string | null } 
     lastName:  u.lastName,
     fullName:  `${u.firstName} ${u.lastName}`.trim(),
     email:     u.email,
+    orgId:     u.orgId || 'org_doppelmayr',
     role:      u.role,
     permissions: u.permissions || [],
     banned:    u.isBanned,
     isActive:  u.isActive,
     mailAccess: u.mailAccess ?? false,
+    sessionVersion: u.sessionVersion ?? 1,
     primaryEmailAddress: { emailAddress: u.email },
     unsafeMetadata: { role: u.role, permissions: u.permissions || [] },
     lastActiveAt: u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : null,
@@ -45,10 +49,12 @@ export async function listUsers(opts: { limit?: number; orgId?: string | null } 
   }))
 }
 
-export async function getUserById(id: string): Promise<ListedUser | null> {
+export async function getUserById(id: string, orgId?: string | null): Promise<ListedUser | null> {
   await connectDB()
   try {
-    const u = await User.findById(id).lean()
+    const filter: Record<string, unknown> = { _id: id }
+    if (orgId) filter.orgId = orgId
+    const u = await User.findOne(filter).lean()
     if (!u) return null
     return {
       id:        String(u._id),
@@ -56,11 +62,13 @@ export async function getUserById(id: string): Promise<ListedUser | null> {
       lastName:  u.lastName,
       fullName:  `${u.firstName} ${u.lastName}`.trim(),
       email:     u.email,
+      orgId:     u.orgId || 'org_doppelmayr',
       role:      u.role,
       permissions: u.permissions || [],
       banned:    u.isBanned,
       isActive:  u.isActive,
       mailAccess: u.mailAccess ?? false,
+      sessionVersion: u.sessionVersion ?? 1,
       primaryEmailAddress: { emailAddress: u.email },
       unsafeMetadata: { role: u.role, permissions: u.permissions || [] },
       lastActiveAt: u.lastLoginAt ? new Date(u.lastLoginAt).getTime() : null,
@@ -69,7 +77,13 @@ export async function getUserById(id: string): Promise<ListedUser | null> {
   } catch { return null }
 }
 
-export async function updateUser(id: string, patch: { role?: UserRole; permissions?: string[]; isBanned?: boolean; isActive?: boolean; mailAccess?: boolean; firstName?: string; lastName?: string }) {
+export async function updateUser(
+  id: string,
+  patch: { role?: UserRole; permissions?: string[]; isBanned?: boolean; isActive?: boolean; mailAccess?: boolean; firstName?: string; lastName?: string },
+  orgId?: string | null
+) {
   await connectDB()
-  return User.findByIdAndUpdate(id, patch, { returnDocument: 'after' }).lean()
+  const filter: Record<string, unknown> = { _id: id }
+  if (orgId) filter.orgId = orgId
+  return User.findOneAndUpdate(filter, patch, { returnDocument: 'after' }).lean()
 }

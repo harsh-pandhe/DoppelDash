@@ -5,12 +5,20 @@ import { getUser } from '@/lib/auth'
 import { getUserTransporter } from '@/lib/userEmail'
 import { sendMail } from '@/lib/mailer'
 import CampaignLog from '@/models/CampaignLog'
+import { canUseFeature } from '@/lib/entitlements/entitlementService'
 
 // GET — preview contacts for a tag, OR ?history=1 for the caller's sent-campaign log
 export async function GET(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const orgId = user?.orgId || 'org_doppelmayr'
+
+  if (!(await canUseFeature(orgId, 'campaigns'))) {
+    return NextResponse.json(
+      { error: 'Email campaigns require a Premium plan subscription.' },
+      { status: 403 }
+    )
+  }
 
   await connectDB()
   const url = new URL(req.url)
@@ -32,6 +40,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
+
+  if (!(await canUseFeature(orgId, 'campaigns'))) {
+    return NextResponse.json(
+      { error: 'Email campaigns require a Premium plan subscription.' },
+      { status: 403 }
+    )
+  }
 
   // 10B: mass mail = admin + manager by default; employees only if granted mailAccess
   const role = user?.role || 'employee'
@@ -59,7 +75,8 @@ export async function POST(req: NextRequest) {
   } else if (body.recipients?.length) {
     contacts = body.recipients.filter(r => typeof r.email === 'string' && r.email.includes('@'))
   } else {
-    let query: Record<string, unknown> = { createdBy: userId, email: { $exists: true, $ne: '' } }
+    const effectiveOrgId = user?.orgId || 'org_doppelmayr'
+    let query: Record<string, unknown> = { orgId: effectiveOrgId, createdBy: userId, email: { $exists: true, $ne: '' } }
     if (body.contactIds?.length) query = { ...query, _id: { $in: body.contactIds } }
     else if (body.tag)           query = { ...query, tags: body.tag }
     contacts = await Contact.find(query, 'name email company').lean()

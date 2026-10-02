@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
 import { emailAnnouncement, buildAnnouncementEmail } from '@/lib/email'
@@ -13,14 +14,16 @@ export async function POST(req: NextRequest) {
 
   const { announcementId, targetRoles } = await req.json()
   if (!announcementId) return NextResponse.json({ error: 'announcementId required' }, { status: 400 })
+  if (!mongoose.isValidObjectId(announcementId)) return NextResponse.json({ error: 'Invalid announcementId' }, { status: 400 })
 
+  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
   await connectDB()
-  const ann = await Announcement.findOne({ _id: announcementId, orgId }).lean() as {
+  const ann = await Announcement.findOne({ _id: announcementId, orgId: effectiveOrgId }).lean() as {
     title: string; body: string; priority?: string
   } | null
   if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const users  = await listUsers({ limit: 500, orgId })
+  const users  = await listUsers({ limit: 500, orgId: effectiveOrgId })
   const roles: string[] = Array.isArray(targetRoles) && targetRoles.length
     ? targetRoles
     : ['employee', 'manager', 'admin']

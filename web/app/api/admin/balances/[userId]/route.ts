@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
+import User from '@/models/User'
 import LeaveBalance from '@/models/LeaveBalance'
 import { writeAudit } from '@/lib/audit'
 import { getUser } from '@/lib/auth'
@@ -15,6 +16,11 @@ export async function GET(_: NextRequest, { params }: { params: { userId: string
 
   const org = orgId || 'org_doppelmayr'
   await connectDB()
+
+  // Verify target user belongs to this organization
+  const targetUser = await User.findOne({ _id: params.userId, orgId: org }).lean()
+  if (!targetUser) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const year = new Date().getFullYear()
   const bal  = await LeaveBalance.findOne({ userId: params.userId, orgId: org, year }).lean()
   return NextResponse.json(bal || { userId: params.userId, orgId: org, year, ...DEFAULTS })
@@ -27,6 +33,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
 
   const org = orgId || 'org_doppelmayr'
   await connectDB()
+
+  // Verify target user belongs to this organization before updating
+  const targetUser = await User.findOne({ _id: params.userId, orgId: org }).lean()
+  if (!targetUser) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body    = await req.json()
   const updates = pick<Record<string, number>>(body, BALANCE_FIELDS)
 

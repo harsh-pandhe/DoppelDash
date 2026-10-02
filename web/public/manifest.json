@@ -1,7 +1,7 @@
 {
-  "name": "DoppelDash — Doppelmayr India",
+  "name": "DoppelDash",
   "short_name": "DoppelDash",
-  "description": "Enterprise management suite for Doppelmayr India",
+  "description": "Unified Operations, Travel, Expenses & CRM Platform",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",

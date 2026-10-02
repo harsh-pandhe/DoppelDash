@@ -7,8 +7,9 @@ import { emailOnboardingNudge } from '@/lib/email'
 // Emails a nudge to employees who joined 7+ days ago but haven't finished onboarding.
 // Re-nudges at most once every 7 days (idempotent within the week).
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret')
-  if (secret !== process.env.CRON_SECRET) {
+  const authHeader = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
+  const secret = req.nextUrl.searchParams.get('secret') || authHeader
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

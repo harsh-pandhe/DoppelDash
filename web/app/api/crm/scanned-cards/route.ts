@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import ScannedCard from '@/models/ScannedCard'
+import Contact from '@/models/Contact'
 import { getUser } from '@/lib/auth'
 
 // GET — list the caller's scanned cards (newest first)
@@ -30,6 +32,14 @@ export async function POST(req: NextRequest) {
   if (body.imageData.length > 1_500_000) return NextResponse.json({ error: 'imageData too large' }, { status: 400 })
 
   await connectDB()
+  if (body.contactId) {
+    if (!mongoose.isValidObjectId(body.contactId)) {
+      return NextResponse.json({ error: 'Invalid contactId' }, { status: 400 })
+    }
+    const contact = await Contact.findOne({ _id: body.contactId, orgId })
+    if (!contact) return NextResponse.json({ error: 'Referenced contact not found in this organization' }, { status: 404 })
+  }
+
   // Strip nulls from parsed fields so schema stays clean
   const parsed: Record<string, string> = {}
   for (const [k, v] of Object.entries(body.parsedFields || {})) {

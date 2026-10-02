@@ -28,6 +28,8 @@ const LeaveBalanceSchema = new Schema<ILeaveBalance>(
 )
 
 LeaveBalanceSchema.index({ userId: 1, year: 1 }, { unique: true })
+LeaveBalanceSchema.index({ orgId: 1, userId: 1, year: 1 }, { unique: true })
+LeaveBalanceSchema.index({ orgId: 1, year: 1 })
 
 const LeaveBalance: Model<ILeaveBalance> =
   mongoose.models.LeaveBalance || mongoose.model('LeaveBalance', LeaveBalanceSchema)

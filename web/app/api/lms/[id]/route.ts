@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import LeaveBalance from '@/models/LeaveBalance'
@@ -14,6 +15,7 @@ const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const role = user?.role || 'employee'
   const leave = await Leave.findOne({ _id: params.id, orgId }).lean()
@@ -26,6 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
@@ -113,6 +116,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const role = user?.role || 'employee'
   const leave = await Leave.findOne({ _id: params.id, orgId })

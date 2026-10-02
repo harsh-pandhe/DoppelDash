@@ -1,6 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { startAuthentication } from '@simplewebauthn/browser'
 import dynamic from 'next/dynamic'
 
@@ -10,6 +11,7 @@ import {
   Mail, Lock, Eye, EyeOff, ChevronRight, ShieldCheck, Sparkles, X, Send,
   Loader2, Check, Mountain, Smartphone, KeyRound,
 } from 'lucide-react'
+import { SUPPORT_CONFIG } from '@/lib/config/support'
 
 type Step = 'credentials' | 'otp' | 'change-password'
 type VerifyMethod = 'totp' | 'email'
@@ -184,7 +186,7 @@ export default function SignInPage() {
       const data = await res.json()
       setChatHistory([...next, { role: 'model', text: data.text || data.error || "Couldn't get a response." }])
     } catch {
-      setChatHistory([...next, { role: 'model', text: 'Network error. Try again or email IT-NaviMumbai@doppelmayr.com.' }])
+      setChatHistory([...next, { role: 'model', text: `Network error. Try again or contact ${SUPPORT_CONFIG.isConfigured ? SUPPORT_CONFIG.supportEmail : 'support'}.` }])
     } finally { setIsTyping(false) }
   }
 
@@ -226,7 +228,7 @@ export default function SignInPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Peaks & People.</span>
             </h2>
             <p className="text-lg text-slate-300 max-w-md font-light leading-relaxed">
-              Secure access to the Doppelmayr India network. Engineering the future of ropeways globally.
+              Secure enterprise mobility, travel, expenses, and CRM platform.
             </p>
 
             <div className="grid grid-cols-3 gap-4 max-w-md mt-8">
@@ -290,7 +292,7 @@ export default function SignInPage() {
                   {step === 'change-password' && 'Set a new password'}
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  {step === 'credentials' && 'Use your Doppelmayr India work credentials.'}
+                  {step === 'credentials' && 'Use your work credentials.'}
                   {step === 'otp' && verifyMethod === 'totp' && <>Enter the 6-digit code from your <span className="text-slate-200 font-medium">authenticator app</span>.</>}
                   {step === 'otp' && verifyMethod === 'email' && (emailSent
                     ? <>We sent a 6-digit code to <span className="text-slate-200 font-medium">{email}</span>. It expires in 10 minutes.</>
@@ -318,7 +320,7 @@ export default function SignInPage() {
                         <input
                           id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" autoFocus
                           className="block w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm"
-                          placeholder="name@doppelmayr.in"
+                          placeholder="name@company.com"
                         />
                       </div>
                     </div>
@@ -326,10 +328,15 @@ export default function SignInPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label htmlFor="password" className="text-xs font-medium text-slate-300 uppercase tracking-wider block">Password</label>
-                        <button type="button" onClick={() => setShowSupport(true)}
-                          className="text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />Smart IT Help
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <Link href="/forgot-password" className="text-xs font-medium text-slate-400 hover:text-white transition-colors">
+                            Forgot?
+                          </Link>
+                          <button type="button" onClick={() => setShowSupport(true)}
+                            className="text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" />Smart IT Help
+                          </button>
+                        </div>
                       </div>
                       <div className="relative group">
                         <Lock className="absolute inset-y-0 left-0 ml-4 my-auto h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
@@ -483,7 +490,7 @@ export default function SignInPage() {
             </div>
 
             <p className="text-center text-[11px] text-slate-500 mt-4">
-              Internal platform · Doppelmayr India
+              Enterprise platform · DoppelDash
             </p>
             <p className="text-center text-[10px] text-slate-600 mt-1">
               Access restricted to authorised employees. All sessions are logged.

@@ -33,9 +33,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'purpose, destination, dates required' }, { status: 400 })
   }
 
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   const tr = await TravelRequest.create({
     userId, userName,
-    orgId,
+    orgId: effectiveOrgId,
     purpose, destination,
     departureDate: new Date(departureDate),
     returnDate:    new Date(returnDate),
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
   // Notify reporting manager (+ boss); fallback to all managers if no chain set
   ;(async () => {
     try {
-      const recipients = await notifyTargetsFor(userId)
+      const recipients = await notifyTargetsFor(userId, effectiveOrgId)
       for (const email of recipients) {
         emailTravelSubmitted({
           managerEmail: email,

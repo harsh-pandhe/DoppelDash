@@ -31,7 +31,43 @@ async function getTransporter(): Promise<Transporter | null> {
 }
 
 export function defaultFrom(): string {
-  return process.env.SMTP_FROM || `"DoppelDash · Doppelmayr India" <${process.env.SMTP_USER}>`
+  const fromAddress = process.env.SMTP_USER || process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'unconfigured'
+  return process.env.SMTP_FROM || `"DoppelDash" <${fromAddress}>`
+}
+
+export interface MailerDiagnostics {
+  configured: boolean
+  host: string
+  port: number
+  secure: boolean
+  hasUser: boolean
+  hasPass: boolean
+  from: string
+  missing: string[]
+  canDeliverAuthEmails: boolean
+}
+
+export function getMailerDiagnostics(): MailerDiagnostics {
+  const missing: string[] = []
+  if (!process.env.SMTP_USER) missing.push('SMTP_USER')
+  if (!process.env.SMTP_PASS) missing.push('SMTP_PASS')
+
+  const configured = missing.length === 0
+  return {
+    configured,
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    hasUser: !!process.env.SMTP_USER,
+    hasPass: !!process.env.SMTP_PASS, // Never exposes the password itself
+    from: defaultFrom(),
+    missing,
+    canDeliverAuthEmails: configured,
+  }
+}
+
+export function canDeliverAuthEmails(): boolean {
+  return !process.env.SMTP_USER || !process.env.SMTP_PASS ? false : true
 }
 
 export interface SendOptions {
@@ -48,9 +84,15 @@ export interface SendOptions {
  * Fire-and-forget callers can ignore the return value.
  */
 export async function sendMail(opts: SendOptions): Promise<boolean> {
+  const recipients = Array.isArray(opts.to) ? opts.to : [opts.to]
+  const validRecipients = recipients.filter(r => r && r.includes('@') && !r.includes('__REQUIRED_SET_SUPPORT_GMAIL_IN_ENV__') && !r.includes('DoppelDash support Gmail'))
+  if (validRecipients.length === 0) {
+    console.warn('[mailer] No valid email recipients specified — skipping send')
+    return false
+  }
   const t = await getTransporter()
   if (!t) {
-    console.warn('[mailer] SMTP not configured — skipping send to', opts.to)
+    console.warn('[mailer] SMTP not configured — skipping send to', validRecipients)
     return false
   }
   const msg: SendMailOptions = {

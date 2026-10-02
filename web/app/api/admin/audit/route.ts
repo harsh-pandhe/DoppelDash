@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
   const to         = searchParams.get('to')
   const limit      = Math.min(Number(searchParams.get('limit') || 50), 200)
   const skip       = Math.max(0, Number(searchParams.get('skip') || 0))
-  const match: Record<string, unknown> = { orgId }
+  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const match: Record<string, unknown> = { orgId: effectiveOrgId }
   // UI filter 'travel' maps to the travel_request targetType
   if (targetType) match.targetType = targetType === 'travel' ? 'travel_request' : targetType
   if (action)     match.action     = action

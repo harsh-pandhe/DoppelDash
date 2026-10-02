@@ -84,7 +84,7 @@ export default function BrandPanel({ subtitle }: { subtitle: string }) {
       <div className="relative z-10">
         <div className="h-px bg-white/10 mb-4 w-16" />
         <p className="text-[11px] text-white/35 tracking-wide">
-          © {new Date().getFullYear()} Doppelmayr India Pvt Ltd. All rights reserved.
+          © {new Date().getFullYear()} DoppelDash. All rights reserved.
         </p>
       </div>
     </div>

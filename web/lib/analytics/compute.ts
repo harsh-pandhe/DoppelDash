@@ -33,9 +33,9 @@ function buildMonths(start: Date, end: Date) {
  * Core analytics aggregation. Scoped by (userId, role). Used by the authed dashboard
  * route AND the public shared-dashboard route (which passes the share owner's identity).
  */
-export async function computeAnalytics(userId: string, role: string, p: AnalyticsParams, orgId?: string | null) {
+export async function computeAnalytics(userId: string, role: string, p: AnalyticsParams, orgId: string) {
   const isManager = role === 'manager' || role === 'admin'
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   const now = new Date()

@@ -6,11 +6,12 @@ import nodemailer from 'nodemailer'
 import { getUser } from '@/lib/auth'
 
 export async function POST() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const effectiveOrgId = orgId || 'org_doppelmayr'
 
   await connectDB()
-  const config = await UserEmailConfig.findOne({ userId }).lean() as Record<string, unknown> | null
+  const config = await UserEmailConfig.findOne({ userId, orgId: effectiveOrgId }).lean() as Record<string, unknown> | null
   if (!config) return NextResponse.json({ error: 'No email configured' }, { status: 400 })
 
   const appPassword = decrypt(config.appPassword as string)
@@ -37,7 +38,7 @@ export async function POST() {
     })
 
     // Mark as verified
-    await UserEmailConfig.updateOne({ userId }, { isVerified: true })
+    await UserEmailConfig.updateOne({ userId, orgId: effectiveOrgId }, { isVerified: true })
 
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {

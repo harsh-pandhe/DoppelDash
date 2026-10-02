@@ -7,17 +7,22 @@ import TravelRequest from '@/models/TravelRequest'
 import { getUser, listUsers } from '@/lib/auth'
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
 
-  const clerkUsers = await listUsers({ limit: 500 })
+  // Strictly scope user and employee lookups to this organization
+  const clerkUsers = await listUsers({ limit: 500, orgId: effectiveOrgId })
 
-  const employees = await Employee.find({}, 'clerkUserId firstName lastName lastLoginAt lastActiveAt loginCount onboardingComplete department').lean()
-  const empMap    = new Map(employees.map(e => [e.clerkUserId, e]))
+  const employees = await Employee.find(
+    { orgId: effectiveOrgId },
+    'clerkUserId firstName lastName lastLoginAt lastActiveAt loginCount onboardingComplete department'
+  ).lean()
+  const empMap = new Map(employees.map(e => [e.clerkUserId, e]))
 
   const now   = Date.now()
   const day7  = now - 7  * 24 * 60 * 60 * 1000
@@ -46,15 +51,15 @@ export async function GET() {
   const activeIn30d    = userStats.filter(u => u.activeIn30d).length
   const onboardingPend = userStats.filter(u => !u.onboardingComplete).length
 
-  // Feature usage (last 30 days)
+  // Feature usage (last 30 days) — strictly scoped to this organization
   const since30 = new Date(day30)
   const [leavesCount, expensesCount, travelCount] = await Promise.all([
-    Leave.countDocuments({ createdAt: { $gte: since30 } }),
-    Expense.countDocuments({ createdAt: { $gte: since30 } }),
-    TravelRequest.countDocuments({ createdAt: { $gte: since30 } }),
+    Leave.countDocuments({ orgId: effectiveOrgId, createdAt: { $gte: since30 } }),
+    Expense.countDocuments({ orgId: effectiveOrgId, createdAt: { $gte: since30 } }),
+    TravelRequest.countDocuments({ orgId: effectiveOrgId, createdAt: { $gte: since30 } }),
   ])
 
-  // Login activity by day (last 30 days) — approximate from Clerk lastActiveAt
+  // Login activity by day (last 30 days)
   const loginByDay: Record<string, number> = {}
   userStats.forEach(u => {
     if (!u.lastLoginAt) return

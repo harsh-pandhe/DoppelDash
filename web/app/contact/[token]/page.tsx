@@ -43,7 +43,7 @@ export default async function PublicContactPage({ params }: { params: { token: s
           </div>
           <p className="font-bold text-ink text-lg">Contact not found</p>
           <p className="text-sm text-ink-muted mt-1">This link may be invalid or expired.</p>
-          <p className="text-[10px] text-ink-muted mt-6 uppercase tracking-widest">DoppelDash · Doppelmayr India</p>
+          <p className="text-[10px] text-ink-muted mt-6 uppercase tracking-widest">DoppelDash</p>
         </div>
       </div>
     )
@@ -145,8 +145,6 @@ export default async function PublicContactPage({ params }: { params: { token: s
         <div className="px-5 pb-4 pt-2 border-t border-surface-border">
           <p className="text-center text-[10px] text-ink-muted leading-relaxed">
             Powered by <span className="font-bold text-ink-muted">DoppelDash</span>
-            <span className="mx-1.5 text-gray-300">·</span>
-            Doppelmayr India
           </p>
         </div>
 

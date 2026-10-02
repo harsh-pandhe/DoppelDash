@@ -3,11 +3,14 @@ import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sanitize } from '@/lib/sanitize'
 import { encryptContact, decryptContact } from '@/lib/encrypt'
+import mongoose from 'mongoose'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const role = user?.role || 'employee'
   const visClauses: Record<string, unknown>[] = [
@@ -31,6 +34,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const orgId = user?.orgId || 'org_doppelmayr'
   const role = user?.role || 'employee'
@@ -53,6 +57,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { timelineEntry, ...rest } = body
+  delete rest.orgId
+  delete rest.createdBy
+  delete rest._id
   const encrypted = encryptContact(rest)
   const contact = await Contact.findOneAndUpdate(
     filter,
@@ -66,6 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const orgId = user?.orgId || 'org_doppelmayr'
   const role = user?.role || 'employee'
@@ -73,6 +81,17 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     ? { _id: params.id, orgId }
     : { _id: params.id, orgId, createdBy: userId }
 
-  await Contact.findOneAndDelete(filter)
+  const deleted = await Contact.findOneAndDelete(filter)
+  if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  writeAudit({
+    action: 'contact_deleted',
+    performedBy: userId,
+    performedByName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || userId,
+    targetId: params.id,
+    targetType: 'contact',
+    orgId,
+  })
+
   return NextResponse.json({ success: true })
 }

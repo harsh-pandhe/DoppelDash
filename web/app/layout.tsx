@@ -7,8 +7,8 @@ const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-inter-tig
 const mono       = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono',     display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'DoppelDash — Doppelmayr India',
-  description: 'Enterprise management suite for Doppelmayr India',
+  title: 'DoppelDash — Enterprise Operations & Mobile Platform',
+  description: 'Modern Operations, Travel, Expenses & CRM Platform',
   manifest: '/manifest.json',
   icons: { apple: '/icon-192.png' },
   appleWebApp: { capable: false, statusBarStyle: 'default', title: 'DoppelDash' },
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0057A8',
+  themeColor: '#070B16',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { getUser, listUsers } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
@@ -9,6 +10,7 @@ import Contact from '@/models/Contact'
 import Employee from '@/models/Employee'
 import { writeAudit } from '@/lib/audit'
 import { getUserEmail, emailExpenseStatusChanged, emailExpensePendingPayout } from '@/lib/email'
+import { selfApprovalCheck } from '@/lib/permissions'
 
 export interface NotifItem {
   id:       string
@@ -26,13 +28,14 @@ export async function GET() {
   const role  = user?.role || 'employee'
   const isMgr = role === 'manager' || role === 'admin'
   const isBoss = role === 'admin'
+  const effectiveOrgId = orgId || 'org_doppelmayr'
 
   await connectDB()
   const items: NotifItem[] = []
 
   if (isMgr) {
     // Pending leaves needing approval
-    const pendingLeaves = await Leave.find({ orgId, status: 'pending' }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingLeaves = await Leave.find({ orgId: effectiveOrgId, status: 'pending' }).sort({ createdAt: -1 }).limit(10).lean()
     pendingLeaves.forEach(l => items.push({
       id: `leave-${String(l._id)}`, kind: 'leave',
       title: `${l.userName} — ${l.type} leave`,
@@ -43,7 +46,7 @@ export async function GET() {
 
     // Expenses awaiting manager approval (non-boss) or pending_admin (boss)
     const expStatus = isBoss ? 'pending_admin' : 'pending_manager'
-    const pendingExp = await Expense.find({ orgId, status: expStatus }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingExp = await Expense.find({ orgId: effectiveOrgId, status: expStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingExp.forEach(e => items.push({
       id: `exp-${String(e._id)}`, kind: 'expense',
       title: `${e.userName} — ${e.title}`,
@@ -54,7 +57,7 @@ export async function GET() {
 
     // Travel requests
     const trStatus = isBoss ? 'pending_admin' : 'pending_manager'
-    const pendingTr = await TravelRequest.find({ orgId, status: trStatus }).sort({ createdAt: -1 }).limit(10).lean()
+    const pendingTr = await TravelRequest.find({ orgId: effectiveOrgId, status: trStatus }).sort({ createdAt: -1 }).limit(10).lean()
     pendingTr.forEach(t => items.push({
       id: `tr-${String(t._id)}`, kind: 'travel',
       title: `${t.userName} → ${t.destination}`,
@@ -65,7 +68,7 @@ export async function GET() {
   }
 
   // Status changes on MY items (employee + manager + boss)
-  const myReturned = await Expense.find({ orgId, userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(5).lean()
+  const myReturned = await Expense.find({ orgId: effectiveOrgId, userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(5).lean()
   myReturned.forEach(e => items.push({
     id: `exp-ret-${String(e._id)}`, kind: 'expense',
     title: `${e.title} returned for revision`,
@@ -77,7 +80,7 @@ export async function GET() {
 
   // Pinned + recent announcements (7 days)
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const annos = await Announcement.find({ orgId, $or: [{ pinned: true }, { createdAt: { $gte: since } }] })
+  const annos = await Announcement.find({ orgId: effectiveOrgId, $or: [{ pinned: true }, { createdAt: { $gte: since } }] })
     .sort({ pinned: -1, createdAt: -1 }).limit(5).lean()
   annos.forEach(a => items.push({
     id: `ann-${String(a._id)}`, kind: 'announcement',
@@ -91,7 +94,7 @@ export async function GET() {
   // Contact reminders due in next 7 days (mine only)
   const dueSoon = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const reminders = await Contact.find({
-    orgId,
+    orgId: effectiveOrgId,
     createdBy: userId,
     reminderDate: { $exists: true, $lte: dueSoon }
   }, 'name company reminderDate reminderNote').sort({ reminderDate: 1 }).limit(5).lean()
@@ -111,7 +114,7 @@ export async function GET() {
   const today = new Date(); today.setHours(0,0,0,0)
   const employees = await Employee.find(
     {
-      orgId,
+      orgId: effectiveOrgId,
       $or: [
         { dateOfBirth:     { $exists: true, $ne: null } },
         { workAnniversary: { $exists: true, $ne: null } },
@@ -178,29 +181,39 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const isBoss = role === 'admin'
+  const effectiveOrgId = orgId || 'org_doppelmayr'
 
   const body = await req.json().catch(() => ({}))
-  const ids: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
-  if (ids.length === 0) return NextResponse.json({ error: 'No expense IDs' }, { status: 400 })
+  const rawIds: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
+  const ids = rawIds.filter(id => typeof id === 'string' && mongoose.isValidObjectId(id))
+  if (ids.length === 0) return NextResponse.json({ error: 'No valid expense IDs' }, { status: 400 })
 
   await connectDB()
   const fromStatus = isBoss ? 'pending_admin' : 'pending_manager'
   const toStatus   = isBoss ? 'paid' : 'pending_admin'
   const actorName  = user?.fullName || user?.firstName || (isBoss ? 'Boss' : 'Manager')
 
-  const expenses = await Expense.find({ _id: { $in: ids }, orgId, status: fromStatus })
+  const expenses = await Expense.find({ _id: { $in: ids }, orgId: effectiveOrgId, status: fromStatus })
   let approved = 0
+  const approvedExpenses: typeof expenses = []
+
   for (const e of expenses) {
+    const check = selfApprovalCheck(userId, role, e.userId)
+    if (check.blocked) continue
+
+    const selfApproved = check.selfApproved
     e.status = toStatus
     if (isBoss) { e.paidBy = userId; e.paidAt = new Date() } else { e.approvedBy = userId }
     await e.save()
     approved++
+    approvedExpenses.push(e)
+
     writeAudit({
-      action: `expense.${toStatus}`,
+      action: selfApproved ? `expense.${toStatus}.self_approved` : `expense.${toStatus}`,
       performedBy: userId, performedByName: actorName,
       targetId: String(e._id), targetType: 'expense',
-      metadata: { status: toStatus, employeeName: e.userName, amount: e.amount, bulk: true },
-      orgId,
+      metadata: { status: toStatus, employeeName: e.userName, amount: e.amount, bulk: true, ...(selfApproved ? { selfApproved: true } : {}) },
+      orgId: effectiveOrgId,
     })
     if (isBoss) {
       getUserEmail(e.userId).then(email => {
@@ -213,9 +226,9 @@ export async function POST(req: NextRequest) {
   if (!isBoss && approved > 0) {
     ;(async () => {
       try {
-        const users = await listUsers({ limit: 500, orgId })
+        const users = await listUsers({ limit: 500, orgId: effectiveOrgId })
         const bosses = users.filter(u => u.role === 'admin')
-        for (const e of expenses) {
+        for (const e of approvedExpenses) {
           for (const b of bosses) {
             if (b.email) emailExpensePendingPayout({ bossEmail: b.email, employeeName: e.userName, title: e.title, amount: e.amount })
           }
@@ -224,5 +237,5 @@ export async function POST(req: NextRequest) {
     })()
   }
 
-  return NextResponse.json({ approved, skipped: ids.length - approved })
+  return NextResponse.json({ approved, skipped: rawIds.length - approved })
 }

@@ -5,6 +5,7 @@ import User from '@/models/User'
 import Employee from '@/models/Employee'
 import LeaveBalance from '@/models/LeaveBalance'
 import { sendEmail } from '@/lib/email'
+import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
 export async function GET() {
   const { userId, user } = await getUser()
@@ -86,6 +87,15 @@ export async function POST(req: NextRequest) {
   await connectDB()
   const orgId = user?.orgId || 'org_doppelmayr'
 
+  const maxMembers = await getOrganizationLimit(orgId, 'maxMembers')
+  const currentMembers = await getOrganizationUsage(orgId, 'members')
+  if (currentMembers >= maxMembers) {
+    return NextResponse.json(
+      { error: `Organization member limit reached (${maxMembers}). Upgrade to Premium to add more team members.` },
+      { status: 403 }
+    )
+  }
+
   const existing = await User.findOne({ email: email.toLowerCase() })
   if (existing) return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
 
@@ -104,37 +114,44 @@ export async function POST(req: NextRequest) {
     createdByUserId:    userId,
     mustChangePassword: true,
     isActive:           true,
+    sessionVersion:     1,
   })
   const newUid = newUser._id.toString()
 
-  // Create Employee profile
-  const emp = await Employee.create({
-    clerkUserId:     newUid,    // reuse field for our userId
-    orgId,
-    createdByUserId: userId,
-    firstName, lastName, email,
-    department:      department    || 'General',
-    designation:     designation   || newRole,
-    employeeType:    employeeType  || 'full_time',
-    joiningDate:     joiningDate   ? new Date(joiningDate) : new Date(),
-    onboardingComplete: false,
-    onboardingStep:  0,
-    privileges: privileges || {
-      food:   { tier: 'none', dailyLimit: 0 },
-      taxi:   { tier: 'none', perKmLimit: 0 },
-      flight: { tier: 'none', enabled: false },
-      hotel:  { tier: 'none', perNightLimit: 0 },
-      travelAdvance: 0,
-    },
-  })
+  let emp
+  try {
+    // Create Employee profile
+    emp = await Employee.create({
+      clerkUserId:     newUid,    // reuse field for our userId
+      orgId,
+      createdByUserId: userId,
+      firstName, lastName, email,
+      department:      department    || 'General',
+      designation:     designation   || newRole,
+      employeeType:    employeeType  || 'full_time',
+      joiningDate:     joiningDate   ? new Date(joiningDate) : new Date(),
+      onboardingComplete: false,
+      onboardingStep:  0,
+      privileges: privileges || {
+        food:   { tier: 'none', dailyLimit: 0 },
+        taxi:   { tier: 'none', perKmLimit: 0 },
+        flight: { tier: 'none', enabled: false },
+        hotel:  { tier: 'none', perNightLimit: 0 },
+        travelAdvance: 0,
+      },
+    })
 
-  // Initialise leave balance
-  const year = new Date().getFullYear()
-  await LeaveBalance.findOneAndUpdate(
-    { orgId, userId: newUid, year },
-    { $setOnInsert: { orgId, casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 } },
-    { upsert: true }
-  )
+    // Initialise leave balance
+    const year = new Date().getFullYear()
+    await LeaveBalance.findOneAndUpdate(
+      { orgId, userId: newUid, year },
+      { $setOnInsert: { orgId, casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 } },
+      { upsert: true }
+    )
+  } catch (err) {
+    await User.findByIdAndDelete(newUid)
+    throw err
+  }
 
   // Send welcome email with credentials — unless silent add requested.
   // skipWelcomeEmail lets an admin create real users (e.g. onboarding a directory)

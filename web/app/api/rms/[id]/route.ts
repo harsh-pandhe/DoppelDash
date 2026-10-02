@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Expense from '@/models/Expense'
+import TravelRequest from '@/models/TravelRequest'
 import { writeAudit } from '@/lib/audit'
 import { getUserEmail, emailExpenseStatusChanged, emailExpensePendingPayout } from '@/lib/email'
 import { getUser, listUsers } from '@/lib/auth'
@@ -11,6 +13,7 @@ import { EXPENSE_CREATE_FIELDS, EXPENSE_REVIEW_FIELDS } from '@/lib/apiFields'
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const role = user?.role || 'employee'
   const expense = await Expense.findOne({ _id: params.id, orgId }).lean()
@@ -23,6 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const role = user?.role || 'employee'
 
   await connectDB()
@@ -41,6 +45,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updates: Record<string, unknown> = role === 'employee'
     ? pick(body, EXPENSE_CREATE_FIELDS)
     : pick(body, EXPENSE_REVIEW_FIELDS)
+
+  if (updates.travelRequestId) {
+    if (!mongoose.isValidObjectId(updates.travelRequestId as string)) {
+      return NextResponse.json({ error: 'Invalid travelRequestId' }, { status: 400 })
+    }
+    const tr = await TravelRequest.findOne({ _id: updates.travelRequestId, orgId })
+    if (!tr) {
+      return NextResponse.json({ error: 'Referenced travel request not found in this organization' }, { status: 404 })
+    }
+  }
 
   // Reviewers also approve/reject individual line items via a positional path
   // (`lineItems.3.status`). Allowed explicitly — the generic whitelist can't
@@ -147,6 +161,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await connectDB()
   const role = user?.role || 'employee'
   const expense = await Expense.findOne({ _id: params.id, orgId })

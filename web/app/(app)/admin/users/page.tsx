@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Shield, User, Briefcase, Check, Loader2, Ban, UserCheck,
   Save, Search, Database, Lock, Plus, Copy, Eye, EyeOff,
-  Building2, CalendarDays, Star, ChevronDown,
+  Building2, CalendarDays, Star, ChevronDown, Mail,
 } from 'lucide-react'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,8 @@ import { useUser } from '@/lib/useUser'
 import { ALL_PERMISSIONS, type Permission } from '@/lib/permissions'
 import { useAutoRefresh } from '@/lib/useAutoRefresh'
 import * as Dialog from '@radix-ui/react-dialog'
+import InviteMemberDialog from './_components/InviteMemberDialog'
+import InvitationsTab from './_components/InvitationsTab'
 
 interface EmployeeProfile {
   employeeId: string; department: string; designation: string
@@ -163,7 +165,7 @@ function CreateUserDialog({ canCreateManager, onCreated }: { canCreateManager: b
 
               <div className="space-y-1.5">
                 <Label htmlFor="email">Work Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))} placeholder="rahul@doppelmayr.com" />
+                <Input id="email" type="email" value={form.email} onChange={e => setForm(f=>({...f,email:e.target.value}))} placeholder="name@example.com" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -660,6 +662,7 @@ export default function AdminUsersPage() {
   const role = (user?.unsafeMetadata?.role as string) || 'employee'
   const isBoss = role === 'admin'
 
+  const [activeTab, setActiveTab] = useState<'members' | 'invitations'>('members')
   const [users,   setUsers]   = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search,  setSearch]  = useState('')
@@ -716,7 +719,7 @@ export default function AdminUsersPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-ink">{users.length} Team Member{users.length !== 1 ? 's' : ''}</p>
-              <p className="text-xs text-surface-muted">Manage roles, balances, and privileges.</p>
+              <p className="text-xs text-surface-muted">Manage roles, invitations, balances, and privileges.</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -727,58 +730,97 @@ export default function AdminUsersPage() {
                 Reseed
               </Button>
             )}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-muted pointer-events-none" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
-                className="pl-9 h-9 pr-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 min-w-[200px]" />
-            </div>
+            <InviteMemberDialog canCreateManager={isBoss} onInvited={fetchUsers} />
             <CreateUserDialog canCreateManager={isBoss} onCreated={fetchUsers} />
           </div>
         </div>
 
-        {/* 12A: role + department filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {(['all', 'employee', 'manager', 'admin'] as const).map(r => (
-            <button type="button" key={r} onClick={() => setRoleFilter(r)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize transition-all
-                ${roleFilter === r ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
-              {r === 'all' ? 'All roles' : r}
-            </button>
-          ))}
-          {departments.length > 0 && (
-            <select aria-label="Filter by department" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-              className="h-7 px-2 ml-1 rounded-lg border border-surface-border text-[11px] font-semibold text-ink-muted focus:outline-none focus:border-brand-500">
-              <option value="all">All departments</option>
-              {departments.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          )}
-          {(roleFilter !== 'all' || deptFilter !== 'all') && (
-            <button type="button" onClick={() => { setRoleFilter('all'); setDeptFilter('all') }}
-              className="text-[11px] font-semibold text-surface-muted hover:text-ink-muted px-2 py-1">
-              Clear
-            </button>
-          )}
-          <span className="text-[11px] text-surface-muted ml-auto">{filtered.length} shown</span>
+        {/* Tab Switcher */}
+        <div className="flex border-b border-surface-border gap-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab('members')}
+            className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'members'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Team Members ({users.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('invitations')}
+            className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'invitations'
+                ? 'border-brand-500 text-brand-600'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            Invitations
+          </button>
         </div>
 
-        {loading ? (
-          <div className="space-y-2">{[...Array(6)].map((_,i) => <div key={i} className="h-14 rounded-xl bg-surface-border animate-pulse" />)}</div>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-surface-muted py-8 text-center">No users match the current filters.</p>
+        {activeTab === 'invitations' ? (
+          <InvitationsTab />
         ) : (
-          <div className="rounded-2xl border border-surface-border bg-surface-1 overflow-hidden">
-            {/* Header row (md+) */}
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-2.5 border-b border-surface-border bg-surface-2 text-[10px] font-bold uppercase tracking-widest text-surface-muted">
-              <span>Member</span><span>Role</span><span>Department</span><span className="text-right">Status</span>
+          <>
+            {/* Search and Filters */}
+            <div className="flex items-center gap-3 flex-wrap justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+                {(['all', 'employee', 'manager', 'admin'] as const).map(r => (
+                  <button type="button" key={r} onClick={() => setRoleFilter(r)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold capitalize transition-all
+                      ${roleFilter === r ? 'bg-brand-500 text-white' : 'bg-surface-1 border border-surface-border text-ink-muted hover:border-brand-400'}`}>
+                    {r === 'all' ? 'All roles' : r}
+                  </button>
+                ))}
+                {departments.length > 0 && (
+                  <select aria-label="Filter by department" value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
+                    className="h-7 px-2 ml-1 rounded-lg border border-surface-border text-[11px] font-semibold text-ink-muted focus:outline-none focus:border-brand-500">
+                    <option value="all">All departments</option>
+                    {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                )}
+                {(roleFilter !== 'all' || deptFilter !== 'all') && (
+                  <button type="button" onClick={() => { setRoleFilter('all'); setDeptFilter('all') }}
+                    className="text-[11px] font-semibold text-surface-muted hover:text-ink-muted px-2 py-1">
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-surface-muted">{filtered.length} shown</span>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-muted pointer-events-none" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search team…"
+                    className="pl-9 h-9 pr-3 rounded-xl border border-surface-border text-sm focus:outline-none focus:border-brand-500 min-w-[200px]" />
+                </div>
+              </div>
             </div>
-            <div className="divide-y divide-surface-border">
-              {filtered.map(u => (
-                <UserRowItem key={u.id} u={u} allUsers={users} onUpdate={fetchUsers} isBoss={isBoss}
-                  expanded={expandedId === u.id}
-                  onToggle={() => setExpandedId(id => id === u.id ? null : u.id)} />
-              ))}
-            </div>
-          </div>
+
+            {loading ? (
+              <div className="space-y-2">{[...Array(6)].map((_,i) => <div key={i} className="h-14 rounded-xl bg-surface-border animate-pulse" />)}</div>
+            ) : filtered.length === 0 ? (
+              <p className="text-sm text-surface-muted py-8 text-center">No users match the current filters.</p>
+            ) : (
+              <div className="rounded-2xl border border-surface-border bg-surface-1 overflow-hidden">
+                {/* Header row (md+) */}
+                <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_auto] gap-3 px-4 py-2.5 border-b border-surface-border bg-surface-2 text-[10px] font-bold uppercase tracking-widest text-surface-muted">
+                  <span>Member</span><span>Role</span><span>Department</span><span className="text-right">Status</span>
+                </div>
+                <div className="divide-y divide-surface-border">
+                  {filtered.map(u => (
+                    <UserRowItem key={u.id} u={u} allUsers={users} onUpdate={fetchUsers} isBoss={isBoss}
+                      expanded={expandedId === u.id}
+                      onToggle={() => setExpandedId(id => id === u.id ? null : u.id)} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
     </>

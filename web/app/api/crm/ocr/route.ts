@@ -49,8 +49,9 @@ async function extractWithOllama(base64Image: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
 
   if (!(await rateLimit(`ocr:${userId}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests — wait a minute' }, { status: 429 })
@@ -70,9 +71,13 @@ export async function POST(req: NextRequest) {
   // Legacy: if only imageUrl sent, read file from disk and convert to base64
   if (!base64Image && body.imageUrl) {
     try {
+      const path = await import('path')
+      const publicDir = path.resolve(process.cwd(), 'public')
+      const filePath = path.resolve(publicDir, body.imageUrl.replace(/^\/+/, ''))
+      if (!filePath.startsWith(publicDir)) {
+        return NextResponse.json({ error: 'Invalid image path' }, { status: 400 })
+      }
       const { readFile } = await import('fs/promises')
-      const { join } = await import('path')
-      const filePath = join(process.cwd(), 'public', body.imageUrl)
       const fileBuffer = await readFile(filePath)
       base64Image = fileBuffer.toString('base64')
       if (body.imageUrl.endsWith('.png')) mimeType = 'image/png'
@@ -105,8 +110,8 @@ export async function POST(req: NextRequest) {
   // Deduplication check
   await connectDB()
   let existing = null
-  if (parsed.email) existing = await Contact.findOne({ createdBy: userId, email: parsed.email }).lean()
-  if (!existing && parsed.phone) existing = await Contact.findOne({ createdBy: userId, phone: parsed.phone }).lean()
+  if (parsed.email) existing = await Contact.findOne({ orgId, createdBy: userId, email: parsed.email }).lean()
+  if (!existing && parsed.phone) existing = await Contact.findOne({ orgId, createdBy: userId, phone: parsed.phone }).lean()
 
   return NextResponse.json({
     parsed,

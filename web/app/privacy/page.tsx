@@ -1,15 +1,16 @@
 import React from 'react'
 import Link from 'next/link'
-import { Shield, Lock, ArrowLeft, Eye, Server, UserCheck, AlertCircle } from 'lucide-react'
+import { Shield, Lock, ArrowLeft, Eye, Server, Trash2, Mail } from 'lucide-react'
+import { SUPPORT_CONFIG } from '@/lib/config/support'
 
 export const metadata = {
-  title: 'Privacy Policy | DoppelDash — Doppelmayr India',
-  description: 'Privacy policy and data governance for DoppelDash enterprise application.',
+  title: 'Privacy Policy | DoppelDash',
+  description: 'Privacy policy and data governance for DoppelDash mobile application and platform.',
 }
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-600 selection:text-white pb-20">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-600 selection:text-white pb-20">
       {/* Header */}
       <header className="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -17,7 +18,7 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft className="w-4 h-4" /> Back to DoppelDash
           </Link>
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-500" />
+            <Shield className="w-5 h-5 text-sky-400" />
             <span className="font-semibold text-slate-200">Privacy Policy</span>
           </div>
         </div>
@@ -26,51 +27,48 @@ export default function PrivacyPolicyPage() {
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-6 pt-12">
         <div className="mb-10 text-center sm:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-4">
-            <Lock className="w-3.5 h-3.5" /> Doppelmayr India Enterprise Data Policy
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium mb-4">
+            <Lock className="w-3.5 h-3.5" /> DoppelDash Data Governance & Protection
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-2">
             DoppelDash Privacy Policy
           </h1>
           <p className="text-slate-400 text-sm">
-            Effective Date: September 1, 2026 • Last updated: September 1, 2026
+            Effective Date: October 1, 2026 • Last updated: October 2, 2026
           </p>
         </div>
 
-        <div className="space-y-10 text-slate-300 text-sm leading-relaxed">
+        <div className="space-y-8 text-slate-300 text-sm leading-relaxed">
           {/* Section 1 */}
           <section className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Eye className="w-5 h-5 text-blue-400" /> 1. Overview and Scope
+              <Eye className="w-5 h-5 text-sky-400" /> 1. Overview and Scope
             </h2>
             <p>
-              DoppelDash is an internal operations, enterprise resource management, and workforce automation portal operated by <strong>Doppelmayr India</strong>. This Privacy Policy governs data collected through both the web platform (<code className="text-blue-300 bg-slate-800 px-1.5 py-0.5 rounded">doppeldash.com</code>) and the DoppelDash mobile application for Android.
+              DoppelDash (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) provides unified organizational operations, modern customer relationship management (CRM), travel management, receipt reimbursements, team communications, and administrative services via our Android mobile application and web portal.
             </p>
             <p>
-              DoppelDash is intended strictly for authorized employees, contractors, managers, and administrators of Doppelmayr India.
+              This Privacy Policy explains how we collect, process, store, and protect user data when you use the DoppelDash mobile application or register an organization workspace. We are committed to transparency, compliance with the Digital Personal Data Protection (DPDP) Act, GDPR, and Google Play Store Developer policies.
             </p>
           </section>
 
           {/* Section 2 */}
           <section className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Server className="w-5 h-5 text-blue-400" /> 2. Information We Collect
+              <Server className="w-5 h-5 text-sky-400" /> 2. Information We Collect
             </h2>
             <ul className="list-disc pl-5 space-y-2 text-slate-300">
               <li>
-                <strong>Identity & Authentication:</strong> Name, work email address, department, designation, employee ID, phone number, and password hashes / TOTP two-factor secret keys.
+                <strong>Account & Profile Information:</strong> Name, work email address, phone number, designated company/organization, department, designation, and password hashes (bcrypt hashed).
               </li>
               <li>
-                <strong>Operational & HR Records:</strong> Leave applications, expense claims and uploaded receipt images, business travel requests, project milestones, and company announcements.
+                <strong>Operational & CRM Data:</strong> Contact lists, company client entries, notes, interaction timelines, and business card OCR text captured at your instruction.
               </li>
               <li>
-                <strong>CRM & Business Cards:</strong> Client contact information, contact notes, and OCR-extracted data from business cards scanned using the mobile camera.
+                <strong>Expense & Travel Data:</strong> Travel request details (dates, destinations, estimated costs), expense reimbursement claims, amounts, categories, and uploaded receipt images.
               </li>
               <li>
-                <strong>Device & Biometrics:</strong> Biometric authentication (Fingerprint / Face ID) is processed locally on-device by Android BiometricPrompt and is never transmitted to or stored on our servers.
-              </li>
-              <li>
-                <strong>Audit & Security Logs:</strong> IP address, timestamp, action type, and user agent for administrative actions to ensure compliance and prevent unauthorized access.
+                <strong>Device & Security Tokens:</strong> Biometric authentication state (processed strictly on-device via Android BiometricPrompt and Keystore; raw biometric fingerprints or face data are never transmitted or stored on our servers), session tokens, and IP addresses for audit log compliance.
               </li>
             </ul>
           </section>
@@ -78,52 +76,47 @@ export default function PrivacyPolicyPage() {
           {/* Section 3 */}
           <section className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <Lock className="w-5 h-5 text-blue-400" /> 3. How We Use and Protect Your Data
+              <Lock className="w-5 h-5 text-sky-400" /> 3. Data Protection and Security
             </h2>
-            <p>We process enterprise data strictly to:</p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
-              <li>Authenticate authorized personnel and enforce role-based access control (RBAC).</li>
-              <li>Facilitate managerial leave approvals, expense reimbursements, and travel authorisations.</li>
-              <li>Deliver push notifications and organizational announcements.</li>
-              <li>Provide IMAP/SMTP email synchronisation for approved internal communications.</li>
-            </ul>
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mt-4 text-xs text-blue-300">
-              <strong>Security Standards:</strong> All data in transit is encrypted using TLS 1.3. Sensitive tokens and credentials stored on mobile devices utilize AES-256 GCM encrypted shared preferences backed by hardware Keystore.
-            </div>
+            <p>
+              All communication between the Android application and our backend endpoints is encrypted in transit using industry-standard TLS / HTTPS (TLS 1.3). Sensitive contact fields and tokens are protected using AES-256 field-level encryption at rest. Multi-tenant isolation ensures data belonging to your organization is inaccessible to other tenants.
+            </p>
           </section>
 
           {/* Section 4 */}
           <section className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-blue-400" /> 4. Data Sharing & Third Parties
+              <Trash2 className="w-5 h-5 text-sky-400" /> 4. Data Retention and Account Deletion
             </h2>
             <p>
-              We do <strong>not</strong> sell, rent, or monetize employee or corporate data. Data is shared exclusively with verified operational infrastructure providers:
+              You have the right to request deletion of your account and personal data at any time. We provide an automated self-service account deletion mechanism directly in the DoppelDash Android app (Settings &rarr; Account &rarr; Delete Account) as well as an external account deletion request procedure at <Link href="/delete-account" className="text-sky-400 hover:underline">/delete-account</Link>.
             </p>
-            <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
-              <li><strong>Cloud Storage:</strong> Encrypted cloud storage for uploaded receipts and document attachments.</li>
-              <li><strong>Email Delivery:</strong> Enterprise SMTP servers (e.g. Office 365) configured by your organization.</li>
-              <li><strong>Push Notifications:</strong> Google Firebase Cloud Messaging (FCM) for operational alerts.</li>
-            </ul>
+            <p>
+              Upon account deletion, your user credentials, personal employee profile, leave balances, and authentication tokens are immediately and permanently purged. Financial and approval records (such as approved company expense claims) may be retained in anonymized form strictly to satisfy statutory accounting and tax regulations.
+            </p>
           </section>
 
           {/* Section 5 */}
           <section className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 sm:p-8 space-y-4">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-blue-400" /> 5. Data Retention & Account Deletion
+              <Mail className="w-5 h-5 text-sky-400" /> 5. Contact Information & Privacy Queries
             </h2>
             <p>
-              Employee data is retained for the duration of the employee&apos;s active engagement with Doppelmayr India and in accordance with applicable statutory employment and tax laws.
+              If you have any questions, concerns, or requests regarding this Privacy Policy or your personal information, please contact our support team at:
             </p>
-            <p>
-              To request account deletion, data extraction, or access log inspection, please contact your organization administrator or write to <a href="mailto:privacy@doppelmayr.com" className="text-blue-400 hover:underline">privacy@doppelmayr.com</a>.
+            {SUPPORT_CONFIG.isConfigured ? (
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 font-mono text-sm text-sky-300">
+                {SUPPORT_CONFIG.supportEmail}
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-400">
+                Contact information is published in our official Google Play Store developer listing and available in-app via Settings.
+              </div>
+            )}
+            <p className="text-xs text-slate-400">
+              For support inquiries, you can also visit our <Link href="/support" className="text-sky-400 hover:underline">Support Center</Link>.
             </p>
           </section>
-
-          {/* Contact Footer */}
-          <div className="pt-6 border-t border-slate-800 text-center text-xs text-slate-500">
-            © {new Date().getFullYear()} Doppelmayr India • DoppelDash Enterprise Operations • All rights reserved.
-          </div>
         </div>
       </main>
     </div>

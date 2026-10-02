@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { rateLimit } from '@/lib/ratelimit'
 import { getUser } from '@/lib/auth'
 import { geminiText, geminiStream } from '@/lib/gemini'
+import { canUseFeature } from '@/lib/entitlements/entitlementService'
 
 const enc = new TextEncoder()
 const sseToken = (token: string) => enc.encode(`data: ${JSON.stringify({ token })}\n\n`)
@@ -47,18 +49,19 @@ const MESSAGE_PROMPTS: Record<string, (c: { name: string; company?: string; desi
     `Write a warm, professional birthday greeting for ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''}.${ctx ? ` Context: ${ctx}.` : ''} Keep it 2-3 sentences, genuine, not overly formal. Output only the message text, no subject line.`,
 
   'follow-up': (c, ctx) =>
-    `Write a professional follow-up email body for ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''} from Doppelmayr India.${ctx ? ` Context/goal: ${ctx}.` : ''} Keep it concise, 3-4 sentences, end with a clear call to action. Output only the email body, no subject line, no greeting like "Dear".`,
+    `Write a professional follow-up email body for ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''} from our team.${ctx ? ` Context/goal: ${ctx}.` : ''} Keep it concise, 3-4 sentences, end with a clear call to action. Output only the email body, no subject line, no greeting like "Dear".`,
 
   'meeting-request': (c, ctx) =>
-    `Write a brief meeting request email body to ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''} from Doppelmayr India.${ctx ? ` Purpose: ${ctx}.` : ''} Propose a 30-minute call, keep it under 4 sentences, professional and direct. Output only the email body.`,
+    `Write a brief meeting request email body to ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''} from our team.${ctx ? ` Purpose: ${ctx}.` : ''} Propose a 30-minute call, keep it under 4 sentences, professional and direct. Output only the email body.`,
 
   introduction: (c, ctx) =>
-    `Write a short professional introduction message to ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''}. Introduce yourself as a representative from Doppelmayr India.${ctx ? ` Additional context: ${ctx}.` : ''} 3 sentences max. Output only the message text.`,
+    `Write a short professional introduction message to ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''}. Introduce yourself as a representative from our company.${ctx ? ` Additional context: ${ctx}.` : ''} 3 sentences max. Output only the message text.`,
 }
 
 export async function POST(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const orgId = user?.orgId || 'org_doppelmayr'
 
   if (!(await rateLimit(`generate:${userId}`, 20, 60 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests — try again later' }, { status: 429 })
@@ -73,13 +76,26 @@ export async function POST(req: NextRequest) {
   let prompt: string
 
   if (refineInstruction && currentDraft) {
+    if (!(await canUseFeature(orgId, 'aiMessageGeneration'))) {
+      return NextResponse.json(
+        { error: 'AI message generation requires a Premium plan subscription.' },
+        { status: 403 }
+      )
+    }
     // Iterative refine: rewrite the existing draft per the user's instruction.
     prompt = `Here is an email draft:\n\n"""${currentDraft}"""\n\nRewrite it to: ${refineInstruction}. Keep it professional. ${SUBJECT_DIRECTIVE}`
   } else if (rawPrompt) {
+    if (!(await canUseFeature(orgId, 'aiMessageGeneration'))) {
+      return NextResponse.json(
+        { error: 'AI message generation requires a Premium plan subscription.' },
+        { status: 403 }
+      )
+    }
     // Campaign/direct prompt mode (no subject directive — campaigns set their own subject)
     prompt = rawPrompt
   } else {
     if (!contactId || !messageType) return NextResponse.json({ error: 'contactId and messageType required' }, { status: 400 })
+    if (!mongoose.isValidObjectId(contactId)) return NextResponse.json({ error: 'Invalid contactId' }, { status: 400 })
     await connectDB()
 
     const role = user?.role || 'employee'
@@ -93,11 +109,20 @@ export async function POST(req: NextRequest) {
 
     const contact = await Contact.findOne({
       _id: contactId,
+      orgId,
       $or: visClauses,
     }).lean() as {
       name: string; company?: string; designation?: string
     } | null
     if (!contact) return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+
+    if (!(await canUseFeature(orgId, 'aiMessageGeneration'))) {
+      return NextResponse.json(
+        { error: 'AI message generation requires a Premium plan subscription.' },
+        { status: 403 }
+      )
+    }
+
     const promptFn = MESSAGE_PROMPTS[messageType]
     if (!promptFn) return NextResponse.json({ error: 'Unknown message type' }, { status: 400 })
     prompt = promptFn(contact, context) + SUBJECT_DIRECTIVE

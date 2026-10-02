@@ -1,5 +1,7 @@
 import { getUserById } from '@/lib/auth/userService'
-import { sendMail } from '@/lib/mailer'
+import { sendMail, getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics } from '@/lib/mailer'
+
+export { getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics }
 
 export async function getUserEmail(userId: string): Promise<string | null> {
   const u = await getUserById(userId)
@@ -138,7 +140,7 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">DoppelDash</td>
-                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Doppelmayr&nbsp;India</td>
+                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Enterprise&nbsp;Platform</td>
               </tr>
             </table>
           </td>
@@ -159,14 +161,13 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
           <td style="background:${SURFACE};border-top:1px solid ${BORDER};padding:16px 32px;">
             <p style="margin:0;font-size:11px;line-height:1.55;color:${SUBTLE};">
               ${opts.footerHint ? `${escapeHtml(opts.footerHint)}<br/>` : ''}
-              This is an automated message from DoppelDash — the internal platform of
-              <strong style="color:${GRAPHITE};font-weight:600;">Doppelmayr</strong>.
+              This is an automated notification from <strong style="color:${GRAPHITE};font-weight:600;">DoppelDash</strong>.
               Please do not reply to this email.
             </p>
           </td>
         </tr>
       </table>
-      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} Doppelmayr India · Navi Mumbai</p>
+      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} DoppelDash. All rights reserved.</p>
     </td></tr>
   </table>
 </body>
@@ -183,7 +184,7 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
     opts.note ? `\n${opts.note.label}: ${opts.note.value}` : '',
     opts.cta ? `\nOpen in DoppelDash: ${opts.cta.href}` : '',
     '',
-    '— Doppelmayr',
+    '— DoppelDash',
   ].filter(Boolean).join('\n')
 
   return { html, text, subject: opts.subject }
@@ -527,7 +528,7 @@ export function buildAnnouncementEmail(opts: {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">DoppelDash</td>
-                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Doppelmayr&nbsp;India</td>
+                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Enterprise&nbsp;Platform</td>
               </tr>
             </table>
             ${priorityBadge}
@@ -548,14 +549,13 @@ export function buildAnnouncementEmail(opts: {
         <tr>
           <td style="background:${SURFACE};border-top:1px solid ${BORDER};padding:16px 32px;">
             <p style="margin:0;font-size:11px;line-height:1.55;color:${SUBTLE};">
-              Sent by <strong style="color:${GRAPHITE};font-weight:600;">${escapeHtml(sender)}</strong> via DoppelDash —
-              the internal platform of <strong style="color:${GRAPHITE};font-weight:600;">Doppelmayr</strong>.
+              Sent by <strong style="color:${GRAPHITE};font-weight:600;">${escapeHtml(sender)}</strong> via DoppelDash.
               Please do not reply to this email.
             </p>
           </td>
         </tr>
       </table>
-      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} Doppelmayr India · Navi Mumbai</p>
+      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} DoppelDash. All rights reserved.</p>
     </td></tr>
   </table>
 </body>
@@ -569,7 +569,7 @@ export function buildAnnouncementEmail(opts: {
     '',
     `Open in DoppelDash: ${url}/announcements`,
     '',
-    `— ${sender}, via DoppelDash (Doppelmayr)`,
+    `— ${sender}, via DoppelDash`,
   ].join('\n')
 
   return { html, text, subject }

@@ -6,8 +6,12 @@ import { verifyToken, COOKIE_NAME } from '@/lib/auth/jwt'
 const PUBLIC_EXACT = [
   '/sign-in',
   '/sign-up',
+  '/forgot-password',
   '/privacy',
   '/terms',
+  '/support',
+  '/delete-account',
+  '/web-access-restricted',
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/verify-otp',
@@ -19,14 +23,20 @@ const PUBLIC_EXACT = [
   '/api/support/chat',
   '/api/dev/seed',       // secret-gated inside route (DEV_SEED_SECRET)
   '/api/dev/migrate',    // secret-gated inside route (DEV_SEED_SECRET) — non-destructive data migration
+  '/api/billing/play/rtdn', // Google Play RTDN webhook (secret/signature authenticated inside route)
 ]
 
 // Genuine prefixes — everything beneath these is public by design.
 const PUBLIC_PREFIXES = [
   '/contact/',           // public shared contact cards (QR / link)
   '/shared/',            // public read-only shared analytics dashboards
+  '/invite',             // public invitation acceptance UI
+  '/reset-password',     // public password reset UI
+  '/api/auth/invitations/',    // public invitation verification and acceptance APIs
+  '/api/auth/password-reset/', // public password reset request and confirm APIs
   '/api/analytics/shared/',
   '/api/webhooks/',
+  '/api/cron/',          // secret-gated inside route (CRON_SECRET)
 ]
 
 // Public API patterns (regex). Anything under /api/crm/<id>/share is public.

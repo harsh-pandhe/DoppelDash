@@ -71,18 +71,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   const leave = await Leave.create({
     ...pick(body, LEAVE_CREATE_FIELDS),
     userId,
     userName: user?.fullName || user?.firstName || 'Unknown',
-    orgId,
+    orgId: effectiveOrgId,
     status: 'pending',
   })
 
   // Notify reporting manager (+ boss); fallback to all managers if no chain set
   ;(async () => {
     try {
-      const recipients = await notifyTargetsFor(userId)
+      const recipients = await notifyTargetsFor(userId, effectiveOrgId)
       const employeeName = user?.fullName || user?.firstName || 'An employee'
       for (const email of recipients) {
         emailLeaveSubmitted({

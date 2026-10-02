@@ -13,10 +13,11 @@ const EXPIRY_MS: Record<string, number | null> = {
 
 // List existing shares for the current owner
 export async function GET() {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
-  const shares = await SharedDashboard.find({ ownerId: userId }).sort({ createdAt: -1 }).lean()
+  const shares = await SharedDashboard.find({ ownerId: userId, orgId: effectiveOrgId }).sort({ createdAt: -1 }).lean()
   return NextResponse.json({
     shares: shares.map(s => ({
       token:     s.token,
@@ -30,8 +31,9 @@ export async function GET() {
 
 // Create a new share token from the supplied layout + filters snapshot
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const effectiveOrgId = user.orgId || orgId || 'org_doppelmayr'
   await connectDB()
 
   const body = await req.json().catch(() => ({}))
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
   const token = randomBytes(16).toString('hex')   // 32 hex chars, unguessable
 
   await SharedDashboard.create({
+    orgId:     effectiveOrgId,
     token,
     ownerId:   userId,
     ownerName: user.fullName || `${user.firstName} ${user.lastName}`.trim(),

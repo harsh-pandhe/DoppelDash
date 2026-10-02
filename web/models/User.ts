@@ -18,6 +18,7 @@ export interface IUserPublic {
   totpEnabled: boolean
   tourSeen: boolean
   mailAccess: boolean
+  sessionVersion: number
   lastLoginAt?: Date
   loginCount: number
   unsafeMetadata: { role: UserRole; permissions: string[] }
@@ -37,6 +38,7 @@ export interface IUser extends Document {
   isBanned: boolean
   mustChangePassword: boolean
   mailAccess: boolean
+  sessionVersion: number
   otp?: string
   otpExpiry?: Date
   otpAttempts: number
@@ -74,6 +76,7 @@ const UserSchema = new Schema<IUser, UserModel>(
     isActive:           { type: Boolean, default: true },
     isBanned:           { type: Boolean, default: false },
     mustChangePassword: { type: Boolean, default: true },
+    sessionVersion:     { type: Number, default: 1, required: true },
     otp:                { type: String },
     otpExpiry:          { type: Date },
     otpAttempts:        { type: Number, default: 0 },
@@ -109,6 +112,7 @@ UserSchema.methods.toPublic = function (): IUserPublic {
     mailAccess:         this.mailAccess ?? false,
     totpEnabled:        this.totpEnabled ?? false,
     tourSeen:           this.tourSeen ?? false,
+    sessionVersion:     this.sessionVersion ?? 1,
     lastLoginAt:        this.lastLoginAt,
     loginCount:         this.loginCount,
     unsafeMetadata:     { role: this.role, permissions: this.permissions || [] },

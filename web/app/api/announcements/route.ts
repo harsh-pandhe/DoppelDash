@@ -10,11 +10,12 @@ import { ANNOUNCEMENT_CREATE_FIELDS } from '@/lib/apiFields'
 export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   await connectDB()
   const now = new Date()
   // Hide future-scheduled posts from everyone except their author
   const visibility = {
-    orgId,
+    orgId: effectiveOrgId,
     $or: [
       { scheduledFor: null },
       { scheduledFor: { $lte: now } },
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
   await connectDB()
   const body = await req.json()
   const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
@@ -43,14 +45,14 @@ export async function POST(req: NextRequest) {
     urgentEmailSent: body.priority === 'urgent' && !isFutureScheduled,
     authorId:   userId,
     authorName: user?.fullName || user?.firstName || 'Unknown',
-    orgId,
+    orgId:      effectiveOrgId,
   })
 
   // Fire-and-forget urgent broadcast — skip when scheduled for the future (cron sends at publish time)
   if (body.priority === 'urgent' && !isFutureScheduled) {
     ;(async () => {
       try {
-        const users  = await listUsers({ limit: 500, orgId })
+        const users  = await listUsers({ limit: 500, orgId: effectiveOrgId })
         const emails = users.map(u => u.email).filter((e): e is string => Boolean(e))
         if (emails.length) {
           emailUrgentAnnouncement({

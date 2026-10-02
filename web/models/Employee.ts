@@ -124,7 +124,7 @@ const MedicalSchema = new Schema<IMedicalDetails>({
 const EmployeeSchema = new Schema<IEmployee>(
   {
     clerkUserId:      { type: String, required: true, unique: true, index: true },
-    employeeId:       { type: String, required: true, unique: true },
+    employeeId:       { type: String, required: true },
     createdByUserId:  { type: String, required: true },
     orgId:            { type: String, required: true, default: 'org_doppelmayr', index: true },
 
@@ -178,11 +178,54 @@ const EmployeeSchema = new Schema<IEmployee>(
   { timestamps: true }
 )
 
-// Auto-generate employeeId if not set
+EmployeeSchema.index({ orgId: 1, employeeId: 1 }, { unique: true })
+
+// Auto-generate employeeId before validation if not set (scoped to tenant)
+EmployeeSchema.pre('validate', async function () {
+  if (!this.isNew || (this.employeeId && this.employeeId.trim())) return
+  const ModelConstructor = this.constructor as Model<IEmployee>
+  const orgFilter = { orgId: this.orgId || 'org_doppelmayr' }
+
+  // Query highest existing numeric sequence number matching EMP-xxx within this organization
+  const lastEmp = await ModelConstructor.findOne({ ...orgFilter, employeeId: /^EMP-\d+$/ })
+    .sort({ employeeId: -1 })
+    .select('employeeId')
+    .lean()
+
+  let nextNum = 1
+  if (lastEmp?.employeeId) {
+    const match = lastEmp.employeeId.match(/^EMP-(\d+)$/)
+    if (match) {
+      nextNum = parseInt(match[1], 10) + 1
+    }
+  } else {
+    const count = await ModelConstructor.countDocuments(orgFilter)
+    nextNum = count + 1
+  }
+
+  // Ensure candidate is unique against any gaps, deletes, or concurrent records in this org
+  let candidate = `EMP-${String(nextNum).padStart(3, '0')}`
+  while (await ModelConstructor.exists({ ...orgFilter, employeeId: candidate })) {
+    nextNum++
+    candidate = `EMP-${String(nextNum).padStart(3, '0')}`
+  }
+
+  this.employeeId = candidate
+})
+
+// Fallback auto-generate in pre('save') if validation was bypassed (scoped to tenant)
 EmployeeSchema.pre('save', async function () {
-  if (!this.isNew || this.employeeId) return
-  const count = await (this.constructor as Model<IEmployee>).countDocuments()
-  this.employeeId = `EMP-${String(count + 1).padStart(3, '0')}`
+  if (!this.isNew || (this.employeeId && this.employeeId.trim())) return
+  const ModelConstructor = this.constructor as Model<IEmployee>
+  const orgFilter = { orgId: this.orgId || 'org_doppelmayr' }
+  const count = await ModelConstructor.countDocuments(orgFilter)
+  let nextNum = count + 1
+  let candidate = `EMP-${String(nextNum).padStart(3, '0')}`
+  while (await ModelConstructor.exists({ ...orgFilter, employeeId: candidate })) {
+    nextNum++
+    candidate = `EMP-${String(nextNum).padStart(3, '0')}`
+  }
+  this.employeeId = candidate
 })
 
 const Employee: Model<IEmployee> = mongoose.models.Employee || mongoose.model('Employee', EmployeeSchema)

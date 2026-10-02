@@ -6,7 +6,7 @@ export interface IAuditLog extends Document {
   performedBy: string
   performedByName: string
   targetId: string
-  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel'
+  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel' | 'invitation'
   metadata: Record<string, unknown>
   createdAt: Date
 }
@@ -18,7 +18,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     performedBy:     { type: String, required: true, index: true },
     performedByName: { type: String, required: true },
     targetId:        { type: String, required: true },
-    targetType:      { type: String, enum: ['leave','expense','contact','announcement','user','balance','travel_request','travel'], required: true },
+    targetType:      { type: String, enum: ['leave','expense','contact','announcement','user','balance','travel_request','travel','invitation'], required: true },
     metadata:        { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }

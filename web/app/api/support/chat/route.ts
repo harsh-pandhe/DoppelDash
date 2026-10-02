@@ -5,24 +5,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/ratelimit'
 
-const SYSTEM_INSTRUCTION = `You are the IT support AI for DoppelDash, Doppelmayr India's internal enterprise platform. Help employees with sign-in, verification codes, passkeys, authenticator apps, VPN, password reset, or access issues.
+import { SUPPORT_CONFIG } from '@/lib/config/support'
 
-DoppelDash sign-in works three ways:
-1. Passkey (fastest) — click "Sign in with a passkey" after typing your work email. Uses your device fingerprint, face, or PIN. Set one up in Profile → Security once signed in.
-2. Authenticator app — if enabled, after your password you can enter a 6-digit code from Google/Microsoft Authenticator. Works even when email is unreachable (e.g. inside Citrix). Set up in Profile → Security (scan the QR code).
-3. Email code — after your password, a 6-digit code is emailed to your work inbox. Expires in 10 minutes. If you have an authenticator set up, pick the "Email code" tab and press "Email me the code".
+const SYSTEM_INSTRUCTION = `You are the IT support AI for DoppelDash. Help users with sign-in, verification codes, passkeys, authenticator apps, password reset, or access issues.
 
 Rules:
 - Be professional, concise, tech-savvy. 1-3 short paragraphs max.
-- Common issues: forgot password (manager/HR can reset), email code not arriving (check spam/junk, press "Resend code" after 60s, or switch to the Authenticator tab if set up), locked out (5 failed codes → 1 min wait), wrong email (use your work email like name@doppelmayr.com), passkey prompt dismissed (just click the passkey button again), lost phone with authenticator (use email code, then re-set up in Profile → Security).
+- Common issues: forgot password (use the forgot password link or contact manager), email code not arriving (check spam/junk, press "Resend code" after 60s, or switch to the Authenticator tab if set up), locked out (5 failed codes → 1 min wait), passkey prompt dismissed (just click the passkey button again), lost phone with authenticator (use email code, then re-set up in Profile → Security).
 - Recommend setting up a passkey or authenticator app in Profile → Security to anyone who reports email/OTP delivery problems.
-- If they need a password reset or are completely locked out, advise them to contact their manager or email IT-NaviMumbai@doppelmayr.com.
+- If they need a password reset or are completely locked out, advise them to contact their manager or email ${SUPPORT_CONFIG.supportEmail}.
 - NEVER give out actual passwords, verification codes, or any credentials.
 - If asked about something unrelated to IT support (politics, code, etc.), politely redirect: "I'm here for DoppelDash login and access help only."`
 
 const MAX_TURNS = 12
 const MAX_CHARS = 800
-const IT_FALLBACK = "Our assistant is busy right now. Please email IT-NaviMumbai@doppelmayr.com and the team will help you sign in."
+const IT_FALLBACK = `Our assistant is busy right now. Please email ${SUPPORT_CONFIG.supportEmail} and the team will help you sign in.`
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
@@ -38,7 +35,7 @@ export async function POST(req: NextRequest) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return NextResponse.json({ text: "AI assistant is not configured. Please email IT-NaviMumbai@doppelmayr.com for help." })
+  if (!apiKey) return NextResponse.json({ text: `AI assistant is not configured. Please email ${SUPPORT_CONFIG.supportEmail} for help.` })
 
   const { messages } = await req.json() as { messages: { role: 'user' | 'model'; text: string }[] }
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -77,13 +74,13 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
       console.error('[support/chat] Gemini error:', res.status, errText)
-      return NextResponse.json({ text: "I'm having trouble connecting right now. Please try again in a moment, or email IT-NaviMumbai@doppelmayr.com if it's urgent." })
+      return NextResponse.json({ text: `I'm having trouble connecting right now. Please try again in a moment, or email ${SUPPORT_CONFIG.supportEmail} if it's urgent.` })
     }
     const data = await res.json()
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response. Try rephrasing your question."
     return NextResponse.json({ text })
   } catch (e) {
     console.error('[support/chat] exception:', e)
-    return NextResponse.json({ text: "Network hiccup. Try again, or email IT-NaviMumbai@doppelmayr.com." })
+    return NextResponse.json({ text: `Network hiccup. Try again, or email ${SUPPORT_CONFIG.supportEmail}.` })
   }
 }

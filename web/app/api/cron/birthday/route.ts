@@ -1,13 +1,14 @@
-import { listUsers } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sendBirthdayEmail } from '@/lib/email'
+import { getBirthdayNotificationRecipients } from '@/lib/cron-recipients'
 
 // Called by system cron: 0 8 * * * curl http://localhost:3000/api/cron/birthday?secret=<CRON_SECRET>
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret')
-  if (secret !== process.env.CRON_SECRET) {
+  const authHeader = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
+  const secret = req.nextUrl.searchParams.get('secret') || authHeader
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -30,18 +31,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent: 0, message: 'No birthdays today' })
   }
 
-  // Get all manager/boss emails to notify
-  let managerEmails: string[] = []
-  try {
-    const users = await listUsers({ limit: 500 })
-    managerEmails = users
-      .filter(u => u.role === 'manager' || u.role === 'admin')
-      .map(u => u.email)
-      .filter((e): e is string => Boolean(e))
-  } catch { /* best-effort */ }
-
   let sent = 0
   for (const contact of todayBirthdays) {
+    // Determine the tenant organization of this contact
+    const contactOrgId = contact.orgId || 'org_doppelmayr'
+    const managerEmails = await getBirthdayNotificationRecipients(contactOrgId)
+
     if (managerEmails.length) {
       await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails })
     }

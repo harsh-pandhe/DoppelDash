@@ -75,13 +75,11 @@ export async function POST(req: NextRequest) {
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
     return NextResponse.json({ error: 'Destructive seed is disabled in production' }, { status: 403 })
   }
-  if (process.env.NODE_ENV === 'production' && !required) {
-    return NextResponse.json({ error: 'Disabled in production (no DEV_SEED_SECRET)' }, { status: 403 })
+  if (!required) {
+    return NextResponse.json({ error: 'DEV_SEED_SECRET must be configured to run seed' }, { status: 403 })
   }
-  if (required) {
-    const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
-    if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+  if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
 
@@ -478,7 +476,9 @@ export async function POST(req: NextRequest) {
 
   /* ─── 11) Org settings ────────────────────────────────────────────── */
   await OrgSettings.create({
+    orgId:   'org_doppelmayr',
     name:    'Doppelmayr India Pvt Ltd',
+    companyName: 'Doppelmayr India Pvt Ltd',
     address: 'Navi Mumbai, Maharashtra, India',
     website: 'https://www.doppelmayr.com',
     phone:   '+91 22 0000 0000',

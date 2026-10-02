@@ -2,6 +2,7 @@
  * Send OTP via the shared SMTP mailer. Always logs to console as backup.
  */
 import { sendMail } from '@/lib/mailer'
+import { SUPPORT_CONFIG } from '@/lib/config/support'
 
 const BRAND_BLUE  = '#0057A8'
 const BRAND_DARK  = '#003B73'
@@ -68,7 +69,7 @@ const HTML = (otp: string) => {
               <div style="border-top:1px solid ${BORDER};padding-top:18px;">
                 <p style="margin:0;font-size:12px;line-height:1.55;color:${SUBTLE};">
                   Didn't try to sign in? Someone may have your password. Reset it immediately and notify
-                  <a href="mailto:harsh.pandhe@doppelmayr.com" style="color:${BRAND_BLUE};font-weight:600;text-decoration:none;">harsh.pandhe@doppelmayr.com</a>.
+                  <span style="color:${BRAND_BLUE};font-weight:600;">${SUPPORT_CONFIG.supportEmail}</span>.
                 </p>
               </div>
             </td>
@@ -103,15 +104,17 @@ const TEXT = (otp: string) => {
     '',
     'Doppelmayr IT will never call, text, or email you for this code. Share it with no one.',
     '',
-    'Didn\'t try to sign in? Reset your password and contact harsh.pandhe@doppelmayr.com.',
+    `Didn't try to sign in? Reset your password and contact ${SUPPORT_CONFIG.supportEmail}.`,
     '',
     '— Doppelmayr',
   ].join('\n')
 }
 
 export async function sendOTP(to: string, otp: string): Promise<void> {
-  // Console backup — useful for local dev and audit trail
-  console.log(`\n🔐 OTP for ${to}: ${otp}\n`)
+  // Console backup — useful for local dev and audit trail (disabled in production to prevent secret leakage)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n🔐 OTP for ${to}: ${otp}\n`)
+  }
 
   await sendMail({
     to,

@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
   if (from) dateFilter.$gte = new Date(from)
   if (to)   dateFilter.$lte = new Date(to + 'T23:59:59')
 
-  const ownerFilter: Record<string, unknown> = isManager ? { orgId } : { userId, orgId }
+  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const ownerFilter: Record<string, unknown> = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
   const match: Record<string, unknown> = { ...ownerFilter }
   if (from || to) match.createdAt = dateFilter
 
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
 
   // Employees — visible to everyone in org (so all can wish each other)
   const employees = await Employee.find({
-    orgId,
+    orgId: effectiveOrgId,
     $or: [
       { dateOfBirth:        { $exists: true, $ne: null } },
       { workAnniversary:    { $exists: true, $ne: null } },
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
     .filter(e => e.daysUntil >= 0 && e.daysUntil <= 30)
 
   // CRM contacts (owner-scoped)
-  const contacts = await Contact.find({ orgId, createdBy: userId, birthday: { $exists: true, $ne: null } })
+  const contacts = await Contact.find({ orgId: effectiveOrgId, createdBy: userId, birthday: { $exists: true, $ne: null } })
     .select('name birthday company').lean()
   const contactBirthdays = contacts
     .map(c => ({

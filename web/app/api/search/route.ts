@@ -14,23 +14,26 @@ export async function GET(req: NextRequest) {
   if (!q || q.length < 2) return NextResponse.json({ results: [] })
 
   await connectDB()
-  const re = new RegExp(q, 'i')
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const re = new RegExp(escaped, 'i')
+
+  const effectiveOrgId = orgId || 'org_doppelmayr'
 
   // Role-aware scope: managers + admins search org-wide; employees see only their own.
   const isManager = user?.role === 'manager' || user?.role === 'admin'
   // Contacts: own contacts + (for managers/admins) any not marked private; admins see all.
   const contactScope = user?.role === 'admin'
-    ? { orgId }
+    ? { orgId: effectiveOrgId }
     : isManager
-      ? { orgId, $or: [{ createdBy: userId }, { visibility: { $ne: 'private' } }] }
-      : { orgId, createdBy: userId }
-  const ownScope = isManager ? { orgId } : { userId, orgId }
+      ? { orgId: effectiveOrgId, $or: [{ createdBy: userId }, { visibility: { $ne: 'private' } }] }
+      : { orgId: effectiveOrgId, createdBy: userId }
+  const ownScope = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
 
   const [contacts, leaves, expenses, announcements] = await Promise.all([
     Contact.find({ ...contactScope, $and: [{ $or: [{ name: re }, { email: re }, { company: re }, { designation: re }] }] }, 'name email company designation photo').limit(5).lean(),
     Leave.find({ ...ownScope, $or: [{ userName: re }, { reason: re }, { type: re }] }, 'userName type days status startDate').limit(5).lean(),
     Expense.find({ ...ownScope, $or: [{ title: re }, { reason: re }, { userName: re }] }, 'title amount status startDate userName').limit(5).lean(),
-    Announcement.find({ orgId, $or: [{ title: re }, { body: re }] }, 'title priority createdAt').limit(3).lean(),
+    Announcement.find({ orgId: effectiveOrgId, $or: [{ title: re }, { body: re }] }, 'title priority createdAt').limit(3).lean(),
   ])
 
   const results = [

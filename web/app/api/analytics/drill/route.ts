@@ -36,13 +36,15 @@ export async function GET(req: NextRequest) {
   const rangeEnd   = toQS   ? new Date(toQS)   : now
   rangeEnd.setHours(23, 59, 59, 999)
 
+  const effectiveOrgId = orgId || 'org_doppelmayr'
+
   // Owner scope (same rules as analytics route)
-  const ownerFilter: Record<string, unknown> = isManager ? { orgId } : { userId, orgId }
+  const ownerFilter: Record<string, unknown> = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
   if (isManager) {
     if (employeeQS) {
       ownerFilter.userId = employeeQS
     } else if (deptQS) {
-      const emps = await Employee.find({ orgId, isActive: true, department: deptQS }, 'clerkUserId').lean()
+      const emps = await Employee.find({ orgId: effectiveOrgId, isActive: true, department: deptQS }, 'clerkUserId').lean()
       const ids = emps.map(e => e.clerkUserId)
       ownerFilter.userId = { $in: ids.length ? ids : ['__none__'] }
     }

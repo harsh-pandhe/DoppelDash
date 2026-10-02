@@ -1,13 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUser } from '@/lib/auth'
+import { getUser, COOKIE_NAME, COOKIE_OPTS } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
+import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { currentPassword, newPassword } = await req.json()
+  if (!(await rateLimit(`change-pwd:${userId}`, 5, 60_000))) {
+    return NextResponse.json({ error: 'Too many password change attempts — please wait 1 minute' }, { status: 429 })
+  }
+
+  let body: Record<string, unknown> = {}
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : ''
+  const newPassword = typeof body.newPassword === 'string' ? body.newPassword : ''
+
   if (!newPassword || newPassword.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
@@ -29,7 +43,10 @@ export async function POST(req: NextRequest) {
   await User.findByIdAndUpdate(userId, {
     passwordHash:       hash,
     mustChangePassword: false,
+    $inc:               { sessionVersion: 1 },
   })
 
-  return NextResponse.json({ ok: true })
+  const res = NextResponse.json({ ok: true, message: 'Password updated. Please sign in again.' })
+  res.cookies.set(COOKIE_NAME, '', { ...COOKIE_OPTS, maxAge: 0, path: '/' })
+  return res
 }

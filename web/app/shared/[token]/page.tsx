@@ -43,7 +43,7 @@ export default function SharedDashboardPage({ params }: { params: { token: strin
             <div className="min-w-0">
               <p className="text-sm font-bold leading-tight">DoppelDash · Shared dashboard</p>
               <p className="text-[11px] text-white/75 truncate">
-                {res ? `Shared by ${res.ownerName}` : 'Doppelmayr India'}
+                {res ? `Shared by ${res.ownerName}` : 'DoppelDash'}
               </p>
             </div>
           </div>

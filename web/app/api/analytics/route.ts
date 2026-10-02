@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(req.url)
+  const effectiveOrgId = orgId || 'org_doppelmayr'
   const data = await computeAnalytics(userId, user?.role || 'employee', {
     from:     url.searchParams.get('from'),
     to:       url.searchParams.get('to'),
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     status:   url.searchParams.get('status')   || '',
     compare:  url.searchParams.get('compare')  || 'none',
     includeFilterOptions: true,
-  }, orgId)
+  }, effectiveOrgId)
 
   return NextResponse.json(data)
 }
