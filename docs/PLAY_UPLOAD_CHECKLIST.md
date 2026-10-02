@@ -86,10 +86,18 @@ This document details the exact 28 sequential steps to upload, configure, and re
 - In **Policy and programs → App content → App access**:
 - Select **All or some functionality is restricted**.
 - Click **Add instructions**:
-  - **Title**: `Demo Reviewer Workspace`
-  - **Username/Email**: Your reviewer demo email
-  - **Password**: Your reviewer demo password
-  - **Instructions**: `Sign in with credentials. OTP 2-factor is disabled or automated for this testing account. Navigate to Dashboard, CRM, LMS, RMS, and Settings.`
+  - **Title**: `DoppelDash Demo Workspace`
+  - **Username/Email**: `doppeldash.playreview@gmail.com`
+  - **Password**: `<PASSWORD>`
+  - **Instructions**:
+    ```text
+    Sign in with:
+    Email: doppeldash.playreview@gmail.com
+    Password: <PASSWORD>
+
+    If prompted for OTP / verification code on the second screen, enter: 112022 (or 000000).
+    Reviewer account has full administrative privileges and an active Premium subscription in "DoppelDash Demo" to review all features (CRM, LMS, RMS, Travel, Settings).
+    ```
 
 #### 15. Data Safety Form
 - In **Policy and programs → App content → Data safety**:

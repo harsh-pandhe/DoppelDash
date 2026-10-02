@@ -128,17 +128,18 @@ For Google Play App Review:
 - **Reviewer Instructions**:
   ```text
   DoppelDash is a multi-tenant business productivity application.
-  Reviewers can test the application using one of the following methods:
-  
-  Method A (Instant Self-Service Registration):
-  1. Open the application.
-  2. Tap "Create CRM" on the login screen.
-  3. Register a test organization workspace (e.g., "Google Play QA Team", valid email, password).
-  4. The test workspace is created instantly with full administrative privileges to review all features (CRM, Leaves, Expenses, Travel, Settings).
+  Please sign in with the following dedicated reviewer credentials:
 
-  Method B (Pre-provisioned Demo Account):
-  - Email: reviewer@doppeldash.app (or test account provided in Console)
-  - 2FA/OTP: If prompted for email verification code in test mode, the verification screen accepts standard test OTP: 123456.
+  Email: doppeldash.playreview@gmail.com
+  Password: <PASSWORD>
+
+  If prompted for 2-factor / verification code on the second screen, enter: 112022 (or 000000).
+  (Email OTP delivery is automatically bypassed for this account so the review process is completely self-contained).
+
+  This dedicated review account belongs to the "DoppelDash Demo" organization and has:
+  - Role: admin
+  - Plan: Premium (Active subscription)
+  - Full access to all business modules: CRM, Scanned Cards, Leaves (LMS), Expenses (RMS), Travel, and Workspace Settings.
   ```
 
 ---
