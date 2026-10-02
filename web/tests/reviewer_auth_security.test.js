@@ -36,6 +36,7 @@ const { getOrganizationEntitlements, canUseFeature } = jiti(path.resolve(__dirna
 const REVIEWER_EMAIL = 'doppeldash.playreview@gmail.com';
 const REVIEWER_ORG_ID = 'org_playreview_demo';
 const DESIGNATED_CODE = '112022';
+process.env.REVIEWER_STATIC_OTP = DESIGNATED_CODE;
 
 test.before(async () => {
   if (mongoose.connection.readyState !== 1) {
@@ -276,5 +277,22 @@ test('8. Dev endpoints cannot be invoked without required secret in production',
     process.env.NODE_ENV = originalEnv;
     if (originalAllow) process.env.ALLOW_DEV_SEED = originalAllow;
     if (originalSecret) process.env.DEV_SEED_SECRET = originalSecret;
+  }
+});
+
+test('9. Missing REVIEWER_STATIC_OTP environment variable fails closed', async () => {
+  const reviewer = await User.findOne({ email: REVIEWER_EMAIL, isReviewer: true });
+  assert.ok(reviewer, 'Reviewer account must exist');
+
+  await generateOTP(reviewer._id.toString());
+
+  const originalOtp = process.env.REVIEWER_STATIC_OTP;
+  delete process.env.REVIEWER_STATIC_OTP;
+  try {
+    const result = await verifyOTP(reviewer._id.toString(), DESIGNATED_CODE);
+    assert.equal(result.ok, false, 'Reviewer OTP must fail closed if REVIEWER_STATIC_OTP is not configured');
+    assert.equal(result.reason, 'Reviewer OTP verification not configured');
+  } finally {
+    process.env.REVIEWER_STATIC_OTP = originalOtp;
   }
 });

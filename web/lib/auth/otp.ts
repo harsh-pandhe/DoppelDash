@@ -59,10 +59,14 @@ export async function verifyOTP(userId: string, candidate: string): Promise<{ ok
 
   // Dedicated Google Play reviewer account:
   // Requires explicit persisted DB flag `isReviewer === true` AND exact canonical email match.
-  // Cannot be activated by normal users, similar emails, or unflagged accounts.
+  // Requires REVIEWER_STATIC_OTP environment variable configured explicitly.
+  // If REVIEWER_STATIC_OTP is missing, reviewer verification fails closed.
   const isPlayReviewer = user.isReviewer === true && user.email === 'doppeldash.playreview@gmail.com'
   if (isPlayReviewer) {
-    const designatedCode = process.env.REVIEWER_STATIC_OTP || '112022'
+    const designatedCode = process.env.REVIEWER_STATIC_OTP
+    if (!designatedCode) {
+      return { ok: false, reason: 'Reviewer OTP verification not configured' }
+    }
     if (candidate === designatedCode) {
       await User.findByIdAndUpdate(userId, {
         $unset: { otp: 1, otpExpiry: 1 },
@@ -73,6 +77,7 @@ export async function verifyOTP(userId: string, candidate: string): Promise<{ ok
       })
       return { ok: true }
     }
+    return { ok: false, reason: 'Incorrect OTP' }
   }
 
   if (process.env.NODE_ENV !== 'production' && candidate === '112022') {
