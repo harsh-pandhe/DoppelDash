@@ -95,7 +95,7 @@ This document details the exact 28 sequential steps to upload, configure, and re
     Email: doppeldash.playreview@gmail.com
     Password: <PASSWORD>
 
-    If prompted for OTP / verification code on the second screen, enter: 112022 (or 000000).
+    If prompted for OTP / verification code on the second screen, enter: 112022.
     Reviewer account has full administrative privileges and an active Premium subscription in "DoppelDash Demo" to review all features (CRM, LMS, RMS, Travel, Settings).
     ```
 
