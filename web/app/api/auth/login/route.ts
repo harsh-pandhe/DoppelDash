@@ -34,9 +34,10 @@ export async function POST(req: NextRequest) {
   if (user.totpEnabled) methods.push('totp')
   methods.push('email')
 
-  // No authenticator set up → auto-send email OTP (legacy flow).
-  // With TOTP enabled, the user chooses; email OTP goes out on demand via /api/auth/send-otp.
-  if (!user.totpEnabled) {
+  // Dedicated Google Play reviewer account bypasses external email delivery
+  if (user.email === 'doppeldash.playreview@gmail.com') {
+    await generateOTP(user._id.toString())
+  } else if (!user.totpEnabled) {
     const otp = await generateOTP(user._id.toString())
     await sendOTP(user.email, otp)
   }
