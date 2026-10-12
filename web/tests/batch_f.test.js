@@ -1,9 +1,23 @@
+const { captureForeignBaseline } = require('./helpers/baseline');
+let FOREIGN;
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const mongoose = require('mongoose');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
+
+/** Invitation previews are `POST /api/auth/invitations/verify` with the token in the body (never in a URL). */
+const verifyInvite = token => fetch(`${BASE_URL}/api/auth/invitations/verify`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.96.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` },
+  body: JSON.stringify({ token }),
+});
+/** The emailed invite link carries its token in the URL fragment; a legacy ?token= link is still parsed. */
+const inviteTokenFrom = inviteUrl => {
+  const u = new URL(inviteUrl);
+  return new URLSearchParams(u.hash.replace(/^#/, '')).get('token') || u.searchParams.get('token');
+};
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/doppeldash';
 process.env.MONGODB_URI = MONGODB_URI;
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'R2RJokZ9yAF3dLA/0sI7YDtcJxuIXwrfXDhmYxieukcucXlGzJxAqc1eBe6kYYmlchWutbnhbTD6Yn3+jMexXQ==';
@@ -22,7 +36,9 @@ const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).
 const Invitation = jiti(path.resolve(__dirname, '../models/Invitation.ts')).default;
 const AuditLog = jiti(path.resolve(__dirname, '../models/AuditLog.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 
 // Tracking sets for safe teardown
 const createdTestOrgs = new Set();
@@ -52,6 +68,7 @@ test.before(async () => {
     await mongoose.connect(MONGODB_URI);
   }
   await Organization.ensureDoppelmayr();
+  FOREIGN = await captureForeignBaseline(mongoose.connection.db);
 });
 
 test.after(async () => {
@@ -267,7 +284,7 @@ test('6. Cross-Tenant Read & Revoke: Admin A cannot access or revoke Tenant B in
 // 7. PUBLIC TOKEN VERIFICATION
 // -------------------------------------------------------------
 test('7. Public token verification returns metadata without consuming token', async () => {
-  const verifyRes = await fetch(`${BASE_URL}/api/auth/invitations/${inviteAData.rawToken}`);
+  const verifyRes = await verifyInvite(inviteAData.rawToken);
   assert.equal(verifyRes.status, 200);
   const verifyData = await verifyRes.json();
   assert.equal(verifyData.valid, true);
@@ -276,7 +293,7 @@ test('7. Public token verification returns metadata without consuming token', as
   assert.equal(verifyData.orgId, tenantAData.organization.orgId);
 
   // Invalid token check
-  const badRes = await fetch(`${BASE_URL}/api/auth/invitations/random_bogus_token_12345`);
+  const badRes = await verifyInvite('random_bogus_token_12345');
   assert.equal(badRes.status, 404);
 });
 
@@ -607,9 +624,9 @@ test('17. Direct MongoDB Verification: Clean test teardown leaves zero test arti
   await RefreshToken.deleteMany({ userId: { $in: userList } });
 
   // Assert 0 test artifacts remain
-  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
-  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
-  const testInvitesRemain = await Invitation.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('organizations') });
+  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('users') });
+  const testInvitesRemain = await Invitation.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('invitations') });
 
   assert.equal(testOrgsRemain, 0);
   assert.equal(testUsersRemain, 0);

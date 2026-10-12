@@ -1,3 +1,5 @@
+const { captureForeignBaseline } = require('./helpers/baseline');
+let FOREIGN;
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -20,7 +22,9 @@ const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).
 const OrgSettings = jiti(path.resolve(__dirname, '../models/OrgSettings.ts')).default;
 const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 
 // Track all test-created org IDs and user IDs for clean teardown
 const createdTestOrgs = new Set();
@@ -48,6 +52,7 @@ test.before(async () => {
   }
   // Ensure existing Doppelmayr org is registered
   await Organization.ensureDoppelmayr();
+  FOREIGN = await captureForeignBaseline(mongoose.connection.db);
 });
 
 // -------------------------------------------------------------
@@ -74,23 +79,19 @@ test('1. Registration: New user + new organization succeeds with valid contract'
   assert.ok(data.organization.orgId.startsWith('org_'), 'orgId must have org_ prefix');
   assert.ok(data.organization.slug.startsWith('acme-international'), 'slug should derive from name');
 
-  // Verify cookie set
-  const setCookie = res.headers.get('set-cookie');
-  assert.ok(setCookie, 'Should set dd_session cookie');
-  assert.ok(setCookie.includes('dd_session='), 'Cookie should be dd_session');
+  // Public registration is the Android client's flow: it returns mobile tokens and mints NO web cookie
+  // (a new public organisation has webEnabled=false — see web_access_boundary.test.js).
+  const setCookie = res.headers.get('set-cookie') || '';
+  assert.doesNotMatch(setCookie, /dd_session=[^;]/, 'a new public organisation must not receive a web session cookie');
+  assert.equal(data.webAccess, false, 'registration reports that the web client is not enabled');
+  assert.ok(data.accessToken && data.refreshToken, 'registration returns the mobile token pair');
 
   // Track for later tests
   tenantAData = data;
   createdTestOrgs.add(data.organization.orgId);
   createdTestUserIds.add(data.user.id);
 
-  // Extract session token from cookie
-  const match = setCookie.match(/dd_session=([^;]+)/);
-  if (match) {
-    tokenAdminA = match[1];
-  } else {
-    tokenAdminA = await signToken(data.user);
-  }
+  tokenAdminA = data.accessToken;
 });
 
 // -------------------------------------------------------------
@@ -539,10 +540,10 @@ test('19. Direct MongoDB Verification: Clean test teardown leaves zero test arti
   await RefreshToken.deleteMany({ userId: { $in: userList } });
 
   // 3. Confirm 0 test artifacts remain
-  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('organizations') });
   assert.equal(testOrgsRemain, 0, 'Zero test organizations should remain');
 
-  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('users') });
   assert.equal(testUsersRemain, 0, 'Zero test users should remain');
 
   // 4. Confirm Doppelmayr data is 100% untouched

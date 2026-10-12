@@ -40,7 +40,9 @@ const PasswordResetToken = jiti(path.resolve(__dirname, '../models/PasswordReset
 const RevokedToken = jiti(path.resolve(__dirname, '../models/RevokedToken.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
 const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const { getMailerDiagnostics, canDeliverAuthEmails } = jiti(path.resolve(__dirname, '../lib/mailer.ts'));
 
 async function connectDB() {
@@ -49,6 +51,28 @@ async function connectDB() {
 }
 
 let ipSeq = 200;
+
+/** Web-cookie behaviour only exists for web-enabled organisations: enable the fixture tenant, then sign in for real. */
+async function enableWebAndLogin(orgId, email, password) {
+  await mongoose.connection.db.collection('organizations').updateOne({ orgId }, { $set: { webEnabled: true } });
+  const l = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.98.7.${Math.floor(Math.random() * 250)}` },
+    body: JSON.stringify({ email, password }),
+  });
+  const lj = await l.json();
+  const o = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.98.7.${Math.floor(Math.random() * 250)}` },
+    body: JSON.stringify({ preAuthToken: lj.preAuthToken, otp: '112022', method: 'email' }),
+  });
+  assert.equal(o.status, 200);
+  const sc = o.headers.get('set-cookie') || '';
+  const m = sc.match(/dd_session=([^;]+)/);
+  assert.ok(m, 'a web-enabled organisation must receive the dd_session cookie');
+  return `dd_session=${m[1]}`;
+}
+
 let tenantH1Data = null;
 let adminEmail = null;
 let tokenAdminH1 = null;
@@ -129,11 +153,9 @@ test('1. Setup: Register Tenant H1 and verify safe mailer diagnostics', async ()
     assert.ok(dbUser);
     assert.equal(dbUser.sessionVersion, 1, 'New user must have sessionVersion: 1');
 
-    // Extract cookie
-    const setCookie = res.headers.get('set-cookie');
-    const cookieMatch = setCookie.match(/dd_session=([^;]+)/);
-    assert.ok(cookieMatch);
-    cookieAdminH1 = `dd_session=${cookieMatch[1]}`;
+    // Registration mints no web cookie (public org → mobile only); Tenant H1 is a web-enabled fixture for the cookie flow.
+    assert.doesNotMatch(res.headers.get('set-cookie') || '', /dd_session=[^;]/);
+    cookieAdminH1 = await enableWebAndLogin(tenantH1Data.organization.orgId, adminEmail, 'SecurePassword123!');
   } catch (err) {
     console.error('TEST 1 ERROR:', err.stack);
     throw err;
@@ -293,7 +315,7 @@ test('5. Password reset: invalidates all pre-reset JWTs across all devices', asy
   });
   assert.equal(resReq.status, 200);
   const reqData = await resReq.json();
-  const rawToken = new URL(reqData.resetUrl).searchParams.get('token');
+  const rawToken = new URL(reqData.resetUrl).hash.replace(/^#/, '').split('token=')[1] || new URL(reqData.resetUrl).searchParams.get('token');
   assert.ok(rawToken);
 
   // Confirm password reset

@@ -54,21 +54,33 @@ test.before(async () => {
     await mongoose.connect(MONGODB_URI);
   }
   db = mongoose.connection.db;
-  baseline = await getDoppelmayrBaseline(db);
-  assert.equal(baseline.users, 9, 'Precondition: 9 real users exist');
-  assert.equal(baseline.leavebalances, 9, 'Precondition: 9 leave balances exist');
+  try {
+    baseline = await getDoppelmayrBaseline(db);
+    assert.equal(baseline.users, 9, 'Precondition: 9 real users exist');
+    assert.equal(baseline.leavebalances, 9, 'Precondition: 9 leave balances exist');
+  } catch (err) {
+    // A failed precondition must not leave the connection pool open: the open MongoDB sockets
+    // would keep this process alive forever instead of reporting the failure.
+    await mongoose.disconnect();
+    throw err;
+  }
 });
 
 test.after(async () => {
-  if (db && baseline) {
-    const finalBaseline = await getDoppelmayrBaseline(db);
-    for (const [coll, count] of Object.entries(baseline)) {
-      assert.equal(finalBaseline[coll], count, `Final baseline count mismatch in '${coll}'`);
+  try {
+    if (db && baseline) {
+      const finalBaseline = await getDoppelmayrBaseline(db);
+      for (const [coll, count] of Object.entries(baseline)) {
+        assert.equal(finalBaseline[coll], count, `Final baseline count mismatch in '${coll}'`);
+      }
+      const violations = await auditDatabaseIntegrity(db);
+      assert.deepEqual(violations, [], 'Post-test database audit must have 0 violations');
     }
-    const violations = await auditDatabaseIntegrity(db);
-    assert.deepEqual(violations, [], 'Post-test database audit must have 0 violations');
+  } finally {
+    // Always release the MongoDB pool — an assertion above throwing must not skip this,
+    // otherwise the open sockets keep the process alive (the original batch_k hang).
+    await mongoose.disconnect();
   }
-  await mongoose.disconnect();
 });
 
 test('K.1 — Production Secrets Fail-Closed Check', async () => {
@@ -262,7 +274,7 @@ test('K.7 — Public SaaS Registration, Isolation & Rollback Verification', asyn
     // 1. Successful registration
     const regRes = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `198.18.${(uniqueSuffix >> 8) & 255}.${uniqueSuffix & 255}` },
       body: JSON.stringify({
         organizationName: orgName,
         email: testEmail,
@@ -304,7 +316,7 @@ test('K.7 — Public SaaS Registration, Isolation & Rollback Verification', asyn
     // 2. Duplicate registration attempt fails with 409
     const dupRes = await fetch(`${BASE_URL}/api/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `198.18.${(uniqueSuffix >> 8) & 255}.${uniqueSuffix & 255}` },
       body: JSON.stringify({
         organizationName: orgName,
         email: testEmail,

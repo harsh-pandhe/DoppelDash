@@ -4,6 +4,18 @@ const path = require('node:path');
 const mongoose = require('mongoose');
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
+
+/** Invitation previews are `POST /api/auth/invitations/verify` with the token in the body (never in a URL). */
+const verifyInvite = token => fetch(`${BASE_URL}/api/auth/invitations/verify`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.96.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` },
+  body: JSON.stringify({ token }),
+});
+/** The emailed invite link carries its token in the URL fragment; a legacy ?token= link is still parsed. */
+const inviteTokenFrom = inviteUrl => {
+  const u = new URL(inviteUrl);
+  return new URLSearchParams(u.hash.replace(/^#/, '')).get('token') || u.searchParams.get('token');
+};
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/doppeldash';
 process.env.MONGODB_URI = MONGODB_URI;
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'R2RJokZ9yAF3dLA/0sI7YDtcJxuIXwrfXDhmYxieukcucXlGzJxAqc1eBe6kYYmlchWutbnhbTD6Yn3+jMexXQ==';
@@ -131,8 +143,9 @@ test('2. Admin invitation creation reflects backend response & fallback invite l
   // Verify inviteUrl contains token and points to /invite?token=...
   const url = new URL(data.inviteUrl);
   assert.equal(url.pathname, '/invite');
-  const token = url.searchParams.get('token');
-  assert.ok(token, 'inviteUrl must have token param');
+  assert.equal(url.search, '', 'no query string: the token must not reach server logs');
+  const token = inviteTokenFrom(data.inviteUrl);
+  assert.ok(token, 'inviteUrl must carry the token in its fragment');
   assert.equal(token.length, 64, 'Token must be 64-char hex');
 
   invite1Token = token;
@@ -141,10 +154,10 @@ test('2. Admin invitation creation reflects backend response & fallback invite l
 });
 
 // -------------------------------------------------------------
-// 3. VERIFY VALID INVITATION (/api/auth/invitations/[token])
+// 3. VERIFY VALID INVITATION (POST /api/auth/invitations/verify)
 // -------------------------------------------------------------
-test('3. GET /api/auth/invitations/[token] returns verified invitation details', async () => {
-  const res = await fetch(`${BASE_URL}/api/auth/invitations/${invite1Token}`);
+test('3. POST /api/auth/invitations/verify returns verified invitation details', async () => {
+  const res = await verifyInvite(invite1Token);
   assert.equal(res.status, 200);
   const data = await res.json();
 
@@ -163,9 +176,9 @@ test('3. GET /api/auth/invitations/[token] returns verified invitation details',
 // -------------------------------------------------------------
 // 4. INVALID TOKEN RENDERS NOT FOUND / INVALID ERROR
 // -------------------------------------------------------------
-test('4. GET /api/auth/invitations/[token] with invalid token returns 404 invalid error', async () => {
+test('4. POST /api/auth/invitations/verify with an invalid token returns 404 invalid error', async () => {
   const fakeToken = '0000000000000000000000000000000000000000000000000000000000000000';
-  const res = await fetch(`${BASE_URL}/api/auth/invitations/${fakeToken}`);
+  const res = await verifyInvite(fakeToken);
   assert.equal(res.status, 404);
   const data = await res.json();
   assert.equal(data.valid, false);
@@ -195,7 +208,7 @@ test('5. Expired invitation verification returns 410 expired error', async () =>
   const inviteId = created.invitation._id;
   createdTestInviteIds.add(inviteId);
 
-  const token = new URL(created.inviteUrl).searchParams.get('token');
+  const token = inviteTokenFrom(created.inviteUrl);
 
   // Expire it in DB
   await Invitation.updateOne(
@@ -203,7 +216,7 @@ test('5. Expired invitation verification returns 410 expired error', async () =>
     { $set: { expiresAt: new Date(Date.now() - 3600000) } }
   );
 
-  const resVerify = await fetch(`${BASE_URL}/api/auth/invitations/${token}`);
+  const resVerify = await verifyInvite(token);
   assert.equal(resVerify.status, 410);
   const data = await resVerify.json();
   assert.equal(data.valid, false);
@@ -233,7 +246,7 @@ test('6. Revoked invitation verification returns 410 revoked error', async () =>
   revokedInviteId = created.invitation._id;
   createdTestInviteIds.add(revokedInviteId);
 
-  const token = new URL(created.inviteUrl).searchParams.get('token');
+  const token = inviteTokenFrom(created.inviteUrl);
 
   // Revoke it via Admin API
   const resRevoke = await fetch(`${BASE_URL}/api/admin/invitations/${revokedInviteId}`, {
@@ -246,7 +259,7 @@ test('6. Revoked invitation verification returns 410 revoked error', async () =>
   assert.equal(resRevoke.status, 200);
 
   // Verify it returns 410 revoked
-  const resVerify = await fetch(`${BASE_URL}/api/auth/invitations/${token}`);
+  const resVerify = await verifyInvite(token);
   assert.equal(resVerify.status, 410);
   const data = await resVerify.json();
   assert.equal(data.valid, false);
@@ -288,10 +301,11 @@ test('7. Client cannot influence role or org through acceptance request', async 
   acceptedUserId = data.user.id;
   createdTestUserIds.add(acceptedUserId);
 
-  // Check Set-Cookie contains auth token
-  const setCookie = res.headers.get('set-cookie');
-  assert.ok(setCookie, 'Must set auth cookie');
-  assert.ok(setCookie.includes('dd_session='), 'Must set dd_session cookie');
+  // The invited user joins a PUBLIC (web-disabled) organisation: a real mobile session is issued,
+  // and no web cookie is minted (web-enabled organisations are covered in auth_foundation F4).
+  assert.ok(data.accessToken && data.refreshToken, 'Must issue the mobile token pair')
+  assert.equal(data.webAccess, false)
+  assert.doesNotMatch(res.headers.get('set-cookie') || '', /dd_session=[^;]/, 'no web cookie for a web-disabled organisation')
 
   // Verify in DB directly
   const dbUser = await User.findById(acceptedUserId);
@@ -325,7 +339,7 @@ test('8. Duplicate acceptance attempt is rejected as already accepted', async ()
   assert.match(data.error, /already (?:been )?accepted/i);
 
   // Also check verification endpoint returns already_accepted
-  const resVerify = await fetch(`${BASE_URL}/api/auth/invitations/${invite1Token}`);
+  const resVerify = await verifyInvite(invite1Token);
   assert.equal(resVerify.status, 410);
   const verifyData = await resVerify.json();
   assert.equal(verifyData.valid, false);
@@ -383,7 +397,7 @@ test('10. Admin resend invitation extends expiration and generates a fresh valid
   const inviteId = created.invitation._id;
   createdTestInviteIds.add(inviteId);
 
-  const originalToken = new URL(created.inviteUrl).searchParams.get('token');
+  const originalToken = inviteTokenFrom(created.inviteUrl);
 
   // Trigger resend
   const resResend = await fetch(`${BASE_URL}/api/admin/invitations/${inviteId}/resend`, {
@@ -397,16 +411,16 @@ test('10. Admin resend invitation extends expiration and generates a fresh valid
   const resentData = await resResend.json();
   assert.ok(resentData.inviteUrl, 'Resend must return inviteUrl');
 
-  const newToken = new URL(resentData.inviteUrl).searchParams.get('token');
+  const newToken = inviteTokenFrom(resentData.inviteUrl);
   assert.notEqual(newToken, originalToken, 'Resend must cycle to a new token');
 
   // Verify the new token works
-  const resVerifyNew = await fetch(`${BASE_URL}/api/auth/invitations/${newToken}`);
+  const resVerifyNew = await verifyInvite(newToken);
   assert.equal(resVerifyNew.status, 200);
   const verifyData = await resVerifyNew.json();
   assert.equal(verifyData.valid, true);
 
   // Verify the old token is invalidated
-  const resVerifyOld = await fetch(`${BASE_URL}/api/auth/invitations/${originalToken}`);
+  const resVerifyOld = await verifyInvite(originalToken);
   assert.equal(resVerifyOld.status, 404);
 });

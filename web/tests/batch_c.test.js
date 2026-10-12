@@ -32,7 +32,9 @@ const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).
 const OrgSettings = jiti(path.resolve(__dirname, '../models/OrgSettings.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
 
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const { notifyTargetsFor } = jiti(path.resolve(__dirname, '../lib/notify-targets.ts'));
 
 const ORG_A = 'org_test_c_a_' + Date.now();
@@ -492,7 +494,7 @@ test('10. Cron HTTP Verification: Endpoints reject missing/wrong secret and exec
     const resA = await fetch(`${BASE_URL}${ep}`);
     assert.equal(resA.status, 401, `${ep} must return 401 with no secret`);
 
-    // Case B: Wrong secret via query -> 401
+    // Case B: Wrong secret via query -> 401 (and a query secret is never honoured)
     const resBQuery = await fetch(`${BASE_URL}${ep}?secret=wrong-secret-12345`);
     assert.equal(resBQuery.status, 401, `${ep} must return 401 with wrong secret query`);
 
@@ -502,9 +504,11 @@ test('10. Cron HTTP Verification: Endpoints reject missing/wrong secret and exec
     });
     assert.equal(resBHeader.status, 401, `${ep} must return 401 with wrong secret header`);
 
-    // Case C: Correct secret via query -> 200 OK
-    const resCQuery = await fetch(`${BASE_URL}${ep}?secret=${CRON_SECRET}`);
-    assert.equal(resCQuery.status, 200, `${ep} must return 200 with valid secret query`);
+    // Case C: the secret is accepted ONLY in the Authorization header. A query-string secret would be written to
+    // access logs, so it is no longer honoured — asserted on the route source (probing with the real secret in a
+    // URL would itself put it in the log).
+    const routeSrc = require('node:fs').readFileSync(path.resolve(__dirname, `..${ep.replace('/api/', '/app/api/')}/route.ts`), 'utf8');
+    assert.doesNotMatch(routeSrc, /searchParams\.get\('secret'\)/, `${ep} must not read the secret from the query string`);
 
     // Case C: Correct secret via Bearer header -> 200 OK
     const resCHeader = await fetch(`${BASE_URL}${ep}`, {

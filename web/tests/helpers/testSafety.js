@@ -184,7 +184,40 @@ async function auditDatabaseIntegrity(db) {
   return violations;
 }
 
+/**
+ * Content fingerprint of a set of documents: count + SHA-256 over the documents in a canonical
+ * (key-sorted, _id-ordered) JSON form. Equal fingerprints mean nothing was added, deleted or
+ * mutated — which a bare count cannot prove.
+ */
+function fingerprintDocs(docs) {
+  const crypto = require('node:crypto');
+  const canon = v => {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (v instanceof Date) return JSON.stringify(v.toISOString());
+    if (typeof v.toHexString === 'function') return JSON.stringify(v.toHexString());   // ObjectId
+    if (Array.isArray(v)) return `[${v.map(canon).join(',')}]`;
+    return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
+  };
+  const rows = [...docs].map(canon).sort();
+  return { count: rows.length, digest: crypto.createHash('sha256').update(rows.join('\n')).digest('hex') };
+}
+
+/** Throws a precise message if `after` differs from the `before` snapshot. */
+function assertSnapshotUnchanged(label, before, after) {
+  const assert = require('node:assert/strict');
+  assert.equal(after.count, before.count, `${label}: count changed from ${before.count} to ${after.count} (documents added or deleted)`);
+  assert.equal(after.digest, before.digest, `${label}: same count (${before.count}) but the content changed (a document was mutated or replaced)`);
+}
+
+/** True only for a local MongoDB whose database name contains "test" — the only place a test may write fixtures. */
+function isLocalThrowawayDb(uri) {
+  return /^mongodb:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(uri || '') && /test/i.test((uri.split('/').pop() || '').split('?')[0]);
+}
+
 module.exports = {
+  fingerprintDocs,
+  assertSnapshotUnchanged,
+  isLocalThrowawayDb,
   PROTECTED_ORG_IDS,
   BUSINESS_COLLECTIONS,
   assertSafeTeardown,
