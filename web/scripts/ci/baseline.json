@@ -1,0 +1,6 @@
+{
+  "note": "Reference totals of the recovered backend suite (fake providers, standalone MongoDB). The runner FAILS if the run has fewer tests/files than this, or any failure or skip. Raise the numbers when tests are added; never lower them to make a run pass.",
+  "files": 50,
+  "tests": 681,
+  "skipped": 0
+}
