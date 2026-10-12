@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { passkeyLoginOptions, passkeyLoginVerify, signToken, COOKIE_NAME, COOKIE_OPTS } from '@/lib/auth'
+import { passkeyLoginOptions, passkeyLoginVerify, signToken, isWebAccessAllowed, setWebSessionCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 /** Get authentication options for a passkey sign-in (public, by email). */
@@ -32,12 +32,16 @@ export async function PUT(req: NextRequest) {
   if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 401 })
 
   const pub   = result.user.toPublic()
+  if (!pub.orgId) return NextResponse.json({ error: 'This account is not assigned to an organization — contact support' }, { status: 403 })
   const token = await signToken(pub)
 
+  // Passkeys are a browser flow: no web entitlement → no session at all.
+  const webAccess = await isWebAccessAllowed(pub.orgId)
   const res = NextResponse.json({
     user: pub,
     mustChangePassword: result.user.mustChangePassword,
+    webAccess,
   })
-  res.cookies.set(COOKIE_NAME, token, COOKIE_OPTS)
+  if (webAccess) setWebSessionCookie(res, token)
   return res
 }

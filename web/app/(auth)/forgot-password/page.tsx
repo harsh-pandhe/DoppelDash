@@ -59,8 +59,8 @@ export default function ForgotPasswordPage() {
       {/* Top Header */}
       <header className="relative z-10 w-full p-6 flex items-center justify-between max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="DoppelDash" className="h-9 w-9 rounded-xl shadow-md" />
-          <span className="font-bold text-white tracking-tight text-lg">DoppelDash</span>
+          <img src="/icon-192.png" alt="Doppelmayr India" className="h-9 w-9 rounded-xl shadow-md" />
+          <span className="font-bold text-white tracking-tight text-lg">Doppelmayr India</span>
         </div>
         <Link
           href="/sign-in"
@@ -168,7 +168,7 @@ export default function ForgotPasswordPage() {
       {/* Footer */}
       <footer className="relative z-10 w-full p-6 text-center text-xs text-slate-500 max-w-5xl mx-auto flex items-center justify-center gap-1.5">
         <Shield className="w-3.5 h-3.5 text-slate-600" />
-        <span>DoppelDash Enterprise · Protected by Cryptographic Session Architecture</span>
+        <span>Doppelmayr India · Employee workspace</span>
       </footer>
     </div>
   )

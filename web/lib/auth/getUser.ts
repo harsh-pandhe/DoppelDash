@@ -13,6 +13,7 @@ import { verifyToken } from './jwt'
 import { connectDB } from '@/lib/db'
 import User, { type IUserPublic } from '@/models/User'
 import RevokedToken from '@/models/RevokedToken'
+import { isWebSessionToken, isWebAccessAllowed } from './webAccess'
 
 export type AuthResult =
   | { userId: string; user: IUserPublic; orgId: string }
@@ -73,7 +74,19 @@ export async function getUser(req?: NextRequest): Promise<AuthResult> {
     return { userId: null, user: null, orgId: null }
   }
 
-  const orgId = dbUser.orgId || payload.orgId || 'org_doppelmayr'
+  // 4. Tenant context comes ONLY from the persisted user record and must agree
+  //    with the signed claim. There is deliberately NO default organisation:
+  //    a user without one (or a token that disagrees) is not authenticated.
+  const orgId = dbUser.orgId
+  if (typeof orgId !== 'string' || !orgId || orgId !== payload.orgId) {
+    return { userId: null, user: null, orgId: null }
+  }
+
+  // 5. Web client boundary: a web session is only valid while the organisation's
+  //    persisted entitlement enables the web client. Mobile access tokens are exempt.
+  if (isWebSessionToken(payload) && !(await isWebAccessAllowed(orgId))) {
+    return { userId: null, user: null, orgId: null }
+  }
 
   const pub: IUserPublic = {
     id:                 String(dbUser._id),
@@ -106,10 +119,10 @@ export async function getUserId(): Promise<string | null> {
   return payload?.userId || null
 }
 
-/** Short-hand: get orgId from token only without DB hit */
+/** Short-hand: get orgId from a verified session token only (no DB hit). Null when absent/invalid. */
 export async function getOrgId(): Promise<string | null> {
   const token = await readToken()
   if (!token) return null
   const payload = await verifyToken(token)
-  return payload?.orgId || 'org_doppelmayr'
+  return payload?.orgId || null
 }

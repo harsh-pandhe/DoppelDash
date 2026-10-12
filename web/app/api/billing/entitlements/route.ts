@@ -13,12 +13,11 @@ import {
 } from '@/lib/entitlements/entitlementService'
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const orgId = user.orgId || 'org_doppelmayr'
 
   try {
     const entitlements = await getOrganizationEntitlements(orgId)

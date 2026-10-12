@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
-import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, COOKIE_NAME, COOKIE_OPTS, signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth'
+import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, isWebAccessAllowed, setWebSessionCookie, signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
-  const { preAuthToken, otp, method } = await req.json()
+  let body: { preAuthToken?: unknown; otp?: unknown; method?: unknown } = {}
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const { preAuthToken, otp, method } = body
   if (!otp) return NextResponse.json({ error: 'otp required' }, { status: 400 })
 
-  const userId = preAuthToken ? await verifyPreAuthToken(preAuthToken) : null
+  const userId = typeof preAuthToken === 'string' && preAuthToken ? await verifyPreAuthToken(preAuthToken) : null
   if (!userId) return NextResponse.json({ error: 'Session expired — sign in again' }, { status: 401 })
 
   if (!(await rateLimit(`otp:${userId}`, 10, 60_000))) {
@@ -35,21 +39,29 @@ export async function POST(req: NextRequest) {
   if (!user.isActive || user.isBanned) {
     return NextResponse.json({ error: 'Account suspended — contact your administrator' }, { status: 403 })
   }
+  if (!user.orgId) {
+    // No tenant, no session. Never default an organisation.
+    return NextResponse.json({ error: 'This account is not assigned to an organization — contact support' }, { status: 403 })
+  }
 
   const pub   = user.toPublic()
   const token = await signToken(pub)
 
   // Web uses the cookie above; the mobile app has no cookie jar, so it also
-  // gets a short-lived Bearer access token + rotating opaque refresh token.
+  // gets a short-lived Bearer access token + rotating opaque refresh token
+  // (a new device "family" per login).
   const accessToken  = await signMobileAccessToken(pub)
-  const refreshToken = await issueMobileRefreshToken(pub.id)
+  const refreshToken = await issueMobileRefreshToken(pub.id, { sessionVersion: pub.sessionVersion })
 
+  // The web cookie is minted only for organisations whose persisted entitlement enables the web client.
+  const webAccess = await isWebAccessAllowed(pub.orgId)
   const res = NextResponse.json({
     user: pub,
     mustChangePassword: user.mustChangePassword,
     accessToken,
     refreshToken,
+    webAccess,
   })
-  res.cookies.set(COOKIE_NAME, token, COOKIE_OPTS)
+  if (webAccess) setWebSessionCookie(res, token)
   return res
 }

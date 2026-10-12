@@ -3,41 +3,14 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import PasswordResetToken from '@/models/PasswordResetToken'
 import { rateLimit } from '@/lib/ratelimit'
+import { revokeAllMobileRefreshTokens } from '@/lib/auth/mobileTokens'
+
+// There is intentionally NO GET handler: a reset token must never travel in a URL
+// (query strings are written to access logs and proxies). Validity checks use
+// POST /api/auth/password-reset/check with the token in the body.
 
 /**
- * GET /api/auth/password-reset/confirm?token=...
- * Inspects token validity for UI rendering before form submission.
- */
-export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get('token')
-  if (!token) {
-    return NextResponse.json({ valid: false, reason: 'missing_token', error: 'Reset token is required' }, { status: 400 })
-  }
-
-  await connectDB()
-  const tokenHash = PasswordResetToken.hashToken(token)
-  const tokenDoc = await PasswordResetToken.findOne({ tokenHash }).lean()
-
-  if (!tokenDoc) {
-    return NextResponse.json({ valid: false, reason: 'invalid_token', error: 'Invalid or unrecognized password reset token' }, { status: 404 })
-  }
-
-  if (tokenDoc.usedAt) {
-    return NextResponse.json({ valid: false, reason: 'already_used', error: 'This password reset link has already been used' }, { status: 410 })
-  }
-
-  if (new Date(tokenDoc.expiresAt) <= new Date()) {
-    return NextResponse.json({ valid: false, reason: 'expired', error: 'This password reset link has expired' }, { status: 410 })
-  }
-
-  return NextResponse.json({
-    valid: true,
-    email: tokenDoc.email,
-  })
-}
-
-/**
- * POST /api/auth/password-reset/confirm
+ * POST /api/auth/password-reset/confirm   { token, newPassword }
  * Atomically consumes the token and updates the user's password.
  */
 export async function POST(req: NextRequest) {
@@ -62,6 +35,9 @@ export async function POST(req: NextRequest) {
 
   if (!newPassword || newPassword.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+  }
+  if (newPassword.length > 128) {
+    return NextResponse.json({ error: 'Password is too long' }, { status: 400 })
   }
 
   await connectDB()
@@ -110,6 +86,9 @@ export async function POST(req: NextRequest) {
     $unset: { otp: 1, otpExpiry: 1 },
     $inc:   { sessionVersion: 1 },
   })
+  // A reset must not leave any signed-in device alive (web sessions die via the
+  // stamp above; mobile refresh rows are revoked explicitly).
+  await revokeAllMobileRefreshTokens(user._id.toString(), 'password_reset')
 
   return NextResponse.json(
     { message: 'Password has been reset successfully' },

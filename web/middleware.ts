@@ -12,6 +12,7 @@ const PUBLIC_EXACT = [
   '/support',
   '/delete-account',
   '/web-access-restricted',
+  '/design-system',      // design-system showcase: the page itself 404s in production (see app/design-system/page.tsx)
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/verify-otp',
@@ -55,8 +56,25 @@ function isPublic(pathname: string) {
   return PUBLIC_API_PATTERNS.some(rx => rx.test(pathname))
 }
 
+// Legacy e-mailed links carried their token in the query string (`/invite?token=…`, `/reset-password?token=…`).
+// New links use the URL fragment, which browsers never send to a server. Next embeds the request URL and
+// searchParams in every page's HTML payload, so a legacy link is NOT rendered by the app at all: this static
+// bridge (its HTML never contains the token) moves the token into the fragment client-side and navigates to the
+// clean URL. (The first request of a legacy link was sent by the browser and cannot be un-sent; those links
+// expire — invitations after 7 days, reset links after 1 hour.)
+const LEGACY_LINK_BRIDGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Opening…</title></head><body><script>(function(){var p=new URLSearchParams(location.search).get('token');location.replace(location.pathname+(p?'#token='+encodeURIComponent(p):''));})();</script><noscript>JavaScript is required to open this link.</noscript></body></html>`
+const TOKEN_PAGES = new Set(['/invite', '/reset-password'])
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
+  const legacyToken = TOKEN_PAGES.has(pathname) ? req.nextUrl.searchParams.get('token') : null
+  if (legacyToken) {
+    return new NextResponse(LEGACY_LINK_BRIDGE, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' },
+    })
+  }
 
   // Always allow public routes, static files, Next internals
   // An /api/* path is never a static asset — exempting it on extension would
@@ -75,7 +93,7 @@ export async function middleware(req: NextRequest) {
   if (!token) {
     // API routes → 401 JSON
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized', code: 'unauthorized' }, { status: 401 })
     }
     // App pages → redirect to sign-in
     const url = req.nextUrl.clone()
@@ -91,6 +109,8 @@ export async function middleware(req: NextRequest) {
     }
     const url = req.nextUrl.clone()
     url.pathname = '/sign-in'
+    url.search = ''
+    url.searchParams.set('reason', 'session')   // the sign-in page explains that the session ended
     return NextResponse.redirect(url)
   }
 

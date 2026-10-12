@@ -36,7 +36,9 @@ const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).
 const Contact = jiti(path.resolve(__dirname, '../models/Contact.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
 const AuditLog = jiti(path.resolve(__dirname, '../models/AuditLog.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const { DELETE } = jiti(path.resolve(__dirname, '../app/api/user/account/route.ts'));
 
 test.before(async () => {
@@ -122,6 +124,7 @@ test('3. Employee self-service deletion purges personal data while leaving org i
   const empRecord = await Employee.create({
     clerkUserId: String(empUser._id),
     createdByUserId: String(empUser._id),
+    orgId,
     firstName: 'Delete',
     lastName: 'Target',
     email: empUser.email,

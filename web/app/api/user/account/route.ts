@@ -32,13 +32,14 @@ import { COOKIE_NAME } from '@/lib/auth/jwt'
 export async function DELETE(req: NextRequest) {
   try {
     const { userId, user, orgId: sessionOrgId } = await getUser(req)
-    if (!userId || !user) {
+    if (!userId || !user || !sessionOrgId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     await connectDB()
 
-    const orgId = sessionOrgId || user.orgId || 'org_doppelmayr'
+    // Tenant context comes only from the verified session — never defaulted.
+    const orgId = sessionOrgId
     const org = await Organization.findOne({ orgId })
 
     const isOrgOwner = Boolean(org && org.ownerId === userId)
@@ -60,8 +61,10 @@ export async function DELETE(req: NextRequest) {
         )
       }
 
-      // Owner is the sole member: Disband custom tenant if not the default system org
-      if (orgId !== 'org_doppelmayr') {
+      // Owner is the sole member: disband the tenant — unless it holds a lifetime
+      // grant (a protected system organisation). Decided by persisted entitlement
+      // data, never by a hardcoded organisation id.
+      if (!org?.lifetimeGrant) {
         await Promise.allSettled([
           Organization.deleteOne({ orgId }),
           OrgSettings.deleteOne({ orgId }),

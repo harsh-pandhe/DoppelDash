@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
+import Organization from '@/models/Organization'
 
 export async function POST(req: NextRequest) {
   await connectDB()
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { secret, email, password, firstName, lastName } = body
+  const { secret, email, password, firstName, lastName, orgId } = body
 
   const expectedSecret = process.env.SETUP_SECRET
   if (!expectedSecret) {
@@ -33,12 +34,17 @@ export async function POST(req: NextRequest) {
   if (!email || !password || !firstName || !lastName) {
     return NextResponse.json({ error: 'email, password, firstName, lastName required' }, { status: 400 })
   }
+  // Operator-supplied tenant: an admin must belong to an EXISTING organisation. There is no default.
+  if (typeof orgId !== 'string' || !orgId || !(await Organization.exists({ orgId }))) {
+    return NextResponse.json({ error: 'orgId of an existing organization is required' }, { status: 400 })
+  }
   if (password.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
 
   const hash = await User.hashPassword(password)
   const boss  = await User.create({
+    orgId,
     email:              email.toLowerCase().trim(),
     passwordHash:       hash,
     role:               'admin',

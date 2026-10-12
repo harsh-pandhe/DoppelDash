@@ -12,6 +12,9 @@ import {
   Loader2, Check, Mountain, Smartphone, KeyRound,
 } from 'lucide-react'
 import { SUPPORT_CONFIG } from '@/lib/config/support'
+import { PASSWORD_MAX, passwordRuleState, passwordProblem } from '@/lib/auth/passwordRules'
+
+import { safeRedirect } from '@/lib/auth/safeRedirect'
 
 type Step = 'credentials' | 'otp' | 'change-password'
 type VerifyMethod = 'totp' | 'email'
@@ -37,6 +40,8 @@ export default function SignInPage() {
   const [loading,    setLoading]    = useState(false)
   const [error,      setError]      = useState('')
   const [mounted,    setMounted]    = useState(false)
+  const [notice,     setNotice]     = useState('')
+  const [cooldown,   setCooldown]   = useState(0)
   const otpRefs = useRef<(HTMLInputElement|null)[]>([])
 
   // Support chat state
@@ -44,11 +49,21 @@ export default function SignInPage() {
   const [supportQuery, setSupportQuery] = useState('')
   const [isTyping,     setIsTyping]     = useState(false)
   const [chatHistory,  setChatHistory]  = useState<ChatMsg[]>([
-    { role: 'model', text: "Hi! I'm the DoppelDash IT Assistant ✨. Trouble signing in, no OTP, or need access? I can help." }
+    { role: 'model', text: "Hi! I'm the Doppelmayr IT Assistant ✨. Trouble signing in, no OTP, or need access? I can help." }
   ])
   const chatEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    setMounted(true)
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    if (reason === 'session') setNotice('Your session ended. Sign in again to continue.')
+    else if (reason === 'signed-out') setNotice('You’ve been signed out.')
+  }, [])
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
   useEffect(() => {
     if (step === 'otp') setTimeout(() => otpRefs.current[0]?.focus(), 100)
   }, [step])
@@ -63,11 +78,14 @@ export default function SignInPage() {
       const res  = await fetch('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); return }
+      if (data.webAccess === false) { router.replace('/web-access-restricted'); return }
+      setNotice('')
       setFirstName(data.firstName); setPreAuthToken(data.preAuthToken || '')
       const m: VerifyMethod[] = Array.isArray(data.methods) && data.methods.length ? data.methods : ['email']
       setMethods(m)
       setVerifyMethod(m[0])
       setEmailSent(!!data.emailSent)
+      if (data.emailSent) setCooldown(30)
       setStep('otp')
     } catch { setError('Network error — try again') }
     finally { setLoading(false) }
@@ -87,12 +105,13 @@ export default function SignInPage() {
       const verRes  = await fetch('/api/auth/passkey/login', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId: optData.userId, response: assertion }) })
       const verData = await verRes.json()
       if (!verRes.ok) { setError(verData.error || 'Passkey verification failed'); return }
+      if (verData.webAccess === false) { router.replace('/web-access-restricted'); return }
       if (verData.mustChangePassword) { setStep('change-password'); return }
       await routeAfterAuth()
     } catch (err) {
       // NotAllowedError = user dismissed the browser prompt — not a real failure
-      if (err instanceof Error && err.name === 'NotAllowedError') setError('')
-      else setError('Passkey sign-in failed — use password instead')
+      if (err instanceof Error && err.name === 'NotAllowedError') setError('Passkey sign-in was cancelled. You can try again or use your password.')
+      else setError('Passkey sign-in failed — try again or use your password.')
     } finally { setPkLoading(false) }
   }
 
@@ -103,7 +122,7 @@ export default function SignInPage() {
       const res = await fetch('/api/auth/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ preAuthToken }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Could not send code'); return }
-      setEmailSent(true)
+      setEmailSent(true); setCooldown(30)
     } catch { setError('Network error') }
     finally { setLoading(false) }
   }
@@ -120,7 +139,7 @@ export default function SignInPage() {
         }
       }
     } catch { /* fall through to dashboard */ }
-    router.replace('/dashboard')
+    router.replace(safeRedirect(new URLSearchParams(window.location.search).get('redirect')) ?? '/dashboard')
   }
 
   const submitOTPDirect = async (code: string) => {
@@ -129,6 +148,7 @@ export default function SignInPage() {
       const res  = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ preAuthToken, otp: code, method: verifyMethod }) })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Invalid OTP'); setOtp(['','','','','','']); otpRefs.current[0]?.focus(); return }
+      if (data.webAccess === false) { router.replace('/web-access-restricted'); return }
       if (data.mustChangePassword) { setStep('change-password'); return }
       await routeAfterAuth()
     } catch { setError('Network error') }
@@ -141,8 +161,8 @@ export default function SignInPage() {
   }
 
   const submitChangePassword = async () => {
-    if (newPwd !== newPwd2) { setError('Passwords do not match'); return }
-    if (newPwd.length < 8)  { setError('Password must be at least 8 characters'); return }
+    const problem = passwordProblem(newPwd, newPwd2)
+    if (problem) { setError(problem); return }
     setError(''); setLoading(true)
     try {
       const res = await fetch('/api/auth/change-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ newPassword: newPwd }) })
@@ -213,7 +233,7 @@ export default function SignInPage() {
             <div className="flex items-center mb-2">
               <img
                 src="/icon-192.png"
-                alt="DoppelDash"
+                alt="Doppelmayr India"
                 className="h-12 w-12 rounded-xl shadow-md shadow-black/20"
               />
             </div>
@@ -287,7 +307,7 @@ export default function SignInPage() {
                 </div>
 
                 <h3 className="text-2xl font-semibold text-white tracking-tight">
-                  {step === 'credentials' && 'Sign in to DoppelDash'}
+                  {step === 'credentials' && 'Sign in to Doppelmayr India'}
                   {step === 'otp'         && (firstName ? `Confirm it's you, ${firstName}` : "Confirm it's you")}
                   {step === 'change-password' && 'Set a new password'}
                 </h3>
@@ -304,12 +324,15 @@ export default function SignInPage() {
               {/* Form body */}
               <div className="p-8 pt-4">
                 {error && (
-                  <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 flex items-start gap-2">
+                  <div role="alert" className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-300 flex items-start gap-2">
                     <span className="text-red-400 mt-0.5">⚠</span>
                     <span className="font-medium">{error}</span>
                   </div>
                 )}
 
+                {notice && step === 'credentials' && !error && (
+                  <div role="status" className="mb-4 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 font-medium">{notice}</div>
+                )}
                 {/* STEP 1 — credentials */}
                 {step === 'credentials' && (
                   <form className="space-y-5" onSubmit={e => { e.preventDefault(); submitCredentials() }}>
@@ -430,8 +453,8 @@ export default function SignInPage() {
                       <button type="button" onClick={() => { setStep('credentials'); setOtp(['','','','','','']); setError(''); setEmailSent(false) }}
                         className="text-slate-400 hover:text-white font-medium">← Use different account</button>
                       {verifyMethod === 'email' && emailSent && (
-                        <button type="button" onClick={requestEmailOtp} disabled={loading}
-                          className="text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">Resend code</button>
+                        <button type="button" onClick={requestEmailOtp} disabled={loading || cooldown > 0}
+                          className="text-blue-400 hover:text-blue-300 font-bold disabled:opacity-50">{cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}</button>
                       )}
                     </div>
                   </div>
@@ -463,9 +486,9 @@ export default function SignInPage() {
                     {newPwd.length > 0 && (
                       <div className="grid grid-cols-3 gap-1.5">
                         {([
-                          ['8+ chars',      newPwd.length >= 8],
-                          ['Has number',    /\d/.test(newPwd)],
-                          ['Has uppercase', /[A-Z]/.test(newPwd)],
+                          ['8+ chars',      passwordRuleState(newPwd, newPwd2).length],
+                          ['Max 128',       newPwd.length <= PASSWORD_MAX],
+                          ['Matches',       passwordRuleState(newPwd, newPwd2).match],
                         ] as [string, boolean][]).map(([label, ok]) => (
                           <div key={label} className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-colors ${ok ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20' : 'bg-white/5 text-slate-400 border border-white/5'}`}>
                             <span>{ok ? '✓' : '○'}</span>{label}
@@ -474,7 +497,7 @@ export default function SignInPage() {
                       </div>
                     )}
 
-                    <button type="submit" disabled={loading || !newPwd || newPwd !== newPwd2 || newPwd.length < 8}
+                    <button type="submit" disabled={loading || !!passwordProblem(newPwd, newPwd2)}
                       className="group w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#003B73] to-[#0057A8] hover:from-[#0057A8] hover:to-[#1d6dc2] disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 px-4 rounded-xl font-medium transition-all active:scale-[0.98] shadow-lg shadow-[#0057A8]/30 mt-2 border border-white/10">
                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (<><Lock className="h-4 w-4" /><span>Save and continue</span></>)}
                     </button>
@@ -490,7 +513,7 @@ export default function SignInPage() {
             </div>
 
             <p className="text-center text-[11px] text-slate-500 mt-4">
-              Enterprise platform · DoppelDash
+              Doppelmayr India · Employee workspace
             </p>
             <p className="text-center text-[10px] text-slate-600 mt-1">
               Access restricted to authorised employees. All sessions are logged.
@@ -510,8 +533,8 @@ export default function SignInPage() {
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">DoppelDash IT Assistant</p>
-                  <p className="text-[10px] text-slate-400">Powered by Gemini · Public access</p>
+                  <p className="text-sm font-semibold">Doppelmayr IT Assistant</p>
+                  <p className="text-[10px] text-slate-400">Sign-in and access help</p>
                 </div>
               </div>
               <button type="button" onClick={() => setShowSupport(false)} aria-label="Close" className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors">

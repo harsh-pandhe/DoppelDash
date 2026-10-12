@@ -170,6 +170,22 @@ test('4. Reviewer email with isReviewer=false CANNOT use reviewer bypass', async
   }
 });
 
+/** Remove EVERYTHING a self-registration created (user, org, employee, balance, sessions). */
+async function purgeRegistration(email) {
+  const u = await User.findOne({ email });
+  if (!u) return;
+  const db = mongoose.connection.db;
+  const uid = String(u._id);
+  if (u.orgId) {
+    for (const c of ['organizations', 'orgsettings', 'employees', 'leavebalances', 'auditlogs', 'subscriptions']) {
+      await db.collection(c).deleteMany({ orgId: u.orgId });
+    }
+    await db.collection('users').deleteMany({ orgId: u.orgId });
+  }
+  await db.collection('refreshtokens').deleteMany({ userId: uid });
+  await User.deleteOne({ _id: u._id });
+}
+
 test('5. Self-registration payload cannot set isReviewer to true', async () => {
   const registerHandler = jiti(path.resolve(__dirname, '../app/api/auth/register/route.ts')).POST;
 
@@ -198,13 +214,9 @@ test('5. Self-registration payload cannot set isReviewer to true', async () => {
     assert.ok(createdUser, 'User should be found in DB');
     assert.equal(createdUser.isReviewer, false, 'Self-registered user must strictly have isReviewer: false');
 
-    await User.deleteOne({ _id: createdUser._id });
-    if (body.orgId) {
-      await Organization.deleteOne({ orgId: body.orgId });
-    }
+    await purgeRegistration(testRegisterEmail);
   } catch (err) {
-    // Clean up if created
-    await User.deleteOne({ email: testRegisterEmail });
+    await purgeRegistration(testRegisterEmail);
     throw err;
   }
 });

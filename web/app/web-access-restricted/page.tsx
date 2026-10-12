@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { ShieldAlert, Smartphone, ArrowRight, LogOut } from 'lucide-react'
+import { ShieldAlert, ArrowRight } from 'lucide-react'
+import { PlainSignOutButton } from '@/components/auth/SignOutButton'
 
 export const metadata = {
-  title: 'Web Access Restricted · DoppelDash',
-  description: 'DoppelDash Web Portal is currently in private preview for select organizations.',
+  title: 'Web access not enabled',
+  description: 'Web access is not enabled for this account.',
 }
 
 export default function WebAccessRestrictedPage() {
@@ -16,40 +17,21 @@ export default function WebAccessRestrictedPage() {
 
         <div className="space-y-2">
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100">
-            Web Portal In Preview
+            Web access isn’t enabled
           </h1>
           <p className="text-sm text-slate-400 leading-relaxed">
-            The DoppelDash Web Portal is currently in private preview for enterprise accounts. Public organizations currently operate via the Android mobile application.
+            Your organization isn’t enabled for the Doppelmayr India web workspace. If you expect to have web access, contact your administrator.
           </p>
         </div>
 
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 text-left space-y-3">
-          <div className="flex items-start gap-3">
-            <Smartphone className="w-5 h-5 text-brand-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-semibold text-slate-200">Mobile Access Enabled</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                All CRM contacts, expenses, leaves, and team operations are fully accessible through the DoppelDash Android application.
-              </p>
-            </div>
-          </div>
-        </div>
 
         <div className="pt-2 flex flex-col sm:flex-row gap-3">
-          <form action="/api/auth/logout" method="POST" className="flex-1">
-            <button
-              type="submit"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-sm font-medium text-slate-300 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </form>
+          <div className="flex-1"><PlainSignOutButton className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-sm font-medium text-slate-300 transition-colors disabled:opacity-60" /></div>
           <Link
             href="/sign-in"
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-sm font-medium text-white shadow-lg shadow-brand-600/20 transition-all"
           >
-            Switch Account
+            Use a different account
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

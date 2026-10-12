@@ -8,7 +8,7 @@ import { getUser } from '@/lib/auth'
 export async function POST() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   await connectDB()
   const config = await UserEmailConfig.findOne({ userId, orgId: effectiveOrgId }).lean() as Record<string, unknown> | null

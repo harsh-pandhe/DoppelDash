@@ -91,7 +91,8 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
   let targetOrgId = orgId
   if (!targetOrgId) {
     const userDoc = await User.findById(userId).select('orgId').lean()
-    targetOrgId = userDoc?.orgId || 'org_doppelmayr'
+    targetOrgId = userDoc?.orgId
+    if (!targetOrgId) return { ok: false as const, reason: 'Account is not assigned to an organization' }
   }
 
   const info = verification.registrationInfo

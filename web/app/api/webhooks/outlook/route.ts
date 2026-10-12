@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
     if (!senderEmail) continue
 
     // Find matching contact by sender email (deduplication-aware lookup)
-    const orgId = tokenDoc.orgId || 'org_doppelmayr'
+    const orgId = tokenDoc.orgId
+    if (!orgId) continue // never guess a tenant for a stored token
     const contact = await Contact.findOne({ orgId, createdBy: tokenDoc.userId, email: senderEmail })
     if (!contact) continue
 

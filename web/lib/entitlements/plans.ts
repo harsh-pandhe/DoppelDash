@@ -12,6 +12,7 @@ export type FeatureKey =
   | 'bulkExport'
   | 'ocrReceipts'
   | 'ocrBusinessCards'
+  | 'customMail'
 
 export type LimitKey =
   | 'maxMembers'
@@ -27,6 +28,15 @@ export interface PlanConfig {
   limits: Record<LimitKey, number>
 }
 
+/**
+ * The largest single upload ANY plan allows (derived, never hard-coded elsewhere). Upload tickets use the organisation's own
+ * plan limit; this ceiling bounds things that must keep working across plan changes (e.g. reading a file that was valid when
+ * a Premium organisation attached it, after a downgrade) — see lib/uploads/attachmentStorage.receiptSizeCeiling.
+ */
+export function maxUploadCeilingBytes(): number {
+  return Math.max(...Object.values(PLAN_CONFIGS).map(p => p.limits.maxUploadSizeBytes))
+}
+
 export const PLAN_CONFIGS: Record<'free' | 'premium', PlanConfig> = {
   free: {
     id: 'free',
@@ -39,6 +49,7 @@ export const PLAN_CONFIGS: Record<'free' | 'premium', PlanConfig> = {
       bulkExport: false,
       ocrReceipts: true,
       ocrBusinessCards: true,
+      customMail: false,
     },
     limits: {
       maxMembers: 10,
@@ -58,6 +69,7 @@ export const PLAN_CONFIGS: Record<'free' | 'premium', PlanConfig> = {
       bulkExport: true,
       ocrReceipts: true,
       ocrBusinessCards: true,
+      customMail: true,
     },
     limits: {
       maxMembers: 1000,

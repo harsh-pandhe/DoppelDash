@@ -6,13 +6,20 @@ import { rateLimit } from '@/lib/ratelimit'
 
 /** Send (or resend) the email OTP for a user mid-login. */
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') || 'unknown'
-  const { preAuthToken } = await req.json()
-  const userId = preAuthToken ? await verifyPreAuthToken(preAuthToken) : null
+  const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
+  let body: { preAuthToken?: unknown } = {}
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  const userId = typeof body.preAuthToken === 'string' && body.preAuthToken ? await verifyPreAuthToken(body.preAuthToken) : null
   if (!userId) return NextResponse.json({ error: 'Session expired — sign in again' }, { status: 401 })
 
   if (!(await rateLimit(`send-otp:${ip}:${userId}`, 3, 60_000))) {
     return NextResponse.json({ error: 'Too many requests — wait 1 minute' }, { status: 429 })
+  }
+  // Per-account cap too, so rotating IPs cannot be used to flood one inbox.
+  if (!(await rateLimit(`send-otp:acct:${userId}`, 10, 15 * 60_000))) {
+    return NextResponse.json({ error: 'Too many codes requested — try again in a few minutes' }, { status: 429 })
   }
 
   await connectDB()
@@ -22,6 +29,10 @@ export async function POST(req: NextRequest) {
   }
 
   const otp = await generateOTP(user._id.toString())
-  await sendOTP(user.email, otp)
+  const delivered = await sendOTP(user.email, otp, user.orgId)
+  if (!delivered) {
+    // Safe, generic: no provider details, no configuration hints.
+    return NextResponse.json({ error: 'We couldn’t send your code right now. Please try again shortly.' }, { status: 503 })
+  }
   return NextResponse.json({ ok: true })
 }

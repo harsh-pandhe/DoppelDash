@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUser, COOKIE_NAME, COOKIE_OPTS } from '@/lib/auth'
+import { getUser, COOKIE_NAME, COOKIE_OPTS, revokeAllMobileRefreshTokens } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { rateLimit } from '@/lib/ratelimit'
@@ -25,6 +25,9 @@ export async function POST(req: NextRequest) {
   if (!newPassword || newPassword.length < 8) {
     return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
   }
+  if (newPassword.length > 128) {
+    return NextResponse.json({ error: 'Password is too long' }, { status: 400 })
+  }
 
   await connectDB()
   const user = await User.findById(userId)
@@ -40,11 +43,15 @@ export async function POST(req: NextRequest) {
   }
 
   const hash = await User.hashPassword(newPassword)
+  // Bumping sessionVersion kills every web session and every outstanding access
+  // token; revoking the refresh rows kills every mobile device (including this
+  // one — same semantics as web: the user signs in again).
   await User.findByIdAndUpdate(userId, {
     passwordHash:       hash,
     mustChangePassword: false,
     $inc:               { sessionVersion: 1 },
   })
+  await revokeAllMobileRefreshTokens(userId, 'password_change')
 
   const res = NextResponse.json({ ok: true, message: 'Password updated. Please sign in again.' })
   res.cookies.set(COOKIE_NAME, '', { ...COOKIE_OPTS, maxAge: 0, path: '/' })

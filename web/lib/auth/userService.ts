@@ -27,7 +27,9 @@ export interface ListedUser {
 
 export async function listUsers(opts: { limit?: number; orgId?: string | null } = {}): Promise<ListedUser[]> {
   await connectDB()
-  const filter = opts.orgId ? { orgId: opts.orgId } : {}
+  // Fail closed: listing without a tenant must never mean "every tenant".
+  if (!opts.orgId) return []
+  const filter = { orgId: opts.orgId }
   const docs = await User.find(filter).sort({ createdAt: -1 }).limit(opts.limit ?? 200).lean()
   return docs.map(u => ({
     id:        String(u._id),
@@ -35,7 +37,7 @@ export async function listUsers(opts: { limit?: number; orgId?: string | null } 
     lastName:  u.lastName,
     fullName:  `${u.firstName} ${u.lastName}`.trim(),
     email:     u.email,
-    orgId:     u.orgId || 'org_doppelmayr',
+    orgId:     u.orgId,
     role:      u.role,
     permissions: u.permissions || [],
     banned:    u.isBanned,
@@ -62,7 +64,7 @@ export async function getUserById(id: string, orgId?: string | null): Promise<Li
       lastName:  u.lastName,
       fullName:  `${u.firstName} ${u.lastName}`.trim(),
       email:     u.email,
-      orgId:     u.orgId || 'org_doppelmayr',
+      orgId:     u.orgId,
       role:      u.role,
       permissions: u.permissions || [],
       banned:    u.isBanned,
