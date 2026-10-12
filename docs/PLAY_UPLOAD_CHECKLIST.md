@@ -126,8 +126,8 @@ This document details the exact 28 sequential steps to upload, configure, and re
 
 #### 19. Permissions Declarations
 - In **Policy and programs → App content**:
-- `READ_EXTERNAL_STORAGE` is scoped with `android:maxSdkVersion="32"`.
-- Camera and Notifications are declared for expense receipt capture and workflow alerts.
+  - No broad photo/video storage permissions requested; app uses system Photo Picker.
+  - Camera declared as optional hardware feature for receipt and business card capture.
 
 #### 20. Create Internal Testing Track
 - Navigate to **Testing → Internal testing**.
@@ -137,7 +137,7 @@ This document details the exact 28 sequential steps to upload, configure, and re
 - Drag and drop:
   `DoppelDash-mobile/build/app/outputs/bundle/release/app-release.aab`
 - Verify Play Console parses:
-  - Version: `1.0.0 (1)`
+  - Version: `1.0.1 (2)`
   - Target SDK: `36`
   - Min SDK: `24`
 - Enter Release notes:

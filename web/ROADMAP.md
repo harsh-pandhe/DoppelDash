@@ -216,7 +216,7 @@ Standard to apply to every dialog:
 ### 🧹 Data reset (2026-07-03)
 - [x] **Wiped to just-admin + real reference data** — new secret-gated `api/dev/reset-to-admin/route.ts` (same `ALLOW_DEV_SEED`+secret gating as seed; refuses to run if no admin exists). Keeps `role:'admin'` user(s) + their Employee profile / LeaveBalance / passkeys / email config / outlook token, all PublicHolidays, all OrgSettings; wipes every non-admin user + all leaves/expenses/travel/contacts/scanned-cards/announcements/audit/inbox/campaign-logs/mail-drafts/sync-state.
 - [x] **Local DB done** — `mongodb://localhost:27017/doppeldash` reset: 1 admin (`harshpandhehome@gmail.com`) + its profile/balance + 42 holidays remain; 10 fake users + 15 leaves + 12 expenses + 7 travel + 8 contacts + 5 announcements + 80 audit + 91 inbox all deleted.
-- [ ] **Prod Atlas — user to run tomorrow:** deploy, then `POST /api/dev/reset-to-admin?secret=<DEV_SEED_SECRET>` against the live app (needs `ALLOW_DEV_SEED=true` in Netlify env). Then add managers/employees by hand.
+- [ ] **Prod Atlas — user to run tomorrow:** deploy, then `POST /api/dev/reset-to-admin` with header `x-seed-secret: <DEV_SEED_SECRET>` (never in the URL) against the live app (needs `ALLOW_DEV_SEED=true` in Netlify env). Then add managers/employees by hand.
 
 ### ✅ Verified correct (called out by name so nobody re-litigates)
 

@@ -186,5 +186,4 @@ For Google Play App Review:
 | `android.permission.INTERNET` | All versions | Sync with cloud database and authenticate user |
 | `android.permission.CAMERA` | Optional feature | Scan business cards for CRM and capture expense receipts |
 | `android.permission.USE_BIOMETRIC` | Android 9+ | Allow user to securely unlock app with local fingerprint/face |
-| `android.permission.READ_MEDIA_IMAGES` | Android 13+ | Select receipt photos from gallery for expense submission |
-| `android.permission.READ_EXTERNAL_STORAGE` | `maxSdkVersion="32"` | Legacy photo selection for receipts on Android 12 and below |
+| *No broad media permissions requested* | Android 13+ & legacy | Uses system Photo Picker (zero storage permissions required) |
