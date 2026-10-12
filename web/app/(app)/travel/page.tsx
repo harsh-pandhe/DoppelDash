@@ -19,6 +19,7 @@ interface TravelRequest {
   departureDate: string; returnDate: string
   estimatedTotal: number; advanceRequested: number
   status: string; managerNote?: string; adminNote?: string
+  revision?: number
   expenseId?: string
   createdAt: string
 }
@@ -51,10 +52,19 @@ export default function TravelPage() {
   const fetchRequests = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/travel')
-      if (!res.ok) throw new Error('fetch failed')
-      const data = await res.json()
-      setRequests(Array.isArray(data) ? data : [])
+      // Pages of 100 (newest first) until the server says there is no more; bounded so a runaway cursor can never loop forever.
+      const all: TravelRequest[] = []
+      let cursor: string | undefined
+      for (let page = 0; page < 20; page++) {
+        const res = await fetch(`/api/travel?limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`)
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json()
+        if (Array.isArray(data)) { all.push(...data); break }                 // an older server: the whole (legacy) list in one go
+        all.push(...(Array.isArray(data?.items) ? data.items : []))
+        if (!data?.hasMore || !data?.nextCursor) break
+        cursor = data.nextCursor
+      }
+      setRequests(all)
       setError(false)
     } catch (e) {
       if ((e as Error)?.name === 'AbortError') return
@@ -71,12 +81,20 @@ export default function TravelPage() {
   const act = async (id: string, status: string, note?: string) => {
     setActing(id)
     const noteKey = isAdmin ? 'adminNote' : 'managerNote'
-    await fetch(`/api/travel/${id}`, {
+    const revision = requests.find(r => r._id === id)?.revision ?? 0
+    const res = await fetch(`/api/travel/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, [noteKey]: note }),
+      body: JSON.stringify({ status, revision, ...(note ? { [noteKey]: note } : {}) }),
     })
-    toast(status === 'approved' ? 'Travel approved' : status === 'rejected' ? 'Travel rejected' : 'Sent for admin approval', status === 'rejected' ? 'error' : 'success')
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}))
+      // A conflict means the request changed after this list was loaded: nothing was applied — reload and let the user decide again.
+      if (res.status === 409 && d.code === 'revision_conflict') toast('This request was changed by someone else. The list has been refreshed — please review it and try again.', 'info')
+      else toast(d.error || 'Action failed', 'error')
+    } else {
+      toast(status === 'approved' ? 'Travel approved' : status === 'rejected' ? 'Travel rejected' : 'Sent for admin approval', status === 'rejected' ? 'error' : 'success')
+    }
     setActing(null)
     fetchRequests()
   }

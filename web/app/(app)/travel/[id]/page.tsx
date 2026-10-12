@@ -22,6 +22,8 @@ interface TravelRequest {
   estimatedTotal: number
   advanceRequested: number
   status: string
+  /** Optimistic-concurrency token read with the record; every update sends it back. */
+  revision?: number
   managerNote?: string
   adminNote?: string
   createdAt: string
@@ -70,7 +72,7 @@ export default function TravelRequestDetailPage() {
   const act = async (status: string, noteValue?: string) => {
     if (!request) return
     setActing(true)
-    const body: Record<string, string> = { status }
+    const body: Record<string, string | number> = { status, revision: request.revision ?? 0 }
     if (noteValue?.trim()) {
       body[isAdmin ? 'adminNote' : 'managerNote'] = noteValue.trim()
     }
@@ -81,6 +83,14 @@ export default function TravelRequestDetailPage() {
     })
     if (!res.ok) {
       const d = await res.json().catch(() => ({}))
+      if (res.status === 409 && d.code === 'revision_conflict') {
+        // Someone else changed this request after it was loaded: nothing was applied. Show the current version before the user retries.
+        toast('This request was changed by someone else. The latest version has been loaded — please review it and try again.', 'info')
+        setNoteDialog(null); setNote('')
+        await fetchRequest()
+        setActing(false)
+        return
+      }
       toast(d.error || 'Action failed', 'error')
       setActing(false)
       return
