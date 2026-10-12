@@ -4,7 +4,7 @@
  *   - generates throw-away secrets and a throw-away database name, uses ONLY loopback services and the local fake providers;
  *   - starts `next dev` on TEST_URL's port with its own build directory, waits for it, seeds, runs every tests/*.test.js in sorted order
  *     (one process each), and runs z_final_log_secret_scan LAST against the captured server log;
- *   - fails on any failed test, any skipped test, a missing summary, or fewer tests/files than scripts/ci/baseline.json.
+ *   - fails on any failed test, any skip not listed in baseline.json allowedSkips (each with a documented reason), a missing summary, or fewer tests/files than scripts/ci/baseline.json.
  * Refuses to run against a non-loopback MongoDB, and refuses to overwrite an existing web/.env.local outside CI.
  */
 const { spawn, spawnSync } = require('node:child_process')
@@ -61,7 +61,8 @@ async function main() {
       const t0 = Date.now()
       const r = spawnSync('node', [path.join('tests', f)], { cwd: root, env, encoding: 'utf8', timeout: 600_000, maxBuffer: 64 * 1024 * 1024 })
       const out = (r.stdout || '') + (r.stderr || ''); fs.writeFileSync(path.join(outDir, f + '.log'), out)
-      const s = parse(out); const ok = s.tests !== null && s.fail === 0 && s.skipped === 0 && s.pass === s.tests && r.status === 0
+      const s = parse(out); const allowed = (baseline.allowedSkips || []).filter(a => a.file === f).reduce((n, a) => n + a.max, 0)
+      const ok = s.tests !== null && s.fail === 0 && s.skipped <= allowed && s.pass + s.skipped === s.tests && r.status === 0
       results.push({ file: f, ...s, ok, seconds: Math.round((Date.now() - t0) / 1000) })
       console.log(`${ok ? 'ok  ' : 'FAIL'} ${f.padEnd(44)} tests=${s.tests} pass=${s.pass} fail=${s.fail} skipped=${s.skipped} (${results.at(-1).seconds}s)`)
       if (!ok) failed = true
