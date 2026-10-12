@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isCronAuthorized } from '@/lib/cron/auth'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
 import { emailOnboardingNudge } from '@/lib/email'
 
-// Called by system cron, e.g. daily: 0 9 * * * curl http://localhost:3000/api/cron/onboarding?secret=<CRON_SECRET>
+// Called by system cron, e.g. daily: 0 9 * * * curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/onboarding
 // Emails a nudge to employees who joined 7+ days ago but haven't finished onboarding.
 // Re-nudges at most once every 7 days (idempotent within the week).
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
-  const secret = req.nextUrl.searchParams.get('secret') || authHeader
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -25,7 +24,7 @@ export async function GET(req: NextRequest) {
       { onboardingNudgeSentAt: { $exists: false } },
       { onboardingNudgeSentAt: { $lte: sevenDaysAgo } },
     ],
-  }, 'clerkUserId firstName lastName email joiningDate onboardingStep').lean()
+  }, 'clerkUserId orgId firstName lastName email joiningDate onboardingStep').lean()
 
   let sent = 0
   for (const e of candidates) {
@@ -33,6 +32,7 @@ export async function GET(req: NextRequest) {
     const daysSinceJoining = Math.floor((now.getTime() - new Date(e.joiningDate).getTime()) / 86400000)
     try {
       await emailOnboardingNudge({
+        orgId: e.orgId,
         employeeEmail: e.email,
         employeeName: e.firstName || 'there',
         daysSinceJoining,

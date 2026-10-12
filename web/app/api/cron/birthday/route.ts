@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isCronAuthorized } from '@/lib/cron/auth'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sendBirthdayEmail } from '@/lib/email'
 import { getBirthdayNotificationRecipients } from '@/lib/cron-recipients'
 
-// Called by system cron: 0 8 * * * curl http://localhost:3000/api/cron/birthday?secret=<CRON_SECRET>
+// Called by system cron: 0 8 * * * curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/birthday
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
-  const secret = req.nextUrl.searchParams.get('secret') || authHeader
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -33,12 +32,12 @@ export async function GET(req: NextRequest) {
 
   let sent = 0
   for (const contact of todayBirthdays) {
-    // Determine the tenant organization of this contact
-    const contactOrgId = contact.orgId || 'org_doppelmayr'
-    const managerEmails = await getBirthdayNotificationRecipients(contactOrgId)
+    // A record without a tenant is never assigned one — skip it.
+    if (!contact.orgId) continue
+    const managerEmails = await getBirthdayNotificationRecipients(contact.orgId)
 
     if (managerEmails.length) {
-      await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails })
+      await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails, orgId: contact.orgId })
     }
     await Contact.findByIdAndUpdate(contact._id, { birthdayGreetingSent: true })
     sent++

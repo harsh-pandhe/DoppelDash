@@ -8,6 +8,9 @@ import { getUser } from '@/lib/auth'
 import { notifyTargetsFor } from '@/lib/notify-targets'
 import { pick } from '@/lib/pick'
 import { EXPENSE_CREATE_FIELDS } from '@/lib/apiFields'
+import { validateExpense, EXPENSE_STATUSES } from '@/lib/expenses/validation'
+import { writeAudit } from '@/lib/audit'
+import { presentExpense, checkNewReceipts } from '@/lib/expenses/receipts'
 
 export async function GET(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
@@ -20,14 +23,24 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get('status')
     const from   = searchParams.get('from')
     const to     = searchParams.get('to')
-    if (status) filter.status = status
-    if (from || to) {
-      filter.startDate = {}
-      if (from) (filter.startDate as Record<string, unknown>).$gte = new Date(from)
-      if (to)   (filter.startDate as Record<string, unknown>).$lte = new Date(to)
+    if (status) {
+      if (!(EXPENSE_STATUSES as readonly string[]).includes(status)) return NextResponse.json({ error: 'Invalid status', fields: ['status'] }, { status: 400 })
+      filter.status = status
     }
-    const expenses = await Expense.find(filter).sort({ createdAt: -1 }).limit(200).lean()
-    return NextResponse.json(expenses)
+    if (from || to) {
+      const range: Record<string, Date> = {}
+      for (const [k, v, op] of [['from', from, '$gte'], ['to', to, '$lte']] as const) {
+        if (!v) continue
+        const d = new Date(v)
+        if (Number.isNaN(d.getTime())) return NextResponse.json({ error: `Invalid ${k} date`, fields: [k] }, { status: 400 })
+        range[op] = d
+      }
+      filter.startDate = range
+    }
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '200', 10) || 200, 1), 200)
+    const skip  = Math.max(parseInt(searchParams.get('skip') || '0', 10) || 0, 0)
+    const expenses = await Expense.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean()
+    return NextResponse.json(expenses.map(presentExpense))
   } catch (err) {
     console.error('[RMS GET]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -37,9 +50,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
-  const body    = await req.json()
+  const raw = await req.json().catch(() => null)
+  const checked = validateExpense(pick(raw, EXPENSE_CREATE_FIELDS), 'create', { orgId: effectiveOrgId })
+  if ('problems' in checked) return NextResponse.json(checked.problems, { status: 400 })
+  const body = checked.data
+  const attach = await checkNewReceipts(checked.newRefs, effectiveOrgId)
+  if (attach) return attach
 
   if (body.travelRequestId) {
     if (!mongoose.isValidObjectId(body.travelRequestId)) {
@@ -51,12 +69,49 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const expense = await Expense.create({
-    ...pick(body, EXPENSE_CREATE_FIELDS),
-    userId,
-    userName: user?.fullName || user?.firstName || 'Unknown',
+  // Idempotency / duplicate submission: a retried or double-tapped submit must not create two claims.
+  const clientRequestId = body.clientRequestId as string | undefined
+  if (clientRequestId) {
+    const prior = await Expense.findOne({ orgId: effectiveOrgId, userId, clientRequestId }).lean()
+    if (prior) return NextResponse.json(presentExpense(prior as never), { status: 200 })
+  } else {
+    const dup = await Expense.findOne({
+      orgId: effectiveOrgId, userId, title: body.title as string, amount: body.amount as number, startDate: body.startDate as Date,
+      createdAt: { $gte: new Date(Date.now() - 10_000) },
+    }).lean()
+    if (dup) return NextResponse.json({ error: 'This expense was just submitted. Refresh to see it.', duplicateOf: String((dup as { _id: unknown })._id) }, { status: 409 })
+  }
+
+  let expense
+  try {
+    expense = await Expense.create({
+      ...body,
+      userId,
+      userName: user?.fullName || user?.firstName || 'Unknown',
+      orgId: effectiveOrgId,
+      status: 'pending_manager',
+    })
+  } catch (err) {
+    // A malformed client payload is a 400, never a 500 (Android and Web both rely on a meaningful status).
+    if (err instanceof mongoose.Error.ValidationError) {
+      return NextResponse.json({ error: 'Invalid expense', fields: Object.keys(err.errors) }, { status: 400 })
+    }
+    // Two concurrent submits with the same idempotency key: the unique index lets exactly one win.
+    if ((err as { code?: number })?.code === 11000 && clientRequestId) {
+      const prior = await Expense.findOne({ orgId: effectiveOrgId, userId, clientRequestId }).lean()
+      if (prior) return NextResponse.json(presentExpense(prior as never), { status: 200 })
+    }
+    throw err
+  }
+
+  writeAudit({
+    action: 'expense.submitted',
+    performedBy: userId,
+    performedByName: user?.fullName || user?.firstName || user?.email || userId,
+    targetId: expense._id.toString(),
+    targetType: 'expense',
+    metadata: { title: expense.title, amount: expense.amount, employeeName: expense.userName },
     orgId: effectiveOrgId,
-    status: 'pending_manager',
   })
 
   // Notify reporting manager (+ boss); fallback to all managers if no chain set
@@ -66,14 +121,14 @@ export async function POST(req: NextRequest) {
       const employeeName = user?.fullName || user?.firstName || 'An employee'
       for (const email of recipients) {
         emailExpenseSubmitted({
-          managerEmail: email,
+          orgId, managerEmail: email,
           employeeName,
-          title:  body.title,
-          amount: body.amount,
+          title:  expense.title,
+          amount: expense.amount,
         })
       }
     } catch { /* best-effort */ }
   })()
 
-  return NextResponse.json(expense, { status: 201 })
+  return NextResponse.json(presentExpense(expense.toObject()), { status: 201 })
 }
