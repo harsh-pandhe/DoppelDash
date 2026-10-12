@@ -1,0 +1,68 @@
+/*
+ * Design-system base layer. EVERYTHING here is scoped to .ds-root / [data-ds-*] so that importing this file
+ * never changes a page that is not wrapped in <DsProvider>.
+ */
+.ds-root {
+  background-color: rgb(var(--ds-page));
+  color: rgb(var(--ds-on-surface));
+  font-family: var(--ds-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.ds-root *, .ds-root *::before, .ds-root *::after { border-color: rgb(var(--ds-outline-variant)); }
+.ds-root :focus { outline: none; }
+.ds-root :focus-visible {
+  outline: var(--ds-focus-ring) solid rgb(var(--ds-primary));
+  outline-offset: var(--ds-focus-offset);
+}
+.ds-tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.ds-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ── Motion: small movement + fade, token durations/easings ─────────────────────────────── */
+@keyframes ds-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes ds-rise-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes ds-scale-in { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: scale(1) } }
+@keyframes ds-slide-in-right { from { opacity: 0; transform: translateX(24px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes ds-slide-in-left { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1; transform: translateX(0) } }
+@keyframes ds-slide-in-up { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes ds-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .45 } }
+@keyframes ds-check-pop { from { opacity: 0; transform: scale(.85) } to { opacity: 1; transform: scale(1) } }
+
+.ds-anim-fade { animation: ds-fade-in var(--ds-dur-base) var(--ds-ease-standard-decelerate) both; }
+.ds-anim-rise { animation: ds-rise-in var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-scale { animation: ds-scale-in var(--ds-dur-base) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-slide-right { animation: ds-slide-in-right var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-slide-left { animation: ds-slide-in-left var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-slide-up { animation: ds-slide-in-up var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-pop { animation: ds-check-pop var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-skeleton { background-color: rgb(var(--ds-surface-container-high)); border-radius: var(--ds-radius-sm); animation: ds-pulse 1.4s var(--ds-ease-standard) infinite; }
+
+/* Collapsible region: animates height via the grid-rows technique (no JS measuring). */
+.ds-collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--ds-dur-base) var(--ds-ease-emphasized-decelerate); }
+.ds-collapse[data-open="true"] { grid-template-rows: 1fr; }
+.ds-collapse > div { overflow: hidden; min-height: 0; }
+
+/* Reduced motion: no transforms, no loops; only a very short fade survives. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-root [class*="ds-anim-"] { animation: ds-fade-in 90ms linear both !important; }
+  .ds-skeleton { animation: none; }
+  .ds-collapse { transition: none; }
+}
+[data-ds-motion="reduced"] [class*="ds-anim-"] { animation: ds-fade-in 90ms linear both !important; }
+[data-ds-motion="reduced"] .ds-skeleton { animation: none; }
+[data-ds-motion="reduced"] .ds-collapse { transition: none; }
+[data-ds-motion="reduced"] * { scroll-behavior: auto !important; }
+
+/* Third-party brand artwork (e.g. the Doppelmayr logo) is drawn for light backgrounds: in dark theme it sits on a light plate. */
+[data-ds-theme="dark"] .ds-brand-logo { background: #fff; padding: 4px 8px; border-radius: var(--ds-radius-sm); box-sizing: content-box; }
+
+/* Chart / meter growth: bars grow from the baseline; reduced motion = short fade (see rule above). */
+@keyframes ds-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes ds-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ds-anim-grow-y { transform-origin: bottom; animation: ds-grow-y var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+.ds-anim-grow-x { transform-origin: left; animation: ds-grow-x var(--ds-dur-slow) var(--ds-ease-emphasized-decelerate) both; }
+@media (prefers-reduced-motion: reduce) { .ds-root .ds-anim-grow-y, .ds-root .ds-anim-grow-x { animation: ds-fade-in 90ms linear both !important; } }
+[data-ds-motion="reduced"] .ds-anim-grow-y, [data-ds-motion="reduced"] .ds-anim-grow-x { animation: ds-fade-in 90ms linear both !important; }
+
+/* Auth backdrop: a single faint ropeway line — restrained brand nod, no scene. */
+.ds-auth-line { color: rgb(var(--ds-outline-variant)); }

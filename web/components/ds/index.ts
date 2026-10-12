@@ -1,0 +1,30 @@
+/**
+ * DoppelDash design-system component library (web). Import from '@/components/ds'.
+ * Every component takes its colours/shape/motion from design tokens (CSS variables activated by <DsProvider>)
+ * and owns its accessibility (labels, focus, targets, error announcement, reduced motion).
+ */
+export { DsProvider, useDs, useDsOptional } from './provider'
+export type { ThemePreference, MotionPreference } from './provider'
+export { Icon } from './icon'
+export type { IconSize } from './icon'
+export { Button, IconButton } from './button'
+export type { ButtonProps, IconButtonProps, ButtonVariant, ButtonSize } from './button'
+export { Field, TextField, PasswordField, TextArea, Select, SearchField, DateField, TimeField, Checkbox, Switch, FormSection, FormActions } from './field'
+export type { TextFieldProps, TextAreaProps, SelectProps, SelectOption, SearchFieldProps } from './field'
+export { Chip, FilterBar, StatusBadge, CountBadge, Segmented, Tabs } from './selection'
+export { Card, MetricCard, Avatar, ListRow, List, initialsOf } from './surface'
+export type { MetricTone } from './surface'
+export { DataTable } from './table'
+export type { Column, DataTableProps } from './table'
+export { Dialog, ConfirmDialog, Sheet, Popover, Tooltip, ToastProvider, useToast } from './overlay'
+export type { DialogProps, ToastType } from './overlay'
+export { Skeleton, SkeletonText, SkeletonCard, EmptyState, ErrorState, ForbiddenState, Banner, OfflineBanner } from './states'
+export type { BannerRole } from './states'
+export { Illustration } from './illustration'
+export type { Art } from './illustration'
+export { Reveal, Presence, Expandable, SuccessMark } from './motion'
+export { AppShell, PageHeader, BrandLogo } from './shell'
+export type { NavItem, NavGroup, LinkComponent } from './shell'
+export { AuthShell, StepTransition, OtpInput, useCountdown, PasswordRules } from './auth'
+export { BarChart, Meter } from './chart'
+export type { BarDatum } from './chart'
