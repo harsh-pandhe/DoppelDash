@@ -16,9 +16,10 @@ import ApprovalsQueue, { type PendingItem } from './ApprovalsQueue'
 
 interface Props {
   firstName: string
+  orgId:     string
 }
 
-export default async function AdminDashboard({ firstName }: Props) {
+export default async function AdminDashboard({ firstName, orgId }: Props) {
   await connectDB()
 
   const now      = new Date()
@@ -29,19 +30,19 @@ export default async function AdminDashboard({ firstName }: Props) {
   // ─── Financial pulse ───────────────────────────────────────────────
   const [toPayoutAgg, paidYtdAgg, advanceAgg, travelYtdAgg] = await Promise.all([
     Expense.aggregate([
-      { $match: { status: 'pending_admin' } },
+      { $match: { orgId, status: 'pending_admin' } },
       { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]),
     Expense.aggregate([
-      { $match: { status: 'paid', paidAt: { $gte: yearStart } } },
+      { $match: { orgId, status: 'paid', paidAt: { $gte: yearStart } } },
       { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]),
     TravelRequest.aggregate([
-      { $match: { status: { $in: ['approved', 'pending_admin'] }, advanceRequested: { $gt: 0 } } },
+      { $match: { orgId, status: { $in: ['approved', 'pending_admin'] }, advanceRequested: { $gt: 0 } } },
       { $group: { _id: null, total: { $sum: '$advanceRequested' }, count: { $sum: 1 } } },
     ]),
     TravelRequest.aggregate([
-      { $match: { status: 'approved', createdAt: { $gte: yearStart } } },
+      { $match: { orgId, status: 'approved', createdAt: { $gte: yearStart } } },
       { $group: { _id: null, total: { $sum: '$estimatedTotal' }, count: { $sum: 1 } } },
     ]),
   ])
@@ -53,10 +54,10 @@ export default async function AdminDashboard({ firstName }: Props) {
 
   // ─── Org health ────────────────────────────────────────────────────
   const [allUsers, employees, recentLogins, onboardingPending] = await Promise.all([
-    User.find({ isBanned: false }).select('_id role lastLoginAt').lean(),
-    Employee.find({}).select('clerkUserId lastLoginAt onboardingComplete').lean(),
-    User.find({ lastLoginAt: { $gte: day7 } }).countDocuments(),
-    Employee.countDocuments({ onboardingComplete: false }),
+    User.find({ orgId, isBanned: false }).select('_id role lastLoginAt').lean(),
+    Employee.find({ orgId }).select('clerkUserId lastLoginAt onboardingComplete').lean(),
+    User.find({ orgId, lastLoginAt: { $gte: day7 } }).countDocuments(),
+    Employee.countDocuments({ orgId, onboardingComplete: false }),
   ])
 
   const empMap = new Map(employees.map(e => [e.clerkUserId, e]))
@@ -74,9 +75,9 @@ export default async function AdminDashboard({ firstName }: Props) {
 
   // ─── Escalations (admin-only approvals queue) ───────────────────────
   const [pendingAdminExp, pendingAdminTravel, pendingLeaves] = await Promise.all([
-    Expense.find({ status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
-    TravelRequest.find({ status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
-    Leave.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(20).lean(),
+    Expense.find({ orgId, status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
+    TravelRequest.find({ orgId, status: 'pending_admin' }).sort({ createdAt: -1 }).limit(20).lean(),
+    Leave.find({ orgId, status: 'pending' }).sort({ createdAt: -1 }).limit(20).lean(),
   ])
 
   const queue: PendingItem[] = [
@@ -88,7 +89,7 @@ export default async function AdminDashboard({ firstName }: Props) {
       href: '/rms',
     })),
     ...pendingAdminTravel.map(t => ({
-      id: String(t._id), kind: 'travel' as const, userName: t.userName,
+      id: String(t._id), kind: 'travel' as const, userName: t.userName, revision: (t as { revision?: number }).revision ?? 0,
       title: `${t.destination} — ${t.purpose}`,
       subtitle: `${new Date(t.departureDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })} → ${new Date(t.returnDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}`,
       badge: `₹${t.estimatedTotal.toLocaleString('en-IN')}`,
@@ -106,7 +107,7 @@ export default async function AdminDashboard({ firstName }: Props) {
   ]
 
   // ─── Latest audit activity ─────────────────────────────────────────
-  const latestAudit = await AuditLog.find({}).sort({ createdAt: -1 }).limit(8).lean()
+  const latestAudit = await AuditLog.find({ orgId }).sort({ createdAt: -1 }).limit(8).lean()
 
   const greeting = (() => {
     const h = now.getHours()

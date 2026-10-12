@@ -14,7 +14,7 @@ import { connectDB } from '@/lib/db'
  */
 export async function notifyTargetsFor(employeeUserId: string, orgId: string): Promise<string[]> {
   await connectDB()
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   const emp     = await Employee.findOne({ clerkUserId: employeeUserId, orgId: effectiveOrgId }, 'reportingManagerId').lean()
   const users   = await listUsers({ limit: 500, orgId: effectiveOrgId })

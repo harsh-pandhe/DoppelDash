@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
-import { getUser } from '@/lib/auth'
-import { getOrganizationEntitlements } from '@/lib/entitlements/entitlementService'
+import { getUser, getOrgId, isWebAccessAllowed } from '@/lib/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import BottomNav from '@/components/layout/BottomNav'
 import { ToastProvider } from '@/components/ui/toast'
@@ -10,12 +9,12 @@ import WelcomeTour from '@/components/WelcomeTour'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { userId, user } = await getUser()
-  if (!userId || !user) redirect('/sign-in')
-
-  const orgId = user.orgId || 'org_doppelmayr'
-  const entitlements = await getOrganizationEntitlements(orgId)
-  if (!entitlements.webEnabled) {
-    redirect('/web-access-restricted')
+  if (!userId || !user) {
+    // getUser() refuses web sessions of organisations without web access. Show the
+    // explanation page (instead of a sign-in loop) when the token itself is valid.
+    const tokenOrg = await getOrgId()
+    if (tokenOrg && !(await isWebAccessAllowed(tokenOrg))) redirect('/web-access-restricted')
+    redirect('/sign-in')
   }
 
   return (

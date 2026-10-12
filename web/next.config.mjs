@@ -2,11 +2,19 @@
 
 // Cloudinary is the only cross-origin host the browser talks to directly
 // (unsigned uploads go straight from the client, bypassing the function).
+// Local/CI fakes only: when CLOUDINARY_UPLOAD_BASE / CLOUDINARY_DELIVERY_BASE point somewhere other than Cloudinary
+// (never set in production) their origins are allowed too, so browser uploads can be tested against a local fake.
+const originOf = v => { try { return v ? new URL(v).origin : '' } catch { return '' } }
+// (ignored entirely in production builds)
+const IS_PROD = process.env.NODE_ENV === 'production'
+const FAKE_UPLOAD = IS_PROD ? '' : originOf(process.env.CLOUDINARY_UPLOAD_BASE)
+const FAKE_DELIVERY = IS_PROD ? '' : originOf(process.env.CLOUDINARY_DELIVERY_BASE)
+
 const CSP = [
   "default-src 'self'",
-  "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://upload.wikimedia.org",
+  `img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://upload.wikimedia.org ${FAKE_DELIVERY}`.trim(),
   "media-src 'self' data: blob:",
-  "connect-src 'self' https://api.cloudinary.com",
+  `connect-src 'self' https://api.cloudinary.com ${FAKE_UPLOAD}`.trim(),
   // 'unsafe-inline' is currently required: the no-flash theme script is inlined
   // in app/layout.tsx, and Tailwind, Recharts and Tiptap all set inline styles.
   // Removing it needs nonce plumbing through middleware — tracked separately.
@@ -34,6 +42,8 @@ const SECURITY_HEADERS = [
 ]
 
 const nextConfig = {
+  // Lets a second, isolated production build exist next to the dev build (used by the production-config test).
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   output: process.env.BUILD_STANDALONE === '1' ? 'standalone' : undefined,
   poweredByHeader: false,
   images: {

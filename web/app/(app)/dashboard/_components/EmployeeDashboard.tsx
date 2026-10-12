@@ -15,6 +15,7 @@ import { timeAgo } from '@/lib/timeAgo'
 interface Props {
   userId:    string
   firstName: string
+  orgId:     string
 }
 
 const LEAVE_TYPES = [
@@ -34,7 +35,7 @@ const STATUS_META: Record<string, { label: string; icon: typeof Clock; tone: str
   returned:         { label: 'Revise',   icon: RotateCcw,    tone: 'bg-status-warning-bg text-status-warning' },
 }
 
-export default async function EmployeeDashboard({ userId, firstName }: Props) {
+export default async function EmployeeDashboard({ userId, firstName, orgId }: Props) {
   await connectDB()
   const year = new Date().getFullYear()
   const today = new Date()
@@ -44,13 +45,13 @@ export default async function EmployeeDashboard({ userId, firstName }: Props) {
     myLeaves, myExpenses, myTravel,
     balance, pinnedAnnos, upcomingHolidays, returnedExpenses,
   ] = await Promise.all([
-    Leave.find({ userId }).sort({ createdAt: -1 }).limit(8).lean(),
-    Expense.find({ userId }).sort({ createdAt: -1 }).limit(8).lean(),
-    TravelRequest.find({ userId }).sort({ createdAt: -1 }).limit(4).lean(),
-    LeaveBalance.findOne({ userId, year }).lean(),
-    Announcement.find({ pinned: true }).sort({ createdAt: -1 }).limit(3).lean(),
-    PublicHoliday.find({ date: { $gte: today, $lt: in30 } }).sort({ date: 1 }).limit(4).lean(),
-    Expense.find({ userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(3).lean(),
+    Leave.find({ orgId, userId }).sort({ createdAt: -1 }).limit(8).lean(),
+    Expense.find({ orgId, userId }).sort({ createdAt: -1 }).limit(8).lean(),
+    TravelRequest.find({ orgId, userId }).sort({ createdAt: -1 }).limit(4).lean(),
+    LeaveBalance.findOne({ orgId, userId, year }).lean(),
+    Announcement.find({ orgId, pinned: true }).sort({ createdAt: -1 }).limit(3).lean(),
+    PublicHoliday.find({ orgId: { $in: [orgId, null] }, date: { $gte: today, $lt: in30 } }).sort({ date: 1 }).limit(4).lean(),
+    Expense.find({ orgId, userId, status: 'returned' }).sort({ updatedAt: -1 }).limit(3).lean(),
   ])
 
   // Approved leave days taken (per type)

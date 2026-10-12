@@ -1,17 +1,19 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import './design/ds-tokens.css'
+import './design/ds-base.css'
 
 const inter      = Inter({       subsets: ['latin'], variable: '--font-inter',       display: 'swap' })
 const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-inter-tight', display: 'swap' })
 const mono       = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono',     display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'DoppelDash — Enterprise Operations & Mobile Platform',
-  description: 'Modern Operations, Travel, Expenses & CRM Platform',
+  title: { default: 'Doppelmayr India — Employee workspace', template: '%s · Doppelmayr India' },
+  description: 'Doppelmayr India employee workspace: leave, expenses, travel and CRM.',
   manifest: '/manifest.json',
   icons: { apple: '/icon-192.png' },
-  appleWebApp: { capable: false, statusBarStyle: 'default', title: 'DoppelDash' },
+  appleWebApp: { capable: false, statusBarStyle: 'default', title: 'Doppelmayr India' },
   formatDetection: { telephone: false },
 }
 

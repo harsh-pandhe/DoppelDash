@@ -209,7 +209,8 @@ export default function ExpenseDetailPage() {
       const msg: Record<string, string> = { pending_admin: 'Approved — forwarded for payout', paid: 'Marked as paid', rejected: 'Expense rejected' }
       toast(msg[status] || 'Updated', status === 'rejected' ? 'error' : 'success')
     } else {
-      toast('Action failed', 'error')
+      const d = await res.json().catch(() => null)
+      toast(d?.error || 'Action failed', 'error')
     }
     setActing(false)
   }

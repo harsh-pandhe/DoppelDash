@@ -8,7 +8,7 @@ import EmployeeDashboard from './_components/EmployeeDashboard'
 import AdminDashboard    from './_components/AdminDashboard'
 
 export default async function DashboardPage() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) redirect('/sign-in')
 
   const role      = user?.role || 'employee'
@@ -19,9 +19,9 @@ export default async function DashboardPage() {
     <>
       <Header title="Dashboard" />
       <RouterAutoRefresh intervalMs={30_000} />
-      {role === 'admin'    && <AdminDashboard    firstName={firstName} />}
-      {role === 'manager' && <ManagerDashboard  userId={userId} firstName={firstName} isAdmin={false} />}
-      {role === 'employee'&& <EmployeeDashboard userId={userId} firstName={firstName} />}
+      {role === 'admin'    && <AdminDashboard    orgId={orgId} firstName={firstName} />}
+      {role === 'manager' && <ManagerDashboard  orgId={orgId} userId={userId} firstName={firstName} isAdmin={false} />}
+      {role === 'employee'&& <EmployeeDashboard orgId={orgId} userId={userId} firstName={firstName} />}
     </>
   )
 }

@@ -8,7 +8,7 @@ import { useUser } from '@/lib/useUser'
 interface Step { icon: LucideIcon; title: string; body: string; emoji?: string }
 
 const STEPS: Step[] = [
-  { icon: Sparkles,       title: 'Welcome to DoppelDash',  body: "Your account is ready. Quick 30-second tour so you know where everything lives. Press Esc anytime to skip." },
+  { icon: Sparkles,       title: 'Welcome to Doppelmayr India',  body: "Your account is ready. Quick 30-second tour so you know where everything lives. Press Esc anytime to skip." },
   { icon: Users,          title: 'Contacts (CRM)',          body: "Find people in 3 views (card, list, table). Color-label hot leads, set sharing (private/team/org). Search with Cmd+K." },
   { icon: CalendarClock,  title: 'Leave',                   body: "Request casual / sick / earned / privilege / LWP. Half-day option included. Your manager approves." },
   { icon: Receipt,        title: 'Expenses',                body: "Log spends in Simple mode or Table mode (line items + per-row receipts). Upload bill — Gemini auto-fills." },

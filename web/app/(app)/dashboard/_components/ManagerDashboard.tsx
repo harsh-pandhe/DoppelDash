@@ -13,10 +13,11 @@ import TeamPanel from './TeamPanel'
 interface Props {
   userId:    string
   firstName: string
+  orgId:     string
   isAdmin:    boolean
 }
 
-export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
+export default async function ManagerDashboard({ firstName, isAdmin, orgId }: Props) {
   await connectDB()
 
   // ─── Approvals queue (3 kinds aggregated) ──────────────────────────
@@ -24,9 +25,9 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
   const travelStatusToReview  = isAdmin ? 'pending_admin' : 'pending_manager'
 
   const [pendingLeaves, pendingExpenses, pendingTravel] = await Promise.all([
-    Leave.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(50).lean(),
-    Expense.find({ status: expenseStatusToReview }).sort({ createdAt: -1 }).limit(50).lean(),
-    TravelRequest.find({ status: travelStatusToReview }).sort({ createdAt: -1 }).limit(50).lean(),
+    Leave.find({ orgId, status: 'pending' }).sort({ createdAt: -1 }).limit(50).lean(),
+    Expense.find({ orgId, status: expenseStatusToReview }).sort({ createdAt: -1 }).limit(50).lean(),
+    TravelRequest.find({ orgId, status: travelStatusToReview }).sort({ createdAt: -1 }).limit(50).lean(),
   ])
 
   const queue: PendingItem[] = [
@@ -64,8 +65,8 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
 
   // ─── Team data ──────────────────────────────────────────────────────
   const [team, employees] = await Promise.all([
-    User.find({ role: { $in: ['employee', 'manager'] } }).select('firstName lastName role').lean(),
-    Employee.find({}).select('clerkUserId department onboardingComplete').lean(),
+    User.find({ orgId, role: { $in: ['employee', 'manager'] } }).select('firstName lastName role').lean(),
+    Employee.find({ orgId }).select('clerkUserId department onboardingComplete').lean(),
   ])
   const empMap = new Map(employees.map(e => [e.clerkUserId, e]))
   const teamMembers = team.map(u => ({
@@ -79,6 +80,7 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
   // ─── On leave today ─────────────────────────────────────────────────
   const today  = new Date(); today.setHours(0, 0, 0, 0)
   const todayLeaves = await Leave.find({
+    orgId,
     status: 'approved',
     startDate: { $lte: new Date(today.getTime() + 86400000 - 1) },
     endDate:   { $gte: today },
@@ -87,6 +89,7 @@ export default async function ManagerDashboard({ firstName, isAdmin }: Props) {
   // ─── 14-day availability ────────────────────────────────────────────
   const horizon = new Date(today.getTime() + 14 * 86400000)
   const upcomingLeaves = await Leave.find({
+    orgId,
     status: 'approved',
     startDate: { $lt: horizon },
     endDate:   { $gte: today },

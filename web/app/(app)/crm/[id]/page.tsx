@@ -100,23 +100,31 @@ function ReminderCard({ contactId, reminderDate, reminderNote, onSaved }: {
 
   const save = async () => {
     setSaving(true)
-    await fetch(`/api/crm/${contactId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reminderDate: date || null, reminderNote: note }),
-    })
-    toast('Reminder saved', 'success')
-    setSaving(false); onSaved()
+    try {
+      const res = await fetch(`/api/crm/${contactId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reminderDate: date || null, reminderNote: note }),
+      })
+      if (!res.ok) throw new Error()
+      toast('Reminder saved', 'success')
+      onSaved()
+    } catch { toast('Could not save the reminder', 'error') }
+    setSaving(false)
   }
 
   const clear = async () => {
     setSaving(true)
-    await fetch(`/api/crm/${contactId}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reminderDate: null, reminderNote: '' }),
-    })
-    setDate(''); setNote('')
-    toast('Reminder cleared')
-    setSaving(false); onSaved()
+    try {
+      const res = await fetch(`/api/crm/${contactId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reminderDate: null, reminderNote: '' }),
+      })
+      if (!res.ok) throw new Error()
+      setDate(''); setNote('')
+      toast('Reminder cleared')
+      onSaved()
+    } catch { toast('Could not clear the reminder', 'error') }
+    setSaving(false)
   }
 
   const today0 = new Date(); today0.setHours(0,0,0,0)
@@ -195,10 +203,11 @@ function AddTimelineDialog({ contactId, onAdded }: { contactId: string; onAdded:
     if (!form.title.trim()) return
     setSaving(true)
     try {
-      await fetch(`/api/crm/${contactId}`, {
+      const res = await fetch(`/api/crm/${contactId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ timelineEntry: { ...form, source: 'manual', date: new Date() } }),
       })
+      if (!res.ok) throw new Error()
       toast('Entry added')
       setForm({ type: 'note', title: '', body: '' })
       setOpen(false); onAdded()
@@ -653,9 +662,15 @@ export default function ContactDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true)
-    await fetch(`/api/crm/${id}`, { method: 'DELETE' })
-    toast('Contact deleted', 'info')
-    router.push('/crm')
+    try {
+      const res = await fetch(`/api/crm/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      toast('Contact deleted', 'info')
+      router.push('/crm')
+    } catch {
+      toast('Could not delete this contact. You may not have permission.', 'error')
+      setDeleting(false)
+    }
   }
 
   if (loading) return (

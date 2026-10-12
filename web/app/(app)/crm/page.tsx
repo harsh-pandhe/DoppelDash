@@ -88,8 +88,8 @@ function ColorLabelPopover({ contactId, current, onSaved }: {
     setSaving(false)
   }
   const remove = async () => {
-    await fetch(`/api/crm/${contactId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ colorLabel: null }) })
-    onSaved(null); setOpen(false)
+    const res = await fetch(`/api/crm/${contactId}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ colorLabel: null }) })
+    if (res.ok) { onSaved(null); setOpen(false) }
   }
 
   return (
@@ -168,8 +168,8 @@ function VisibilitySelect({ contactId, current, onSaved }: {
   const Icon = meta.icon
 
   const set = async (v: string) => {
-    await fetch(`/api/crm/${contactId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ visibility: v }) })
-    onSaved(v); setOpen(false)
+    const res = await fetch(`/api/crm/${contactId}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ visibility: v }) })
+    if (res.ok) { onSaved(v); setOpen(false) }
   }
 
   return (
@@ -355,9 +355,12 @@ export default function CRMPage() {
   useAutoRefresh(fetchContacts, { intervalMs: 30_000 })
 
   const deleteContact = async (id: string, name: string) => {
-    await fetch(`/api/crm/${id}`, { method: 'DELETE' })
-    setContacts(c => c.filter(x => x._id !== id))
-    toast(`${name} deleted`, 'info')
+    try {
+      const res = await fetch(`/api/crm/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      setContacts(c => c.filter(x => x._id !== id))
+      toast(`${name} deleted`, 'info')
+    } catch { toast(`Could not delete ${name}. You may not have permission.`, 'error') }
   }
 
   const updateLocal = (id: string, patch: Partial<Contact>) =>

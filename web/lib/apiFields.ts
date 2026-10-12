@@ -12,7 +12,7 @@
 
 export const EXPENSE_CREATE_FIELDS = [
   'title', 'reason', 'amount', 'travelFrom', 'travelTo', 'startDate', 'endDate',
-  'lineItems', 'hasLineItems', 'receipts', 'travelRequestId',
+  'lineItems', 'hasLineItems', 'receipts', 'travelRequestId', 'clientRequestId',
 ] as const
 
 /** Approvers record a decision only — never amounts, dates or ownership. */
