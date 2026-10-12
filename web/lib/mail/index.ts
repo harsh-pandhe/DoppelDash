@@ -1,0 +1,5 @@
+export { MailService, getMailService, __setMailServiceForTests } from './mailService'
+export { resolveMailRoute, PLATFORM_ONLY_PURPOSES } from './resolver'
+export { escapeHtml, singleLine, safeUrl, isSendableAddress, maskAddress } from './escape'
+export type { MailPurpose, MailChannel, MailEnvelope, MailResult, MailTransport, MailFailure } from './types'
+export { resolveMailBrand, makeBrand, PLATFORM_BRAND, type MailBrand } from './brand'

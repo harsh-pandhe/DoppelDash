@@ -15,7 +15,7 @@ const EXPIRY_MS: Record<string, number | null> = {
 export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const shares = await SharedDashboard.find({ ownerId: userId, orgId: effectiveOrgId }).sort({ createdAt: -1 }).lean()
   return NextResponse.json({
@@ -33,7 +33,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = user.orgId || orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   const body = await req.json().catch(() => ({}))

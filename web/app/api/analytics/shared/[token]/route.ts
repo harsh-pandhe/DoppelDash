@@ -13,6 +13,8 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
   const share = await SharedDashboard.findOne({ token: params.token })
   if (!share) return NextResponse.json({ error: 'This shared dashboard does not exist.' }, { status: 404 })
 
+  if (!share.orgId) return NextResponse.json({ error: 'This shared dashboard does not exist.' }, { status: 404 })
+
   if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
     return NextResponse.json({ error: 'This shared link has expired.', expired: true }, { status: 410 })
   }
@@ -26,7 +28,7 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
     dept: f.dept || '', employee: f.employee || '', status: f.status || '',
     compare: 'none',
     includeFilterOptions: false,   // no interactive filters on a read-only share
-  }, share.orgId || 'org_doppelmayr')
+  }, share.orgId)
 
   return NextResponse.json({
     readOnly:  true,

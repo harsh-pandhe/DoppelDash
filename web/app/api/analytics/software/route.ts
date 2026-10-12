@@ -12,7 +12,7 @@ export async function GET() {
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   // Strictly scope user and employee lookups to this organization

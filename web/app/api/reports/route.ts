@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (from) dateFilter.$gte = new Date(from)
   if (to)   dateFilter.$lte = new Date(to + 'T23:59:59')
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   const ownerFilter: Record<string, unknown> = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
   const match: Record<string, unknown> = { ...ownerFilter }
   if (from || to) match.createdAt = dateFilter

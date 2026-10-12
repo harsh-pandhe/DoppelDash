@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
-import { emailAnnouncement, buildAnnouncementEmail } from '@/lib/email'
+import { buildAnnouncementEmail } from '@/lib/email'
+import { resolveMailBrand } from '@/lib/mail'
 import { getUser, listUsers } from '@/lib/auth'
-import { getUserTransporter } from '@/lib/userEmail'
+import { getMailService } from '@/lib/mail'
 
 export async function POST(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   if (!announcementId) return NextResponse.json({ error: 'announcementId required' }, { status: 400 })
   if (!mongoose.isValidObjectId(announcementId)) return NextResponse.json({ error: 'Invalid announcementId' }, { status: 400 })
 
-  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const ann = await Announcement.findOne({ _id: announcementId, orgId: effectiveOrgId }).lean() as {
     title: string; body: string; priority?: string
@@ -36,29 +37,21 @@ export async function POST(req: NextRequest) {
 
   const senderName = user?.fullName || user?.firstName || 'Management'
 
-  // Prefer sender's connected SMTP — branded HTML for both channels
-  const userSmtp = await getUserTransporter(userId)
-  const channel  = userSmtp ? 'user_smtp' : 'smtp'
+  // Provider chosen by the backend (org provider / sender's mailbox when the plan
+  // allows custom mail, else the platform mail service) — see lib/mail/resolver.ts.
+  const sender = await getMailService().createSender('crm_email', { orgId: effectiveOrgId, userId })
+  if ('failure' in sender) return NextResponse.json({ error: sender.failure.message }, { status: 503 })
+  const channel = sender.channel === 'user_mailbox' ? 'user_smtp' : sender.channel === 'organization' ? 'org_smtp' : 'smtp'
 
-  if (userSmtp) {
-    const { html, text, subject } = buildAnnouncementEmail({
-      title:    ann.title,
-      body:     ann.body,
-      priority: ann.priority,
-      senderName,
-    })
-    await Promise.allSettled(emails.map(to =>
-      userSmtp.transporter.sendMail({ from: userSmtp.from, to, subject, html, text })
-    ))
-  } else {
-    await emailAnnouncement({
-      emails,
-      title:      ann.title,
-      body:       ann.body,
-      priority:   ann.priority,
-      senderName,
-    })
-  }
+  const brand = await resolveMailBrand(effectiveOrgId)
+  const { html, text, subject } = buildAnnouncementEmail({
+    brand,
+    title:    ann.title,
+    body:     ann.body,
+    priority: ann.priority,
+    senderName,
+  })
+  await Promise.allSettled(emails.map(to => sender.send({ to, subject, html, text, fromName: brand.isPlatform ? undefined : brand.name })))
 
   return NextResponse.json({ sent: emails.length, channel })
 }

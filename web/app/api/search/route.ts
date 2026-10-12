@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const re = new RegExp(escaped, 'i')
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   // Role-aware scope: managers + admins search org-wide; employees see only their own.
   const isManager = user?.role === 'manager' || user?.role === 'admin'

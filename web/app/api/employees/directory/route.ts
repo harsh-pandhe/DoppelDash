@@ -7,7 +7,7 @@ export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const clerkUsers = await listUsers({ limit: 500, orgId: effectiveOrgId })
 

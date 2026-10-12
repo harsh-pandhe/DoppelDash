@@ -100,7 +100,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (body.status === 'approved' || body.status === 'rejected') {
     getUserEmail(leave.userId).then(email => {
       if (email) emailLeaveStatusChanged({
-        employeeEmail: email,
+        orgId, employeeEmail: email,
         status:        body.status,
         leaveType:     leave.type,
         days:          leave.days,
