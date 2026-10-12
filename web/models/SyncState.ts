@@ -8,7 +8,7 @@ export interface ISyncState extends Document {
 }
 
 const SyncStateSchema = new Schema<ISyncState>({
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
   type:         { type: String, required: true, unique: true },
   lastSyncedAt: { type: Date, default: () => new Date(Date.now() - 24 * 60 * 60 * 1000) },
   lastUid:      { type: Number, default: 0 },

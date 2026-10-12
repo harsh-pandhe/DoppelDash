@@ -13,7 +13,7 @@ export interface IOutlookToken extends Document {
 
 const OutlookTokenSchema = new Schema<IOutlookToken>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:              { type: String, required: true, unique: true, index: true },
     email:               { type: String, required: true },
     accessToken:         { type: String, required: true },

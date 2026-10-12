@@ -32,8 +32,12 @@ export interface IExpense extends Document {
 
   // Linked travel request
   travelRequestId?: string
+  /** Set ONLY by the trip→expense conversion protocol (never from client input): the trip this expense was generated from. Unique per (organisation, trip). */
+  travelConversionOf?: string
 
   receipts: string[]      // legacy top-level receipts
+  /** Optional client-generated idempotency key: a retried/double-tapped submit returns the same expense. */
+  clientRequestId?: string
   status: ExpenseStatus
   managerNote?: string
   adminNote?: string
@@ -62,7 +66,7 @@ const LineItemSchema = new Schema<IExpenseLineItem>({
 
 const ExpenseSchema = new Schema<IExpense>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:       { type: String, required: true, index: true },
     userName:     { type: String, required: true },
     title:        { type: String, required: true },
@@ -77,6 +81,8 @@ const ExpenseSchema = new Schema<IExpense>(
     hasLineItems: { type: Boolean, default: false },
 
     travelRequestId: { type: String },
+    travelConversionOf: { type: String },
+    clientRequestId: { type: String },
 
     receipts:     [{ type: String }],
     status:       { type: String, enum: ['pending_manager','pending_admin','paid','rejected','returned'], default: 'pending_manager' },
@@ -95,6 +101,10 @@ const ExpenseSchema = new Schema<IExpense>(
 )
 
 ExpenseSchema.index({ userId: 1, status: 1 })
+ExpenseSchema.index({ orgId: 1, userId: 1, clientRequestId: 1 }, { unique: true, partialFilterExpression: { clientRequestId: { $type: 'string' } } })
+
+// ONE generated expense per trip, enforced by the database: concurrent conversions cannot both insert (the loser gets E11000 and adopts the winner's row).
+ExpenseSchema.index({ orgId: 1, travelConversionOf: 1 }, { unique: true, partialFilterExpression: { travelConversionOf: { $type: 'string' } } })
 
 const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema)
 export default Expense

@@ -37,7 +37,7 @@ const FieldsSchema = new Schema<IScannedCardFields>({
 
 const ScannedCardSchema = new Schema<IScannedCard>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     uploadedBy:     { type: String, required: true, index: true },
     uploadedByName: { type: String, required: true },
     imageData:      { type: String, required: true },

@@ -43,7 +43,7 @@ const AttachmentSchema = new Schema<IInboxAttachment>({
 
 const InboxMessageSchema = new Schema<IInboxMessage>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     uid:         { type: Number, required: true },
     mailbox:     { type: String, required: true, default: 'INBOX' },
     messageId:   { type: String },

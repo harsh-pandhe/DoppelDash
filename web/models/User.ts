@@ -62,12 +62,11 @@ interface UserModel extends Model<IUser> {
   hashPassword(plain: string): Promise<string>
 }
 
-export const DEFAULT_ORG_ID = 'org_doppelmayr'
-
 const UserSchema = new Schema<IUser, UserModel>(
   {
     email:              { type: String, required: true, unique: true, lowercase: true, trim: true },
-    orgId:              { type: String, required: true, default: DEFAULT_ORG_ID, index: true },
+    // Required with NO default: a user can never be silently assigned to a tenant.
+    orgId:              { type: String, required: true, index: true },
     passwordHash:       { type: String, required: true },
     role:               { type: String, enum: ['admin','manager','employee'], required: true },
     mailAccess:         { type: Boolean, default: false },  // 10B: grant employee mass-mail access
@@ -103,7 +102,7 @@ UserSchema.methods.toPublic = function (): IUserPublic {
   return {
     id:                 this._id.toString(),
     email:              this.email,
-    orgId:              this.orgId || DEFAULT_ORG_ID,
+    orgId:              this.orgId,
     role:               this.role,
     firstName:          this.firstName,
     lastName:           this.lastName,

@@ -41,7 +41,7 @@ const VersionSchema = new Schema<IMailDraftVersion>({
 
 const MailDraftSchema = new Schema<IMailDraft>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     ownerId:    { type: String, required: true, index: true },
     subject:    { type: String, default: '' },
     bodyHtml:   { type: String, default: '' },
