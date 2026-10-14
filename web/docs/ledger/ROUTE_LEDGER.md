@@ -123,9 +123,9 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/holidays` | GET, POST, DELETE | session, role-check, tenant-scoped |  | 2 | 1 | **none** |
 | `/api/inbox` | GET | session, role-check, tenant-scoped |  | — | 1 | **none** |
 | `/api/inbox/[id]` | GET, PATCH | session, role-check, tenant-scoped |  | 1 | 1 | **none** |
-| `/api/lms` | GET, POST | session, role-check, tenant-scoped |  | 2 | 1 | 6 |
-| `/api/lms/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 3 | 1 | 6 |
-| `/api/lms/balance` | GET | session, tenant-scoped |  | 1 | 1 | 2 |
+| `/api/lms` | GET, POST | session, role-check, tenant-scoped |  | 2 | 1 | 7 |
+| `/api/lms/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 3 | 1 | 7 |
+| `/api/lms/balance` | GET | session, tenant-scoped |  | 1 | 1 | 3 |
 | `/api/lms/calendar` | GET | session, role-check, tenant-scoped |  | 1 | **none** | **none** |
 | `/api/lms/workload` | GET | session, role-check, tenant-scoped |  | 1 | **none** | **none** |
 | `/api/mail/drafts` | GET, POST | session, tenant-scoped |  | 2 | 1 | **none** |

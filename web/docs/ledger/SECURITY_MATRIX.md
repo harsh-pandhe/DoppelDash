@@ -24,7 +24,7 @@
 | **HEAD** | `/api/auth/invitations/[token]` | public | none | none | none | **NONE** | `GAPS_FOUND` |
 | **POST** | `/api/auth/invitations/accept` | public | none | none | webEnabled | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/invitations/verify` | public | none | none | none | `tests/batch_f.test.js` +2 | `VERIFIED_FAKE` |
-| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +10 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +11 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/logout` | public | none | none | none | `tests/batch_h.test.js` +6 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
@@ -43,7 +43,7 @@
 | **POST** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_concurrency.test.js` +1 | `VERIFIED_FAKE` |
 | **PUT** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_concurrency.test.js` +1 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/tour-seen` | session | session_jwt (unscoped / user-only) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +8 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +9 | `VERIFIED_FAKE` |
 
 ### 10. Mail & Inbox (8 handlers)
 
@@ -100,7 +100,7 @@
 | **DELETE** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
 | **PATCH** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
-| **GET** | `/api/lms/balance` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/batch_j.test.js` +1 | `VERIFIED_FAKE` |
+| **GET** | `/api/lms/balance` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/batch_j.test.js` +2 | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/calendar` | session | session_jwt (user.orgId) | admin | none | **NONE** | `GAPS_FOUND` |
 | **GET** | `/api/lms/workload` | session | session_jwt (user.orgId) | admin | none | **NONE** | `GAPS_FOUND` |
 
@@ -130,11 +130,11 @@
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
 | **POST** | `/api/auth/change-password` | session | session_jwt (unscoped / user-only) | any_authenticated | none | `tests/auth_foundation.test.js` +4 | `VERIFIED_FAKE` |
-| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +13 | `VERIFIED_FAKE` |
 | **GET** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **POST** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
-| **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +5 | `VERIFIED_FAKE` |
-| **POST** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +5 | `VERIFIED_FAKE` |
+| **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
+| **POST** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
 | **GET** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
 | **PUT** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
