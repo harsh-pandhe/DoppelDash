@@ -86,8 +86,8 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/auth/outlook` | GET | session |  | — | **none** | **none** |
 | `/api/auth/outlook/callback` | GET | webhook/service-auth |  | — | **none** | **none** |
 | `/api/auth/passkey/credentials` | GET, DELETE | session, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
-| `/api/auth/passkey/login` | POST, PUT | rate-limit, tenant-scoped, web-access | **yes** | 1 | **none** | 1 |
-| `/api/auth/passkey/register` | POST, PUT | session, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/auth/passkey/login` | POST, PUT | rate-limit, tenant-scoped, web-access | **yes** | 1 | **none** | 2 |
+| `/api/auth/passkey/register` | POST, PUT | session, rate-limit, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/auth/password-reset/check` | POST | rate-limit | **yes** | 1 | 1 | 3 |
 | `/api/auth/password-reset/confirm` | POST | rate-limit | **yes** | 1 | 1 | 4 |
 | `/api/auth/password-reset/request` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 7 |
@@ -95,7 +95,7 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/auth/register` | POST | rate-limit, tenant-scoped, web-access | **yes** | — | 1 | 8 |
 | `/api/auth/send-otp` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 1 |
 | `/api/auth/setup` | POST | tenant-scoped | **yes** | — | **none** | 1 |
-| `/api/auth/totp/setup` | POST, PUT, DELETE | session, rate-limit, tenant-scoped |  | 1 | 1 | 1 |
+| `/api/auth/totp/setup` | POST, PUT, DELETE | session, rate-limit, tenant-scoped |  | 1 | 1 | 2 |
 | `/api/auth/tour-seen` | POST | session |  | 1 | **none** | **none** |
 | `/api/auth/verify-otp` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 8 |
 | `/api/billing/entitlements` | GET | session, tenant-scoped, web-access |  | — | 1 | 7 |

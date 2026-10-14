@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T22:07:31.044Z",
+    "generatedAt": "2026-10-14T22:30:13.332Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,
@@ -725,6 +725,7 @@
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
         "tests/mail_architecture.test.js",
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
@@ -892,6 +893,7 @@
         "WebAuthn"
       ],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -913,6 +915,7 @@
         "WebAuthn"
       ],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -934,6 +937,7 @@
         "WebAuthn"
       ],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -955,6 +959,7 @@
         "WebAuthn"
       ],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -1134,6 +1139,7 @@
       "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -1153,6 +1159,7 @@
       "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -1172,6 +1179,7 @@
       "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -1214,6 +1222,7 @@
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
+        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",

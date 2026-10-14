@@ -755,9 +755,9 @@
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
     "tests/mail_architecture.test.js",
+    "tests/passkey_totp_concurrency.test.js",
     "tests/passkey_totp_security.test.js",
-    "tests/secret_exposure.test.js",
-    "tests/web_access_boundary.test.js"
+    "tests/secret_exposure.test.js"
    ]
   },
   {
@@ -884,6 +884,7 @@
    ],
    "androidCallers": [],
    "tests": [
+    "tests/passkey_totp_concurrency.test.js",
     "tests/passkey_totp_security.test.js"
    ]
   },
@@ -905,6 +906,7 @@
    ],
    "androidCallers": [],
    "tests": [
+    "tests/passkey_totp_concurrency.test.js",
     "tests/passkey_totp_security.test.js"
    ]
   },
@@ -1087,6 +1089,7 @@
     "lib/data/repositories/auth_repository.dart"
    ],
    "tests": [
+    "tests/passkey_totp_concurrency.test.js",
     "tests/passkey_totp_security.test.js"
    ]
   },
@@ -1129,10 +1132,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/passkey_totp_concurrency.test.js",
     "tests/passkey_totp_security.test.js",
     "tests/secret_exposure.test.js",
-    "tests/web_access_boundary.test.js",
-    "tests/z_final_log_secret_scan.test.js"
+    "tests/web_access_boundary.test.js"
    ]
   },
   {

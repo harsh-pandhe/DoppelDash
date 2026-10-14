@@ -34,13 +34,26 @@ async function saveChallenge(userId: string, challenge: string) {
   })
 }
 
+/**
+ * Atomically consume the pending challenge. A single conditional findOneAndUpdate both checks (exists, unexpired) and
+ * unsets it, so of any number of concurrent callers at most one receives the challenge; everyone else gets null.
+ * Missing, expired, half-written or already-consumed challenges all fail closed.
+ */
 async function consumeChallenge(userId: string): Promise<string | null> {
-  const user = await User.findById(userId)
-  if (!user?.webauthnChallenge || !user.webauthnChallengeExpiry) return null
-  if (new Date() > user.webauthnChallengeExpiry) return null
-  const challenge = user.webauthnChallenge
-  await User.findByIdAndUpdate(userId, { $unset: { webauthnChallenge: 1, webauthnChallengeExpiry: 1 } })
-  return challenge
+  try {
+    const prior = await User.findOneAndUpdate(
+      {
+        _id: userId,
+        webauthnChallenge: { $type: 'string', $ne: '' },
+        webauthnChallengeExpiry: { $gt: new Date() },
+      },
+      { $unset: { webauthnChallenge: 1, webauthnChallengeExpiry: 1 } },
+      { new: false, projection: { webauthnChallenge: 1 } },
+    ).lean()
+    return prior?.webauthnChallenge || null
+  } catch {
+    return null
+  }
 }
 
 /** Registration options for an authenticated user adding a passkey. */
