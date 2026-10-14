@@ -99,7 +99,7 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/auth/tour-seen` | POST | session |  | 1 | **none** | **none** |
 | `/api/auth/verify-otp` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 7 |
 | `/api/billing/entitlements` | GET | session, tenant-scoped, web-access |  | — | 1 | 7 |
-| `/api/billing/play/rtdn` | POST | webhook/service-auth, tenant-scoped |  | — | **none** | 1 |
+| `/api/billing/play/rtdn` | POST | webhook/service-auth, tenant-scoped |  | — | **none** | 2 |
 | `/api/billing/play/verify` | POST | session, rate-limit, tenant-scoped, web-access |  | — | 1 | 1 |
 | `/api/crm` | GET, POST | session, role-check, tenant-scoped |  | 5 | 1 | 8 |
 | `/api/crm/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 5 | 2 | 8 |
@@ -209,7 +209,7 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 * **SMTP (outbound mail)**: `SMTP_FROM`, `SMTP_HOST`, `SMTP_PASS`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`
 * **IMAP (inbox)**: `IMAP_HOST`, `IMAP_PASS`, `IMAP_PORT`, `IMAP_SECURE`, `IMAP_USER`
 * **Outlook (OAuth/webhook)**: `OUTLOOK_CLIENT_ID`, `OUTLOOK_CLIENT_SECRET`, `OUTLOOK_WEBHOOK_SECRET`
-* **Google Play billing/RTDN**: `GOOGLE_PLAY_PACKAGE_NAME`, `GOOGLE_PLAY_PREMIUM_PRODUCT_ID`, `GOOGLE_PLAY_RTDN_SECRET`, `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY`
+* **Google Play billing/RTDN**: `GOOGLE_PLAY_PACKAGE_NAME`, `GOOGLE_PLAY_PREMIUM_PRODUCT_ID`, `GOOGLE_PLAY_RTDN_AUDIENCE`, `GOOGLE_PLAY_RTDN_PUSH_SA_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_SERVICE_ACCOUNT_KEY`
 * **MongoDB**: `MONGODB_URI`
 * **Auth/crypto secrets**: `ENCRYPTION_SECRET`, `JWT_SECRET`, `REFRESH_REUSE_GRACE_MS`, `REVIEWER_PASSWORD`, `REVIEWER_STATIC_OTP`, `SETUP_SECRET`
 * **Cron**: `CRON_SECRET`, `RECEIPT_CLEANUP_APPLY`
