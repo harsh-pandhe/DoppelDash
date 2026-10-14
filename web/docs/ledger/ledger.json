@@ -1,0 +1,2676 @@
+{
+ "generatedFrom": {
+  "note": "machine-generated; do not edit — run scripts/inventory/generate-ledger.js"
+ },
+ "counts": {
+  "webPages": 44,
+  "apiRoutes": 91,
+  "apiMethods": 150,
+  "androidRoutes": 33,
+  "cronJobs": 4
+ },
+ "pages": [
+  {
+   "file": "app/page.tsx",
+   "url": "/",
+   "group": ""
+  },
+  {
+   "file": "app/(app)/admin/audit/page.tsx",
+   "url": "/admin/audit",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/admin/users/page.tsx",
+   "url": "/admin/users",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/analytics/page.tsx",
+   "url": "/analytics",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/analytics/drill/page.tsx",
+   "url": "/analytics/drill",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/announcements/page.tsx",
+   "url": "/announcements",
+   "group": "app"
+  },
+  {
+   "file": "app/contact/[token]/page.tsx",
+   "url": "/contact/[token]",
+   "group": ""
+  },
+  {
+   "file": "app/(app)/crm/page.tsx",
+   "url": "/crm",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/crm/[id]/page.tsx",
+   "url": "/crm/[id]",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/crm/campaigns/page.tsx",
+   "url": "/crm/campaigns",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/crm/directory/page.tsx",
+   "url": "/crm/directory",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/crm/new/page.tsx",
+   "url": "/crm/new",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/crm/scanned/page.tsx",
+   "url": "/crm/scanned",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/dashboard/page.tsx",
+   "url": "/dashboard",
+   "group": "app"
+  },
+  {
+   "file": "app/delete-account/page.tsx",
+   "url": "/delete-account",
+   "group": ""
+  },
+  {
+   "file": "app/design-system/page.tsx",
+   "url": "/design-system",
+   "group": ""
+  },
+  {
+   "file": "app/(auth)/forgot-password/page.tsx",
+   "url": "/forgot-password",
+   "group": "auth"
+  },
+  {
+   "file": "app/(app)/inbox/page.tsx",
+   "url": "/inbox",
+   "group": "app"
+  },
+  {
+   "file": "app/invite/page.tsx",
+   "url": "/invite",
+   "group": ""
+  },
+  {
+   "file": "app/(app)/lms/page.tsx",
+   "url": "/lms",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/lms/[id]/page.tsx",
+   "url": "/lms/[id]",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/lms/holidays/page.tsx",
+   "url": "/lms/holidays",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/lms/new/page.tsx",
+   "url": "/lms/new",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/lms/team/page.tsx",
+   "url": "/lms/team",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/mail/page.tsx",
+   "url": "/mail",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/mail/drafts/page.tsx",
+   "url": "/mail/drafts",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/onboarding/page.tsx",
+   "url": "/onboarding",
+   "group": "app"
+  },
+  {
+   "file": "app/print/expense/[id]/page.tsx",
+   "url": "/print/expense/[id]",
+   "group": ""
+  },
+  {
+   "file": "app/privacy/page.tsx",
+   "url": "/privacy",
+   "group": ""
+  },
+  {
+   "file": "app/(app)/profile/page.tsx",
+   "url": "/profile",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/reports/page.tsx",
+   "url": "/reports",
+   "group": "app"
+  },
+  {
+   "file": "app/(auth)/reset-password/page.tsx",
+   "url": "/reset-password",
+   "group": "auth"
+  },
+  {
+   "file": "app/(app)/rms/page.tsx",
+   "url": "/rms",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/rms/[id]/page.tsx",
+   "url": "/rms/[id]",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/rms/new/page.tsx",
+   "url": "/rms/new",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/settings/[[...rest]]/page.tsx",
+   "url": "/settings/[...rest]",
+   "group": "app"
+  },
+  {
+   "file": "app/shared/[token]/page.tsx",
+   "url": "/shared/[token]",
+   "group": ""
+  },
+  {
+   "file": "app/(auth)/sign-in/page.tsx",
+   "url": "/sign-in",
+   "group": "auth"
+  },
+  {
+   "file": "app/support/page.tsx",
+   "url": "/support",
+   "group": ""
+  },
+  {
+   "file": "app/terms/page.tsx",
+   "url": "/terms",
+   "group": ""
+  },
+  {
+   "file": "app/(app)/travel/page.tsx",
+   "url": "/travel",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/travel/[id]/page.tsx",
+   "url": "/travel/[id]",
+   "group": "app"
+  },
+  {
+   "file": "app/(app)/travel/new/page.tsx",
+   "url": "/travel/new",
+   "group": "app"
+  },
+  {
+   "file": "app/web-access-restricted/page.tsx",
+   "url": "/web-access-restricted",
+   "group": ""
+  }
+ ],
+ "apiRoutes": [
+  {
+   "url": "/api/admin/audit",
+   "file": "app/api/admin/audit/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/audit/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/audit_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_i.test.js",
+    "tests/travel_conversion.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/balances/[userId]",
+   "file": "app/api/admin/balances/[userId]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_b.test.js",
+    "tests/batch_j1.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/invitations",
+   "file": "app/api/admin/invitations/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/_components/InvitationsTab.tsx",
+    "app/(app)/admin/users/_components/InviteMemberDialog.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js",
+    "tests/mail_architecture.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/invitations/[id]",
+   "file": "app/api/admin/invitations/[id]/route.ts",
+   "methods": [
+    "GET",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/_components/InvitationsTab.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js",
+    "tests/mail_architecture.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/invitations/[id]/resend",
+   "file": "app/api/admin/invitations/[id]/resend/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/_components/InvitationsTab.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js",
+    "tests/mail_architecture.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/settings",
+   "file": "app/api/admin/settings/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_e.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/users",
+   "file": "app/api/admin/users/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/admin_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_b.test.js",
+    "tests/batch_d.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_j1.test.js",
+    "tests/secret_exposure.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/admin/users/[userId]",
+   "file": "app/api/admin/users/[userId]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/admin_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_b.test.js",
+    "tests/batch_d.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_j1.test.js",
+    "tests/secret_exposure.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/analytics",
+   "file": "app/api/analytics/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/analytics/page.tsx",
+    "components/DashboardCharts.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/analytics_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_b.test.js",
+    "tests/batch_i.test.js"
+   ]
+  },
+  {
+   "url": "/api/analytics/drill",
+   "file": "app/api/analytics/drill/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/analytics/drill/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_i.test.js"
+   ]
+  },
+  {
+   "url": "/api/analytics/share",
+   "file": "app/api/analytics/share/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/analytics/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/analytics/share/[token]",
+   "file": "app/api/analytics/share/[token]/route.ts",
+   "methods": [
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/analytics/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/analytics/shared/[token]",
+   "file": "app/api/analytics/shared/[token]/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/shared/[token]/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/analytics/software",
+   "file": "app/api/analytics/software/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_b.test.js"
+   ]
+  },
+  {
+   "url": "/api/announcements",
+   "file": "app/api/announcements/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/announcements/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/announcement_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/announcements/[id]",
+   "file": "app/api/announcements/[id]/route.ts",
+   "methods": [
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/announcements/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/announcement_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/announcements/broadcast",
+   "file": "app/api/announcements/broadcast/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/announcements/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_i.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/change-password",
+   "file": "app/api/auth/change-password/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "rate-limit"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/settings/[[...rest]]/page.tsx",
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_j.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/invitations/[token]",
+   "file": "app/api/auth/invitations/[token]/route.ts",
+   "methods": [
+    "GET",
+    "HEAD"
+   ],
+   "guards": [],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/invite/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/invitations/accept",
+   "file": "app/api/auth/invitations/accept/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/invite/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/invitations/verify",
+   "file": "app/api/auth/invitations/verify/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/invite/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/invitation_token_hygiene.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/login",
+   "file": "app/api/auth/login/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_j.test.js",
+    "tests/mail_architecture.test.js",
+    "tests/secret_exposure.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_auth_pages.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/logout",
+   "file": "app/api/auth/logout/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(app)/settings/[[...rest]]/page.tsx",
+    "components/auth/SignOutButton.tsx",
+    "components/layout/Header.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_j.test.js",
+    "tests/batch_l1.test.js",
+    "tests/batch_l2.test.js",
+    "tests/web_auth_pages.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/me",
+   "file": "app/api/auth/me/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "lib/cloudinary.ts",
+    "lib/useUser.ts"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/auth_me_contract.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_j.test.js",
+    "tests/invitation_token_hygiene.test.js",
+    "tests/receipt_client_limits.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/outlook",
+   "file": "app/api/auth/outlook/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/outlook/callback",
+   "file": "app/api/auth/outlook/callback/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "webhook/service-auth"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/passkey/credentials",
+   "file": "app/api/auth/passkey/credentials/route.ts",
+   "methods": [
+    "GET",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/SecuritySettings.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/passkey/login",
+   "file": "app/api/auth/passkey/login/route.ts",
+   "methods": [
+    "POST",
+    "PUT"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/passkey/register",
+   "file": "app/api/auth/passkey/register/route.ts",
+   "methods": [
+    "POST",
+    "PUT"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/SecuritySettings.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/password-reset/check",
+   "file": "app/api/auth/password-reset/check/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/reset-password/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_h.test.js",
+    "tests/password_reset_token_hygiene.test.js",
+    "tests/web_auth_pages.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/password-reset/confirm",
+   "file": "app/api/auth/password-reset/confirm/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/reset-password/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/password_reset_token_hygiene.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/password-reset/request",
+   "file": "app/api/auth/password-reset/request/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/forgot-password/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_k.test.js",
+    "tests/mail_architecture.test.js",
+    "tests/password_reset_token_hygiene.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/refresh",
+   "file": "app/api/auth/refresh/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart",
+    "lib/data/services/api_client.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_j.test.js",
+    "tests/z_final_log_secret_scan.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/register",
+   "file": "app/api/auth/register/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_me_contract.test.js",
+    "tests/batch_d.test.js",
+    "tests/batch_e.test.js",
+    "tests/batch_f.test.js",
+    "tests/batch_g.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_i.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/send-otp",
+   "file": "app/api/auth/send-otp/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/setup",
+   "file": "app/api/auth/setup/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_k.test.js"
+   ]
+  },
+  {
+   "url": "/api/auth/totp/setup",
+   "file": "app/api/auth/totp/setup/route.ts",
+   "methods": [
+    "POST",
+    "PUT",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/SecuritySettings.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/tour-seen",
+   "file": "app/api/auth/tour-seen/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/WelcomeTour.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/auth/verify-otp",
+   "file": "app/api/auth/verify-otp/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "rate-limit",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_h1.test.js",
+    "tests/batch_j.test.js",
+    "tests/secret_exposure.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/z_final_log_secret_scan.test.js"
+   ]
+  },
+  {
+   "url": "/api/billing/entitlements",
+   "file": "app/api/billing/entitlements/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/entitlement_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js",
+    "tests/expenses_vertical.test.js",
+    "tests/secret_exposure.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/billing/play/rtdn",
+   "file": "app/api/billing/play/rtdn/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "webhook/service-auth",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_m.test.js"
+   ]
+  },
+  {
+   "url": "/api/billing/play/verify",
+   "file": "app/api/billing/play/verify/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "rate-limit",
+    "tenant-scoped",
+    "web-access"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/subscription_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_m.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm",
+   "file": "app/api/crm/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/new/page.tsx",
+    "app/(app)/crm/page.tsx",
+    "app/(app)/crm/scanned/page.tsx",
+    "app/(app)/mail/page.tsx",
+    "components/ScanCardDialog.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/batch_j1.test.js",
+    "tests/batch_k.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/[id]",
+   "file": "app/api/crm/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/[id]/page.tsx",
+    "app/(app)/crm/page.tsx",
+    "components/ScanCardDialog.tsx",
+    "app/(app)/mail/page.tsx",
+    "app/(app)/crm/scanned/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/campaign_repository.dart",
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/batch_j1.test.js",
+    "tests/batch_k.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/[id]/share",
+   "file": "app/api/crm/[id]/share/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/[id]/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/batch_j1.test.js",
+    "tests/batch_k.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/campaign",
+   "file": "app/api/crm/campaign/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/mail/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/campaign_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js",
+    "tests/mail_architecture.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/generate",
+   "file": "app/api/crm/generate/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/[id]/page.tsx",
+    "app/(app)/mail/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/ocr",
+   "file": "app/api/crm/ocr/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/ScanCardDialog.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_i.test.js",
+    "tests/batch_k.test.js",
+    "tests/receipt_ocr_vertical.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/reminders",
+   "file": "app/api/crm/reminders/route.ts",
+   "methods": [
+    "GET",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/crm_vertical.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/scanned-cards",
+   "file": "app/api/crm/scanned-cards/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/scanned/page.tsx",
+    "components/ScanCardDialog.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/receipt_ocr_vertical.test.js"
+   ]
+  },
+  {
+   "url": "/api/crm/scanned-cards/[id]",
+   "file": "app/api/crm/scanned-cards/[id]/route.ts",
+   "methods": [
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/scanned/page.tsx",
+    "components/ScanCardDialog.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/contact_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/receipt_ocr_vertical.test.js"
+   ]
+  },
+  {
+   "url": "/api/cron/announcements",
+   "file": "app/api/cron/announcements/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_k.test.js"
+   ]
+  },
+  {
+   "url": "/api/cron/birthday",
+   "file": "app/api/cron/birthday/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_k.test.js"
+   ]
+  },
+  {
+   "url": "/api/cron/onboarding",
+   "file": "app/api/cron/onboarding/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_c.test.js",
+    "tests/batch_k.test.js"
+   ]
+  },
+  {
+   "url": "/api/cron/receipts-cleanup",
+   "file": "app/api/cron/receipts-cleanup/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "cron-secret"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/receipt_cleanup.test.js",
+    "tests/receipt_cleanup_production.test.js"
+   ]
+  },
+  {
+   "url": "/api/dev/migrate",
+   "file": "app/api/dev/migrate/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "dev-secret",
+    "role-check",
+    "webhook/service-auth",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_k.test.js",
+    "tests/doppelmayr_brand_provisioning.test.js",
+    "tests/reviewer_auth_security.test.js",
+    "tests/web_access_boundary.test.js"
+   ]
+  },
+  {
+   "url": "/api/dev/reset-to-admin",
+   "file": "app/api/dev/reset-to-admin/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "dev-secret",
+    "webhook/service-auth"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_k.test.js"
+   ]
+  },
+  {
+   "url": "/api/dev/seed",
+   "file": "app/api/dev/seed/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "dev-secret",
+    "role-check",
+    "webhook/service-auth",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/admin/users/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/batch_k.test.js",
+    "tests/doppelmayr_brand_provisioning.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/z_final_log_secret_scan.test.js"
+   ]
+  },
+  {
+   "url": "/api/employees/[id]",
+   "file": "app/api/employees/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/directory/page.tsx",
+    "app/(app)/mail/page.tsx",
+    "app/print/expense/[id]/page.tsx",
+    "app/(app)/onboarding/page.tsx",
+    "app/(app)/profile/page.tsx",
+    "app/(app)/rms/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/employee_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_d.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_j.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/employees/directory",
+   "file": "app/api/employees/directory/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/crm/directory/page.tsx",
+    "app/(app)/mail/page.tsx",
+    "app/print/expense/[id]/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/employee_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js"
+   ]
+  },
+  {
+   "url": "/api/employees/me",
+   "file": "app/api/employees/me/route.ts",
+   "methods": [
+    "GET",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/mail/page.tsx",
+    "app/(app)/onboarding/page.tsx",
+    "app/(app)/profile/page.tsx",
+    "app/(app)/rms/page.tsx",
+    "app/(app)/travel/new/page.tsx",
+    "app/(auth)/sign-in/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/employee_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_d.test.js",
+    "tests/batch_h.test.js",
+    "tests/batch_j.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/holidays",
+   "file": "app/api/holidays/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/lms/holidays/page.tsx",
+    "app/(app)/lms/team/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/holiday_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/inbox",
+   "file": "app/api/inbox/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/inbox/[id]",
+   "file": "app/api/inbox/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/inbox/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/lms",
+   "file": "app/api/lms/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/lms/page.tsx",
+    "app/(app)/lms/team/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/leave_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/lms/[id]",
+   "file": "app/api/lms/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/dashboard/_components/ApprovalsQueue.tsx",
+    "app/(app)/lms/[id]/page.tsx",
+    "app/(app)/lms/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/leave_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/lms/balance",
+   "file": "app/api/lms/balance/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/lms/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/leave_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_j.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/lms/calendar",
+   "file": "app/api/lms/calendar/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/lms/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/lms/workload",
+   "file": "app/api/lms/workload/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/lms/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/mail/drafts",
+   "file": "app/api/mail/drafts/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/mail/drafts/page.tsx",
+    "app/(app)/mail/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/mail/drafts/[id]",
+   "file": "app/api/mail/drafts/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/mail/drafts/page.tsx",
+    "app/(app)/mail/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/notifications",
+   "file": "app/api/notifications/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/layout/Header.tsx",
+    "lib/notificationsStore.ts"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/notification_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_i.test.js",
+    "tests/expenses_vertical.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/org/mail-config",
+   "file": "app/api/org/mail-config/route.ts",
+   "methods": [
+    "GET",
+    "PUT",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": [
+    "tests/mail_architecture.test.js",
+    "tests/secret_exposure.test.js"
+   ]
+  },
+  {
+   "url": "/api/org/settings",
+   "file": "app/api/org/settings/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/settings/[[...rest]]/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/org_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_me_contract.test.js",
+    "tests/batch_e.test.js",
+    "tests/batch_l.test.js",
+    "tests/batch_l1.test.js",
+    "tests/batch_l2.test.js",
+    "tests/batch_m.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/reports",
+   "file": "app/api/reports/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/reports/page.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/rms",
+   "file": "app/api/rms/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/rms/page.tsx",
+    "lib/expenses/receipts.ts",
+    "lib/expenses/validation.ts"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/expense_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/expenses_vertical.test.js",
+    "tests/receipt_cleanup.test.js",
+    "tests/receipt_ocr_vertical.test.js",
+    "tests/receipt_type_contract.test.js"
+   ]
+  },
+  {
+   "url": "/api/rms/[id]",
+   "file": "app/api/rms/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/dashboard/_components/ApprovalsQueue.tsx",
+    "app/(app)/rms/[id]/page.tsx",
+    "app/(app)/rms/page.tsx",
+    "app/print/expense/[id]/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/expense_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/expenses_vertical.test.js",
+    "tests/receipt_cleanup.test.js",
+    "tests/receipt_ocr_vertical.test.js",
+    "tests/receipt_type_contract.test.js"
+   ]
+  },
+  {
+   "url": "/api/rms/[id]/receipt/[file]",
+   "file": "app/api/rms/[id]/receipt/[file]/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "lib/expenses/receipts.ts"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/expenses_vertical.test.js",
+    "tests/receipt_cleanup.test.js",
+    "tests/receipt_ocr_vertical.test.js",
+    "tests/receipt_type_contract.test.js"
+   ]
+  },
+  {
+   "url": "/api/rms/ocr",
+   "file": "app/api/rms/ocr/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/rms/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/expense_repository.dart"
+   ],
+   "tests": [
+    "tests/receipt_ocr_vertical.test.js"
+   ]
+  },
+  {
+   "url": "/api/search",
+   "file": "app/api/search/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "components/layout/Header.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/search_repository.dart"
+   ],
+   "tests": [
+    "tests/batch_b.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js"
+   ]
+  },
+  {
+   "url": "/api/support/chat",
+   "file": "app/api/support/chat/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "role-check",
+    "rate-limit"
+   ],
+   "unauthenticatedByCode": true,
+   "webCallers": [
+    "app/(auth)/sign-in/page.tsx",
+    "components/auth/SignInHelp.tsx"
+   ],
+   "androidCallers": [],
+   "tests": []
+  },
+  {
+   "url": "/api/sync/email",
+   "file": "app/api/sync/email/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/travel",
+   "file": "app/api/travel/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/travel/new/page.tsx",
+    "app/(app)/travel/page.tsx",
+    "lib/travel/attachments.ts",
+    "lib/travel/present.ts",
+    "lib/travel/validation.ts"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/travel_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/travel_api.test.js",
+    "tests/travel_attachments.test.js",
+    "tests/travel_conversion.test.js",
+    "tests/travel_patch.test.js"
+   ]
+  },
+  {
+   "url": "/api/travel/[id]",
+   "file": "app/api/travel/[id]/route.ts",
+   "methods": [
+    "GET",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/dashboard/_components/ApprovalsQueue.tsx",
+    "app/(app)/travel/[id]/page.tsx",
+    "app/(app)/travel/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/travel_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/travel_api.test.js",
+    "tests/travel_attachments.test.js",
+    "tests/travel_conversion.test.js",
+    "tests/travel_patch.test.js"
+   ]
+  },
+  {
+   "url": "/api/travel/[id]/expense",
+   "file": "app/api/travel/[id]/expense/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "app/(app)/travel/page.tsx"
+   ],
+   "androidCallers": [
+    "lib/data/repositories/travel_repository.dart"
+   ],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/travel_api.test.js",
+    "tests/travel_attachments.test.js",
+    "tests/travel_conversion.test.js",
+    "tests/travel_patch.test.js"
+   ]
+  },
+  {
+   "url": "/api/travel/[id]/itinerary/[file]",
+   "file": "app/api/travel/[id]/itinerary/[file]/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "lib/travel/present.ts"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/travel_api.test.js",
+    "tests/travel_attachments.test.js",
+    "tests/travel_conversion.test.js",
+    "tests/travel_patch.test.js"
+   ]
+  },
+  {
+   "url": "/api/uploads/sign",
+   "file": "app/api/uploads/sign/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "lib/cloudinary.ts"
+   ],
+   "androidCallers": [
+    "lib/data/services/cloudinary_service.dart"
+   ],
+   "tests": [
+    "tests/expenses_vertical.test.js",
+    "tests/receipt_cleanup.test.js",
+    "tests/receipt_client_limits.test.js",
+    "tests/receipt_ocr_vertical.test.js",
+    "tests/receipt_type_contract.test.js",
+    "tests/travel_api.test.js",
+    "tests/travel_attachments.test.js",
+    "tests/travel_conversion.test.js"
+   ]
+  },
+  {
+   "url": "/api/user/account",
+   "file": "app/api/user/account/route.ts",
+   "methods": [
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/auth_repository.dart"
+   ],
+   "tests": [
+    "tests/account_deletion.test.js"
+   ]
+  },
+  {
+   "url": "/api/user/email-config",
+   "file": "app/api/user/email-config/route.ts",
+   "methods": [
+    "GET",
+    "POST",
+    "DELETE"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/user/email-config/test",
+   "file": "app/api/user/email-config/test/route.ts",
+   "methods": [
+    "POST"
+   ],
+   "guards": [
+    "session",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [
+    "lib/data/repositories/mail_repository.dart"
+   ],
+   "tests": []
+  },
+  {
+   "url": "/api/webhooks/outlook",
+   "file": "app/api/webhooks/outlook/route.ts",
+   "methods": [
+    "GET",
+    "POST"
+   ],
+   "guards": [
+    "webhook/service-auth",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [],
+   "androidCallers": [],
+   "tests": []
+  }
+ ],
+ "androidRoutes": [
+  {
+   "path": "<const kDdShowcasePath>",
+   "tests": []
+  },
+  {
+   "path": "/splash",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/welcome",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/auth/sign-up",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/auth/forgot-password",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/auth/reset-password",
+   "tests": []
+  },
+  {
+   "path": "/auth/invite",
+   "tests": []
+  },
+  {
+   "path": "/sign-in",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/onboarding/org-setup",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/onboarding/profile",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/onboarding-role",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/dashboard",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/leave",
+   "tests": [
+    "test/data/services/api_client_test.dart",
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/expense",
+   "tests": []
+  },
+  {
+   "path": "/contacts",
+   "tests": []
+  },
+  {
+   "path": "/profile",
+   "tests": []
+  },
+  {
+   "path": "/travel",
+   "tests": [
+    "test/data/repositories/travel_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/campaigns",
+   "tests": []
+  },
+  {
+   "path": "/settings",
+   "tests": []
+  },
+  {
+   "path": "/analytics",
+   "tests": [
+    "test/data/repositories/analytics_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/admin",
+   "tests": [
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/admin/users",
+   "tests": [
+    "test/data/repositories/admin_repository_test.dart",
+    "test/routing/auth_redirect_test.dart"
+   ]
+  },
+  {
+   "path": "/admin/audit",
+   "tests": [
+    "test/data/repositories/audit_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/admin/org",
+   "tests": []
+  },
+  {
+   "path": "/notifications",
+   "tests": [
+    "test/data/repositories/notification_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/search",
+   "tests": [
+    "test/data/repositories/search_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/announcements",
+   "tests": [
+    "test/data/repositories/announcement_repository_test.dart",
+    "test/data/repositories/search_repository_test.dart"
+   ]
+  },
+  {
+   "path": "/mail",
+   "tests": []
+  },
+  {
+   "path": "/mail/compose",
+   "tests": []
+  },
+  {
+   "path": "/mail/draft/:id",
+   "tests": []
+  },
+  {
+   "path": "/mail/:id",
+   "tests": []
+  },
+  {
+   "path": "/directory",
+   "tests": []
+  },
+  {
+   "path": "/contacts/scanned-cards",
+   "tests": []
+  }
+ ],
+ "androidNav": [
+  "/auth/reset-password",
+  "/sign-in",
+  "/auth/forgot-password",
+  "/auth/sign-up",
+  "/auth/invite",
+  "/contacts/scanned-cards",
+  "/mail/compose",
+  "/leave",
+  "/expense",
+  "/travel",
+  "/announcements",
+  "/contacts",
+  "/analytics"
+ ],
+ "providers": {
+  "Cloudinary": [],
+  "Gemini/Ollama OCR": [
+   "GEMINI_API_BASE",
+   "GEMINI_API_KEY",
+   "OCR_DEADLINE_MS",
+   "OLLAMA_MODEL",
+   "OLLAMA_URL"
+  ],
+  "SMTP (outbound mail)": [
+   "SMTP_FROM",
+   "SMTP_HOST",
+   "SMTP_PASS",
+   "SMTP_PORT",
+   "SMTP_SECURE",
+   "SMTP_USER"
+  ],
+  "IMAP (inbox)": [
+   "IMAP_HOST",
+   "IMAP_PASS",
+   "IMAP_PORT",
+   "IMAP_SECURE",
+   "IMAP_USER"
+  ],
+  "Outlook (OAuth/webhook)": [
+   "OUTLOOK_CLIENT_ID",
+   "OUTLOOK_CLIENT_SECRET",
+   "OUTLOOK_WEBHOOK_SECRET"
+  ],
+  "Google Play billing/RTDN": [
+   "GOOGLE_PLAY_PACKAGE_NAME",
+   "GOOGLE_PLAY_PREMIUM_PRODUCT_ID",
+   "GOOGLE_PLAY_RTDN_SECRET",
+   "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+   "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+   "GOOGLE_PLAY_SERVICE_ACCOUNT_KEY"
+  ],
+  "MongoDB": [
+   "MONGODB_URI"
+  ],
+  "Auth/crypto secrets": [
+   "ENCRYPTION_SECRET",
+   "JWT_SECRET",
+   "REFRESH_REUSE_GRACE_MS",
+   "REVIEWER_PASSWORD",
+   "REVIEWER_STATIC_OTP",
+   "SETUP_SECRET"
+  ],
+  "Cron": [
+   "CRON_SECRET",
+   "RECEIPT_CLEANUP_APPLY"
+  ],
+  "Dev/test switches": [
+   "ALLOW_DEV_SEED",
+   "DD_CI_DB",
+   "DD_DESIGN_SHOWCASE",
+   "DEV_SEED_SECRET",
+   "TRAVEL_CONVERSION_WAIT_MS",
+   "TRAVEL_FAILPOINTS"
+  ]
+ },
+ "jobs": [
+  {
+   "url": "/api/cron/announcements",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "scheduler": "declared (verify)"
+  },
+  {
+   "url": "/api/cron/birthday",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "scheduler": "declared (verify)"
+  },
+  {
+   "url": "/api/cron/onboarding",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "cron-secret",
+    "tenant-scoped"
+   ],
+   "scheduler": "declared (verify)"
+  },
+  {
+   "url": "/api/cron/receipts-cleanup",
+   "methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE"
+   ],
+   "guards": [
+    "cron-secret"
+   ],
+   "scheduler": "declared (verify)"
+  }
+ ],
+ "deadLinks": [],
+ "orphanPages": [
+  "/analytics/drill",
+  "/design-system",
+  "/invite",
+  "/lms/new",
+  "/reset-password"
+ ]
+}
