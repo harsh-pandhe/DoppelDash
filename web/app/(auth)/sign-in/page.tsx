@@ -65,7 +65,16 @@ export default function SignInPage() {
     return () => clearTimeout(t)
   }, [cooldown])
   useEffect(() => {
-    if (step === 'otp') setTimeout(() => otpRefs.current[0]?.focus(), 100)
+    if (step === 'otp') {
+      const t = setTimeout(() => {
+        const active = typeof document !== 'undefined' ? document.activeElement : null
+        const isAlreadyInOtp = otpRefs.current.some(el => el && el === active)
+        if (!isAlreadyInOtp && otpRefs.current[0]) {
+          otpRefs.current[0].focus()
+        }
+      }, 50)
+      return () => clearTimeout(t)
+    }
   }, [step])
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -431,6 +440,7 @@ export default function SignInPage() {
                         <input key={i}
                           ref={el => { otpRefs.current[i] = el }}
                           type="text" inputMode="numeric" maxLength={1} value={v}
+                          autoFocus={i === 0}
                           onChange={e => handleOtpInput(i, e.target.value)}
                           onKeyDown={e => handleOtpKey(i, e)}
                           aria-label={`Digit ${i+1}`}
