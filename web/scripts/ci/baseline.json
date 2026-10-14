@@ -1,7 +1,7 @@
 {
   "note": "Reference totals of the recovered backend suite (fake providers, standalone MongoDB). The runner FAILS if the run has fewer tests/files than this, any failure, or any skip that is not listed in allowedSkips. Raise the numbers when tests are added; never lower them to make a run pass.",
   "files": 57,
-  "tests": 788,
+  "tests": 791,
   "skipped": 1,
   "allowedSkips": [
     {

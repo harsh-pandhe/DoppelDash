@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T22:30:13.332Z",
+    "generatedAt": "2026-10-14T23:11:33.446Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,

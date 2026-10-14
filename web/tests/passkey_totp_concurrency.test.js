@@ -11,7 +11,8 @@
  *   C5  Expired / missing / half-written challenges and replayed codes stay rejected
  *   C6  Invalid TOTP attempts never consume a valid code
  *   C7  Cross-user / cross-tenant isolation of claims and challenges
- *   C8  Database conflicts and unexpected database failures fail closed
+ *   C8  Database conflicts and unexpected database failures fail closed (TOTP claims)
+ *   C9  Genuine database write failure during atomic WebAuthn challenge consumption fails closed (registration + login)
  */
 const test = require('node:test')
 const assert = require('node:assert/strict')
@@ -39,6 +40,7 @@ test.before(async () => {
 test.after(async () => {
   try {
     await db.command({ collMod: CLAIMS, validator: {}, validationLevel: 'off' }).catch(() => {})
+    await clearUsersFault().catch(() => {})
     if (userIds.length) await db.collection(CLAIMS).deleteMany({ userId: { $in: userIds } }).catch(() => {})
     if (orgIds.length) await db.collection('passkeycredentials').deleteMany({ orgId: { $in: orgIds } }).catch(() => {})
     await db.collection('ratelimits').deleteMany({ key: { $regex: /^(totp-|pk-|otp:)/ } }).catch(() => {})
@@ -394,4 +396,80 @@ test('C8 Existing claim (unique-key conflict) rejects the code; database write f
   const dup = await verifyTotpLogin(await preAuth(org.admin.email), code)
   assert.equal(dup.status, 401)
   assert.equal(sessions([dup]).length, 0)
+})
+
+/* ───────────────────────── C9: WebAuthn challenge-consumption database failure ───────────────────────── */
+
+// Real server-side write failure (document validation, code 121) on the one update that consumes the challenge:
+// the validator requires webauthnChallenge to be present, so the atomic `$unset` is rejected by MongoDB while every
+// other write (saving a challenge, updating a counter) is allowed. 'moderate' leaves users without a challenge alone.
+const injectUsersFault = () => db.command({
+  collMod: 'users', validator: { webauthnChallenge: { $type: 'string' } }, validationLevel: 'moderate', validationAction: 'error',
+})
+const clearUsersFault = () => db.command({ collMod: 'users', validator: {}, validationLevel: 'off' })
+
+test('C9a Registration: database failure while consuming the challenge fails closed, nothing is consumed or created', async () => {
+  const { org, session } = await tenant('Register consume DB failure')
+  const auth = createSyntheticAuthenticator(RP_ID, ORIGIN)
+  const opt = await kit.api('/api/auth/passkey/register', { method: 'POST', token: session.accessToken })
+  assert.equal(opt.status, 200)
+  const body = () => ({ response: auth.createRegistrationResponse(opt.json.challenge), nickname: 'fault' })
+  try {
+    await injectUsersFault()
+    const r = await kit.api('/api/auth/passkey/register', { method: 'PUT', token: session.accessToken, body: body() })
+    assert.equal(r.status, 400)
+    assert.notEqual(r.json?.ok, true)
+    assert.equal(await db.collection('passkeycredentials').countDocuments({ userId: org.admin.id }), 0, 'no credential created')
+    // no fallback to a non-atomic read-then-unset: the challenge is still exactly as issued
+    assert.equal((await userDoc(org.admin.id)).webauthnChallenge, opt.json.challenge)
+  } finally {
+    await clearUsersFault()
+  }
+  // fault removed: the very same challenge and response now succeed exactly once, proving nothing was silently consumed
+  const ok = await kit.api('/api/auth/passkey/register', { method: 'PUT', token: session.accessToken, body: body() })
+  assert.equal(ok.status, 200)
+  assert.equal(await db.collection('passkeycredentials').countDocuments({ userId: org.admin.id }), 1)
+  const replay = await kit.api('/api/auth/passkey/register', { method: 'PUT', token: session.accessToken, body: { response: createSyntheticAuthenticator(RP_ID, ORIGIN).createRegistrationResponse(opt.json.challenge), nickname: 'replay' } })
+  assert.equal(replay.status, 400, 'already-consumed challenge rejected')
+  assert.equal(await db.collection('passkeycredentials').countDocuments({ userId: org.admin.id }), 1)
+})
+
+test('C9b Login: database failure while consuming the challenge yields no session or token; state untouched', async () => {
+  const { org, session } = await tenant('Login consume DB failure')
+  const auth = createSyntheticAuthenticator(RP_ID, ORIGIN)
+  await registerPasskey(session, auth)
+  const credBefore = await db.collection('passkeycredentials').findOne({ userId: org.admin.id })
+  const loginsBefore = (await userDoc(org.admin.id)).loginCount || 0
+  const opts = await loginOptions(org.admin.email)
+  const assertion = auth.createAuthenticationResponse(opts.options.challenge)
+  try {
+    await injectUsersFault()
+    const rs = await Promise.all([1, 2, 3].map(() => passkeyAssert(org.admin.id, assertion)))
+    for (const r of rs) {
+      assert.equal(r.status, 401)
+      assert.ok(!r.headers.get('set-cookie'), 'no cookie')
+      assert.ok(!r.json?.user && !r.json?.accessToken && !r.json?.token, 'no user or token in body')
+    }
+    const u = await userDoc(org.admin.id)
+    assert.equal(u.loginCount || 0, loginsBefore, 'no login recorded')
+    assert.equal(u.webauthnChallenge, opts.options.challenge, 'challenge not consumed by a failed atomic update (no fallback path)')
+    const credAfter = await db.collection('passkeycredentials').findOne({ userId: org.admin.id })
+    assert.equal(credAfter.counter, credBefore.counter, 'authenticator counter untouched')
+  } finally {
+    await clearUsersFault()
+  }
+  // fault removed: the same assertion succeeds once, then the consumed/expired/missing cases stay rejected
+  const ok = await passkeyAssert(org.admin.id, assertion)
+  assert.equal(ok.status, 200)
+  assert.equal(sessions([ok]).length, 1)
+  const again = await passkeyAssert(org.admin.id, assertion)
+  assert.equal(again.status, 401); assert.equal(sessions([again]).length, 0)
+})
+
+test('C9c Fault injection is removed: ordinary challenge flow works afterwards', async () => {
+  const info = await db.listCollections({ name: 'users' }).toArray()
+  assert.deepEqual(info[0]?.options?.validator || {}, {}, 'no validator left on users')
+  const { org } = await tenant('Post-fault sanity')
+  const r = await kit.api('/api/auth/passkey/login', { method: 'POST', body: { email: org.admin.email } })
+  assert.equal(r.status, 404, 'user without passkeys: normal contract')
 })
