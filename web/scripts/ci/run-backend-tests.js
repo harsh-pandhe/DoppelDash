@@ -61,7 +61,7 @@ async function main() {
       const t0 = Date.now()
       const r = spawnSync('node', [path.join('tests', f)], { cwd: root, env, encoding: 'utf8', timeout: 600_000, maxBuffer: 64 * 1024 * 1024 })
       const out = (r.stdout || '') + (r.stderr || ''); fs.writeFileSync(path.join(outDir, f + '.log'), out)
-      const s = parse(out); const allowed = (baseline.allowedSkips || []).filter(a => a.file === f).reduce((n, a) => n + a.max, 0)
+      const s = parse(out); const allowed = (baseline.allowedSkips || []).filter(a => a.file === f && !(a.unlessEnv && process.env[a.unlessEnv])).reduce((n, a) => n + a.max, 0)
       const ok = s.tests !== null && s.fail === 0 && s.skipped <= allowed && s.pass + s.skipped === s.tests && r.status === 0
       results.push({ file: f, ...s, ok, seconds: Math.round((Date.now() - t0) / 1000) })
       console.log(`${ok ? 'ok  ' : 'FAIL'} ${f.padEnd(44)} tests=${s.tests} pass=${s.pass} fail=${s.fail} skipped=${s.skipped} (${results.at(-1).seconds}s)`)

@@ -20,6 +20,8 @@ jobs:
     env:
       CI: 'true'
       NEXT_TELEMETRY_DISABLED: '1'
+      # true only when the owner has created the read-only deploy-key secret (see web/docs/CI.md)
+      MOBILE_KEY_SET: ${{ secrets.MOBILE_REPO_DEPLOY_KEY != '' }}
     services:
       mongo:
         image: mongo:7
@@ -29,6 +31,23 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v4
+      - name: Check out the Flutter repo (design-token parity test T8)
+        if: env.MOBILE_KEY_SET == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: harsh-pandhe/DoppelDash-mobile
+          ref: integration/phase0-recovery
+          ssh-key: ${{ secrets.MOBILE_REPO_DEPLOY_KEY }}
+          path: DoppelDash-mobile
+          persist-credentials: false
+      - name: Point T8 at the Flutter tokens
+        if: env.MOBILE_KEY_SET == 'true'
+        run: echo "DD_MOBILE_TOKENS=${{ github.workspace }}/DoppelDash-mobile/tool/design/tokens.json" >> "$GITHUB_ENV"
+        working-directory: .
+      - name: Interim exception notice
+        if: env.MOBILE_KEY_SET != 'true'
+        run: echo "::warning::MOBILE_REPO_DEPLOY_KEY is not configured - ds_tokens T8 will be skipped (documented interim exception); this run is NOT a fully reproduced 681/0 baseline."
+        working-directory: .
       - uses: actions/setup-node@v4
         with:
           node-version: 22
