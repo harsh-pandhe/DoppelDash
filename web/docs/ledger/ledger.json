@@ -659,7 +659,8 @@
     "tests/auth_foundation.test.js",
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
-    "tests/batch_j.test.js"
+    "tests/batch_j.test.js",
+    "tests/passkey_totp_security.test.js"
    ]
   },
   {
@@ -754,9 +755,9 @@
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
     "tests/mail_architecture.test.js",
+    "tests/passkey_totp_security.test.js",
     "tests/secret_exposure.test.js",
-    "tests/web_access_boundary.test.js",
-    "tests/web_auth_pages.test.js"
+    "tests/web_access_boundary.test.js"
    ]
   },
   {
@@ -781,6 +782,7 @@
     "tests/batch_j.test.js",
     "tests/batch_l1.test.js",
     "tests/batch_l2.test.js",
+    "tests/passkey_totp_security.test.js",
     "tests/web_auth_pages.test.js"
    ]
   },
@@ -811,8 +813,8 @@
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
     "tests/invitation_token_hygiene.test.js",
-    "tests/receipt_client_limits.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/passkey_totp_security.test.js",
+    "tests/receipt_client_limits.test.js"
    ]
   },
   {
@@ -852,6 +854,7 @@
    ],
    "guards": [
     "session",
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
@@ -859,7 +862,9 @@
     "components/SecuritySettings.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/passkey_totp_security.test.js"
+   ]
   },
   {
    "url": "/api/auth/passkey/login",
@@ -878,7 +883,9 @@
     "app/(auth)/sign-in/page.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/passkey_totp_security.test.js"
+   ]
   },
   {
    "url": "/api/auth/passkey/register",
@@ -889,6 +896,7 @@
    ],
    "guards": [
     "session",
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
@@ -896,7 +904,9 @@
     "components/SecuritySettings.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/passkey_totp_security.test.js"
+   ]
   },
   {
    "url": "/api/auth/password-reset/check",
@@ -1066,6 +1076,7 @@
    ],
    "guards": [
     "session",
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
@@ -1075,7 +1086,9 @@
    "androidCallers": [
     "lib/data/repositories/auth_repository.dart"
    ],
-   "tests": []
+   "tests": [
+    "tests/passkey_totp_security.test.js"
+   ]
   },
   {
    "url": "/api/auth/tour-seen",
@@ -1116,6 +1129,7 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/passkey_totp_security.test.js",
     "tests/secret_exposure.test.js",
     "tests/web_access_boundary.test.js",
     "tests/z_final_log_secret_scan.test.js"

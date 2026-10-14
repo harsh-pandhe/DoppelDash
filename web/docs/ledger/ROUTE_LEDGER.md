@@ -76,18 +76,18 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/announcements` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 4 |
 | `/api/announcements/[id]` | PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 4 |
 | `/api/announcements/broadcast` | POST | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
-| `/api/auth/change-password` | POST | session, rate-limit |  | 2 | 1 | 4 |
+| `/api/auth/change-password` | POST | session, rate-limit |  | 2 | 1 | 5 |
 | `/api/auth/invitations/[token]` | GET, HEAD | — | **yes** | 1 | 1 | 4 |
 | `/api/auth/invitations/accept` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 4 |
 | `/api/auth/invitations/verify` | POST | rate-limit | **yes** | 1 | 1 | 3 |
 | `/api/auth/login` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 8 |
-| `/api/auth/logout` | POST | — | **yes** | 3 | 1 | 6 |
+| `/api/auth/logout` | POST | — | **yes** | 3 | 1 | 7 |
 | `/api/auth/me` | GET | session, role-check, tenant-scoped, web-access |  | 2 | 1 | 8 |
 | `/api/auth/outlook` | GET | session |  | — | **none** | **none** |
 | `/api/auth/outlook/callback` | GET | webhook/service-auth |  | — | **none** | **none** |
-| `/api/auth/passkey/credentials` | GET, DELETE | session, tenant-scoped |  | 1 | **none** | **none** |
-| `/api/auth/passkey/login` | POST, PUT | rate-limit, tenant-scoped, web-access | **yes** | 1 | **none** | **none** |
-| `/api/auth/passkey/register` | POST, PUT | session, tenant-scoped |  | 1 | **none** | **none** |
+| `/api/auth/passkey/credentials` | GET, DELETE | session, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/auth/passkey/login` | POST, PUT | rate-limit, tenant-scoped, web-access | **yes** | 1 | **none** | 1 |
+| `/api/auth/passkey/register` | POST, PUT | session, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
 | `/api/auth/password-reset/check` | POST | rate-limit | **yes** | 1 | 1 | 3 |
 | `/api/auth/password-reset/confirm` | POST | rate-limit | **yes** | 1 | 1 | 4 |
 | `/api/auth/password-reset/request` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 7 |
@@ -95,9 +95,9 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/auth/register` | POST | rate-limit, tenant-scoped, web-access | **yes** | — | 1 | 8 |
 | `/api/auth/send-otp` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 1 |
 | `/api/auth/setup` | POST | tenant-scoped | **yes** | — | **none** | 1 |
-| `/api/auth/totp/setup` | POST, PUT, DELETE | session, tenant-scoped |  | 1 | 1 | **none** |
+| `/api/auth/totp/setup` | POST, PUT, DELETE | session, rate-limit, tenant-scoped |  | 1 | 1 | 1 |
 | `/api/auth/tour-seen` | POST | session |  | 1 | **none** | **none** |
-| `/api/auth/verify-otp` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 7 |
+| `/api/auth/verify-otp` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 8 |
 | `/api/billing/entitlements` | GET | session, tenant-scoped, web-access |  | — | 1 | 7 |
 | `/api/billing/play/rtdn` | POST | webhook/service-auth, tenant-scoped |  | — | **none** | 2 |
 | `/api/billing/play/verify` | POST | session, rate-limit, tenant-scoped, web-access |  | — | 1 | 1 |

@@ -9,10 +9,10 @@
 - **Public Handlers**: 18 (authentication, invitations, shared dashboard, support chat, public assets)
 - **Session-Authenticated Handlers**: 117
 - **Service-Authenticated Handlers**: 15 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
-- **Handlers with Test Coverage**: 95
-- **Handlers with Coverage Gaps**: 55
+- **Handlers with Test Coverage**: 104
+- **Handlers with Coverage Gaps**: 46
 - **P0 Launch Blockers**: 1 (RTDN Pub/Sub OIDC, Account Deletion Integrity)
-- **P1 High-Risk Gaps**: 17 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
+- **P1 High-Risk Gaps**: 8 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
 
 ## High-Risk Group Analysis (Batch 1)
 
@@ -24,14 +24,14 @@
 | **HEAD** | `/api/auth/invitations/[token]` | public | none | none | none | **NONE** | `GAPS_FOUND` |
 | **POST** | `/api/auth/invitations/accept` | public | none | none | webEnabled | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/invitations/verify` | public | none | none | none | `tests/batch_f.test.js` +2 | `VERIFIED_FAKE` |
-| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +8 | `VERIFIED_FAKE` |
-| **POST** | `/api/auth/logout` | public | none | none | none | `tests/batch_h.test.js` +5 | `VERIFIED_FAKE` |
-| **DELETE** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **GET** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/passkey/login` | public | none | none | webEnabled + plan:premium | **NONE** | `GAPS_FOUND` |
-| **PUT** | `/api/auth/passkey/login` | public | none | none | webEnabled + plan:premium | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/passkey/register` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **PUT** | `/api/auth/passkey/register` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
+| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +9 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/logout` | public | none | none | none | `tests/batch_h.test.js` +6 | `VERIFIED_FAKE` |
+| **DELETE** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/passkey/login` | public | none | none | webEnabled + plan:premium | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/passkey/login` | public | none | none | webEnabled + plan:premium | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/passkey/register` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/passkey/register` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/check` | public | lookup_token (User by email/token) | none | none | `tests/batch_h.test.js` +2 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/confirm` | public | lookup_token (User by email/token) | none | none | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/request` | public | lookup_token (User by email/token) | none | none | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
@@ -39,11 +39,11 @@
 | **POST** | `/api/auth/register` | public | none | none | webEnabled + plan:premium | `tests/auth_me_contract.test.js` +14 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/send-otp` | public | none | none | none | `tests/secret_exposure.test.js` | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/setup` | service | service_context | none | none | `tests/batch_k.test.js` | `VERIFIED_FAKE` |
-| **DELETE** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **PUT** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
+| **DELETE** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/tour-seen` | session | session_jwt (unscoped / user-only) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +7 | `VERIFIED_FAKE` |
 
 ### 10. Mail & Inbox (8 handlers)
 
@@ -129,8 +129,8 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **POST** | `/api/auth/change-password` | session | session_jwt (unscoped / user-only) | any_authenticated | none | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
-| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +11 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/change-password` | session | session_jwt (unscoped / user-only) | any_authenticated | none | `tests/auth_foundation.test.js` +4 | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **GET** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **POST** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +5 | `VERIFIED_FAKE` |
@@ -284,12 +284,12 @@
 | **GET** | `/api/auth/me` | `app/api/auth/me/route.ts` | session | admin | `VERIFIED_FAKE` |
 | **GET** | `/api/auth/outlook` | `app/api/auth/outlook/route.ts` | session | any_authenticated | `GAPS_FOUND` |
 | **GET** | `/api/auth/outlook/callback` | `app/api/auth/outlook/callback/route.ts` | service | none | `GAPS_FOUND` |
-| **DELETE** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **GET** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **POST** | `/api/auth/passkey/login` | `app/api/auth/passkey/login/route.ts` | public | none | `GAPS_FOUND` |
-| **PUT** | `/api/auth/passkey/login` | `app/api/auth/passkey/login/route.ts` | public | none | `GAPS_FOUND` |
-| **POST** | `/api/auth/passkey/register` | `app/api/auth/passkey/register/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **PUT** | `/api/auth/passkey/register` | `app/api/auth/passkey/register/route.ts` | session | any_authenticated | `GAPS_FOUND` |
+| **DELETE** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/passkey/login` | `app/api/auth/passkey/login/route.ts` | public | none | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/passkey/login` | `app/api/auth/passkey/login/route.ts` | public | none | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/passkey/register` | `app/api/auth/passkey/register/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/passkey/register` | `app/api/auth/passkey/register/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/check` | `app/api/auth/password-reset/check/route.ts` | public | none | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/confirm` | `app/api/auth/password-reset/confirm/route.ts` | public | none | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/request` | `app/api/auth/password-reset/request/route.ts` | public | none | `VERIFIED_FAKE` |
@@ -297,9 +297,9 @@
 | **POST** | `/api/auth/register` | `app/api/auth/register/route.ts` | public | none | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/send-otp` | `app/api/auth/send-otp/route.ts` | public | none | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/setup` | `app/api/auth/setup/route.ts` | service | none | `VERIFIED_FAKE` |
-| **DELETE** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **POST** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **PUT** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `GAPS_FOUND` |
+| **DELETE** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **PUT** | `/api/auth/totp/setup` | `app/api/auth/totp/setup/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/tour-seen` | `app/api/auth/tour-seen/route.ts` | session | any_authenticated | `GAPS_FOUND` |
 | **POST** | `/api/auth/verify-otp` | `app/api/auth/verify-otp/route.ts` | public | none | `VERIFIED_FAKE` |
 | **GET** | `/api/billing/entitlements` | `app/api/billing/entitlements/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |

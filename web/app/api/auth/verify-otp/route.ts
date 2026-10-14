@@ -5,9 +5,17 @@ import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, isWebAccessAllowe
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
+  const raw = await req.text().catch(() => '')
+  if (raw.length > 64 * 1024) {
+    return NextResponse.json({ error: 'Payload too large', code: 'payload_too_large' }, { status: 413 })
+  }
+
   let body: { preAuthToken?: unknown; otp?: unknown; method?: unknown } = {}
-  try { body = await req.json() } catch {
+  try { body = JSON.parse(raw) } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
   const { preAuthToken, otp, method } = body
   if (!otp) return NextResponse.json({ error: 'otp required' }, { status: 400 })
@@ -20,7 +28,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (method === 'totp') {
-    const ok = await verifyTotp(userId, String(otp))
+    const otpStr = String(otp).trim()
+    if (!/^\d{6}$/.test(otpStr)) {
+      return NextResponse.json({ error: 'Invalid 6-digit code format' }, { status: 400 })
+    }
+    const ok = await verifyTotp(userId, otpStr)
     if (!ok) return NextResponse.json({ error: 'Incorrect authenticator code' }, { status: 401 })
     await connectDB()
     await User.findByIdAndUpdate(userId, {

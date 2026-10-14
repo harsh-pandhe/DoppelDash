@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T18:12:06.313Z",
+    "generatedAt": "2026-10-14T22:07:31.044Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,
@@ -8,10 +8,10 @@
       "publicHandlers": 18,
       "sessionHandlers": 117,
       "serviceHandlers": 15,
-      "handlersWithTests": 95,
-      "handlersWithGaps": 55,
+      "handlersWithTests": 104,
+      "handlersWithGaps": 46,
       "p0Blockers": 1,
-      "p1HighRiskGaps": 17
+      "p1HighRiskGaps": 8
     }
   },
   "handlers": [
@@ -619,7 +619,8 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
-        "tests/batch_j.test.js"
+        "tests/batch_j.test.js",
+        "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -724,6 +725,7 @@
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
         "tests/mail_architecture.test.js",
+        "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_auth_pages.test.js",
@@ -751,6 +753,7 @@
         "tests/batch_j.test.js",
         "tests/batch_l1.test.js",
         "tests/batch_l2.test.js",
+        "tests/passkey_totp_security.test.js",
         "tests/web_auth_pages.test.js"
       ],
       "missingTests": [],
@@ -776,6 +779,7 @@
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
         "tests/invitation_token_hygiene.test.js",
+        "tests/passkey_totp_security.test.js",
         "tests/receipt_client_limits.test.js",
         "tests/secret_exposure.test.js",
         "tests/staging_harness.test.js",
@@ -845,17 +849,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`pk-creds-list:${userId}`, 60, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/auth/passkey/credentials",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/credentials",
@@ -867,17 +868,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`pk-creds-list:${userId}`, 60, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/auth/passkey/credentials",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/login",
@@ -890,16 +888,15 @@
       "requiredRole": "none",
       "entitlement": "webEnabled + plan:premium",
       "rateLimit": "`pk-login:${ip}`, 10, 60_000",
-      "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/auth/passkey/login",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "providers": [
+        "WebAuthn"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/login",
@@ -912,16 +909,15 @@
       "requiredRole": "none",
       "entitlement": "webEnabled + plan:premium",
       "rateLimit": "`pk-login:${ip}`, 10, 60_000",
-      "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PUT /api/auth/passkey/login",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "providers": [
+        "WebAuthn"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/register",
@@ -933,17 +929,16 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
-      "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/auth/passkey/register",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "rateLimit": "`pk-reg-opt:${userId}`, 15, 60_000",
+      "providers": [
+        "WebAuthn"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/register",
@@ -955,17 +950,16 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
-      "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PUT /api/auth/passkey/register",
-        "Login options test: rate limited, 404 when no passkey for email",
-        "WebAuthn verification test: fake assertion verification and session creation",
-        "Credential management: 401 when unauthenticated, tenant-scoped list & delete"
+      "rateLimit": "`pk-reg-opt:${userId}`, 15, 60_000",
+      "providers": [
+        "WebAuthn"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/password-reset/check",
@@ -1137,17 +1131,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/auth/totp/setup",
-        "Setup test: returns otpauthUrl and secret for authenticated user",
-        "Verification test: valid TOTP code confirms, invalid code rejected (400)",
-        "Disable test: authenticating user can disable TOTP"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/totp/setup",
@@ -1159,17 +1150,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/auth/totp/setup",
-        "Setup test: returns otpauthUrl and secret for authenticated user",
-        "Verification test: valid TOTP code confirms, invalid code rejected (400)",
-        "Disable test: authenticating user can disable TOTP"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/totp/setup",
@@ -1181,17 +1169,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PUT /api/auth/totp/setup",
-        "Setup test: returns otpauthUrl and secret for authenticated user",
-        "Verification test: valid TOTP code confirms, invalid code rejected (400)",
-        "Disable test: authenticating user can disable TOTP"
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/tour-seen",
@@ -1229,6 +1214,7 @@
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
+        "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
         "tests/z_final_log_secret_scan.test.js"

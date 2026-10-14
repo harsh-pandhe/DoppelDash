@@ -167,13 +167,17 @@ export async function passkeyLoginVerify(userId: string, response: Authenticatio
   }
   if (!verification.verified) return { ok: false as const, reason: 'Verification failed' }
 
+  const existingUser = await User.findById(userId)
+  if (!existingUser) return { ok: false as const, reason: 'User not found' }
+  if (!existingUser.isActive || existingUser.isBanned) return { ok: false as const, reason: 'Account suspended' }
+
   cred.counter = verification.authenticationInfo.newCounter
   cred.lastUsedAt = new Date()
   await cred.save()
 
-  const user = await User.findByIdAndUpdate(userId, {
-    lastLoginAt: new Date(), lastActiveAt: new Date(), $inc: { loginCount: 1 },
-  }, { new: true })
-  if (!user) return { ok: false as const, reason: 'User not found' }
-  return { ok: true as const, user }
+  existingUser.lastLoginAt = new Date()
+  existingUser.lastActiveAt = new Date()
+  existingUser.loginCount = (existingUser.loginCount || 0) + 1
+  await existingUser.save()
+  return { ok: true as const, user: existingUser }
 }
