@@ -1,219 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Subscription from '@/models/Subscription'
-import Organization from '@/models/Organization'
-import { PLAY_CONFIG, RTDN_NOTIFICATION_TYPES } from '@/lib/billing/playConfig'
+import { PLAY_CONFIG } from '@/lib/billing/playConfig'
+import { authenticateRtdn } from '@/lib/billing/rtdnAuth'
+import { verifySubscriptionPurchase } from '@/lib/billing/googlePlayService'
+import { applySubscriptionToOrg } from '@/lib/billing/subscriptionState'
 import { getOrganizationEntitlements } from '@/lib/entitlements/entitlementService'
+import { apiError, readJson } from '@/lib/travel/http'
 
 /**
- * POST /api/billing/play/rtdn
+ * Google Play Real-time Developer Notifications (Pub/Sub push).
  *
- * Ingests and idempotently processes Google Play Real-Time Developer Notifications (RTDN).
- * Supports standard Cloud Pub/Sub push messages and direct payloads.
+ *  1. AUTHENTICATION FIRST, fail closed: a valid Pub/Sub OIDC token (issuer, audience, service-account identity) is required; with the
+ *     audience / service account unconfigured every request is refused (503). Nothing is accepted from the query string.
+ *  2. The notification is only a HINT. Entitlements are never derived from its type: for a known purchase token the current state is
+ *     fetched from the Google Play Developer API and THAT is stored (so out-of-order, replayed or forged-content messages cannot
+ *     change what Google says). If Google cannot be reached we answer 503 so Pub/Sub retries — nothing is changed.
+ *  3. Duplicate deliveries are acknowledged without work: the message id is claimed with an atomic conditional update.
+ *  4. Unknown tokens / other packages are acknowledged (200) so Google does not retry forever; they change nothing.
  */
 export async function POST(req: NextRequest) {
-  // 1. Authenticate incoming webhook if secret is configured
-  if (PLAY_CONFIG.rtdnSecret) {
-    const url = new URL(req.url)
-    const token = url.searchParams.get('token') || req.headers.get('x-rtdn-secret')
-    if (token !== PLAY_CONFIG.rtdnSecret) {
-      return NextResponse.json({ error: 'Unauthorized notification source' }, { status: 401 })
-    }
-  }
+  const auth = await authenticateRtdn(req.headers.get('authorization'))
+  if (!auth.ok) return apiError(auth.status, auth.code === 'rtdn_not_configured' ? 'Notification endpoint is not configured.' : 'Unauthorized notification source.', auth.code)
 
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON request' }, { status: 400 })
-  }
+  const parsed = await readJson(req)
+  if ('response' in parsed) return parsed.response
+  const body = parsed.body as Record<string, unknown> | null
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return apiError(400, 'Invalid notification', 'invalid_notification')
 
-  // 2. Decode Pub/Sub push message if wrapped
-  let eventPayload = body
+  let event: Record<string, unknown> = body
   let messageId = typeof body.messageId === 'string' ? body.messageId : undefined
-
   if (body.message && typeof body.message === 'object') {
-    const pubSubMsg = body.message as { data?: string; messageId?: string }
-    messageId = pubSubMsg.messageId
-    if (pubSubMsg.data && typeof pubSubMsg.data === 'string') {
-      try {
-        const decoded = Buffer.from(pubSubMsg.data, 'base64').toString('utf8')
-        eventPayload = JSON.parse(decoded)
-      } catch {
-        return NextResponse.json({ error: 'Failed to decode Pub/Sub data payload' }, { status: 400 })
-      }
+    const msg = body.message as { data?: string; messageId?: string }
+    messageId = typeof msg.messageId === 'string' ? msg.messageId : undefined
+    if (typeof msg.data === 'string') {
+      try { event = JSON.parse(Buffer.from(msg.data, 'base64').toString('utf8')) } catch { return apiError(400, 'Invalid notification payload', 'invalid_notification') }
     }
   }
+  if (!event || typeof event !== 'object') return apiError(400, 'Invalid notification payload', 'invalid_notification')
+  if (event.testNotification) return NextResponse.json({ status: 'ok', type: 'testNotification' })
+  if (typeof event.packageName === 'string' && event.packageName !== PLAY_CONFIG.packageName) return NextResponse.json({ status: 'ignored', reason: 'other_package' })
 
-  // 3. Handle Google Play Pub/Sub connectivity test notification
-  if (eventPayload.testNotification) {
-    return NextResponse.json({ status: 'ok', type: 'testNotification' }, { status: 200 })
-  }
-
-  const subNotif = eventPayload.subscriptionNotification as
-    | {
-        version?: string
-        notificationType?: number
-        purchaseToken?: string
-        subscriptionId?: string
-      }
-    | undefined
-
-  if (!subNotif || typeof subNotif.purchaseToken !== 'string') {
-    return NextResponse.json({ error: 'Missing subscriptionNotification or purchaseToken' }, { status: 400 })
-  }
-
-  const purchaseToken = subNotif.purchaseToken.trim()
-  const notificationType = Number(subNotif.notificationType)
-  const eventId = messageId || `${purchaseToken}_${notificationType}_${eventPayload.eventTimeMillis || Date.now()}`
+  const sub = (event.subscriptionNotification ?? null) as { purchaseToken?: unknown; notificationType?: unknown } | null
+  const voided = (event.voidedPurchaseNotification ?? null) as { purchaseToken?: unknown } | null
+  const rawToken = sub?.purchaseToken ?? voided?.purchaseToken
+  if (typeof rawToken !== 'string' || !rawToken.trim() || rawToken.length > 2048) return apiError(400, 'Missing subscriptionNotification or purchaseToken', 'invalid_notification')
+  const purchaseToken = rawToken.trim()
+  const notificationType = Number(sub?.notificationType ?? 0)
+  const eventTime = Number(event.eventTimeMillis) || 0
+  const eventId = (messageId && messageId.slice(0, 200)) || `${purchaseToken.slice(-24)}_${notificationType}_${eventTime}`
 
   await connectDB()
+  const known = await Subscription.findByPurchaseToken(purchaseToken)
+  if (!known) return NextResponse.json({ status: 'ignored', reason: 'Subscription token not found in local tenant records' })
 
-  // 4. Resolve existing subscription
-  const sub = await Subscription.findByPurchaseToken(purchaseToken)
-  if (!sub) {
-    // If not found in our DB, acknowledge successfully so Google does not endlessly retry
-    return NextResponse.json(
-      { status: 'ignored', reason: 'Subscription token not found in local tenant records' },
-      { status: 200 }
-    )
+  // Atomic duplicate guard: only one delivery of a message id proceeds.
+  const claimed = await Subscription.findOneAndUpdate(
+    { _id: known._id, processedEventIds: { $ne: eventId } },
+    { $push: { processedEventIds: { $each: [eventId], $slice: -25 } } },
+    { returnDocument: 'after' },
+  )
+  if (!claimed) return NextResponse.json({ status: 'ok', message: 'Event already processed' })
+
+  const verification = await verifySubscriptionPurchase({ purchaseToken, productId: claimed.productId })
+  if (!verification.verified) {
+    await Subscription.updateOne({ _id: known._id }, { $pull: { processedEventIds: eventId } })     // let the retry do the work
+    console.error('[rtdn] authoritative verification unavailable')
+    return apiError(503, 'Could not verify the subscription with Google Play; please retry.', 'play_verification_unavailable', {}, { 'Retry-After': '30' })
   }
 
-  // 5. Idempotency check: if rawEventId matches, this exact event was already processed
-  if (sub.rawEventId === eventId) {
-    return NextResponse.json({ status: 'ok', message: 'Event already processed' }, { status: 200 })
-  }
-
-  const orgId = sub.orgId
-  const now = new Date()
-
-  switch (notificationType) {
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_RECOVERED:
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED:
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_PURCHASED:
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_RESTARTED: {
-      sub.status = 'active'
-      sub.autoRenewing = true
-      // Extend currentPeriodEnd by 30 days from now or existing end
-      const baseDate = sub.currentPeriodEnd > now ? sub.currentPeriodEnd : now
-      sub.currentPeriodEnd = new Date(baseDate.getTime() + 30 * 86400000)
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-
-      await Organization.updateOne(
-        { orgId },
-        {
-          $set: {
-            plan: 'premium',
-            subscriptionStatus: 'active',
-            currentPeriodEnd: sub.currentPeriodEnd,
-            cancelAtPeriodEnd: false,
-          },
-        }
-      )
-      break
-    }
-
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_CANCELED: {
-      // User canceled auto-renew, access continues until period end
-      sub.status = 'canceled'
-      sub.autoRenewing = false
-      sub.canceledAt = now
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-
-      await Organization.updateOne(
-        { orgId },
-        {
-          $set: {
-            subscriptionStatus: 'canceled',
-            cancelAtPeriodEnd: true,
-          },
-        }
-      )
-      break
-    }
-
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_ON_HOLD:
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_IN_GRACE_PERIOD:
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_PAUSED: {
-      sub.status = notificationType === RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_PAUSED ? 'on_hold' : 'grace_period'
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-
-      await Organization.updateOne(
-        { orgId },
-        {
-          $set: {
-            subscriptionStatus: sub.status,
-          },
-        }
-      )
-      break
-    }
-
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_REVOKED: {
-      // Immediate revocation (refund, chargeback, or administrative revoke)
-      sub.status = 'revoked'
-      sub.currentPeriodEnd = now
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-
-      await Organization.updateOne(
-        { orgId },
-        {
-          $set: {
-            plan: 'free',
-            subscriptionStatus: 'revoked',
-            currentPeriodEnd: now,
-          },
-        }
-      )
-      break
-    }
-
-    case RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_EXPIRED: {
-      // Natural expiration
-      sub.status = 'expired'
-      sub.currentPeriodEnd = now
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-
-      await Organization.updateOne(
-        { orgId },
-        {
-          $set: {
-            plan: 'free',
-            subscriptionStatus: 'expired',
-            currentPeriodEnd: now,
-          },
-        }
-      )
-      break
-    }
-
-    default: {
-      // Known notification without status modification
-      sub.rawEventId = eventId
-      sub.lastVerifiedAt = now
-      await sub.save()
-      break
-    }
-  }
-
-  // Recompute authoritative entitlements
-  const updatedEntitlements = await getOrganizationEntitlements(orgId)
-
-  return NextResponse.json({
-    status: 'ok',
-    notificationType,
-    orgId,
-    plan: updatedEntitlements.plan,
-    subscriptionStatus: sub.status,
-  })
+  const updated = await Subscription.findOneAndUpdate(
+    { _id: known._id },
+    {
+      $set: {
+        status: verification.status || claimed.status,
+        currentPeriodEnd: verification.currentPeriodEnd || claimed.currentPeriodEnd,
+        autoRenewing: verification.autoRenewing ?? claimed.autoRenewing,
+        acknowledgementState: verification.acknowledgementState || claimed.acknowledgementState,
+        ...(verification.orderId ? { orderId: verification.orderId } : {}),
+        ...(verification.status === 'canceled' && !claimed.canceledAt ? { canceledAt: new Date() } : {}),
+        lastVerifiedAt: new Date(),
+        rawEventId: eventId,
+      },
+      ...(eventTime ? { $max: { lastEventTimeMillis: eventTime } } : {}),
+    },
+    { returnDocument: 'after' },
+  )
+  if (!updated) return NextResponse.json({ status: 'ignored', reason: 'subscription_removed' })
+  await applySubscriptionToOrg(updated.orgId, updated)
+  const entitlements = await getOrganizationEntitlements(updated.orgId)
+  return NextResponse.json({ status: 'ok', notificationType, orgId: updated.orgId, plan: entitlements.plan, subscriptionStatus: updated.status })
 }

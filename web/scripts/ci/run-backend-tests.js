@@ -22,7 +22,7 @@ const mongo = process.env.MONGODB_URI || `mongodb://127.0.0.1:27017/${dbName}`
 if (!/^mongodb:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\//.test(mongo)) { console.error('Refusing to run: MONGODB_URI must be a loopback MongoDB.'); process.exit(2) }
 if (!/_test(\?|$)/.test(mongo.split('/').pop())) { console.error('Refusing to run: the database name must end in _test.'); process.exit(2) }
 const port = new URL(process.env.TEST_URL || 'http://localhost:3100').port || '3100'
-const fake = require(path.join(root, 'tests/helpers/fakeProviders.js')).ENV
+const fake = { ...require(path.join(root, 'tests/helpers/fakeProviders.js')).ENV, ...require(path.join(root, 'tests/helpers/rtdnFixture.js')).ENV }   // fake providers + the RTDN (Pub/Sub OIDC) test settings
 const env = {
   ...process.env, ...fake,
   MONGODB_URI: mongo, TEST_URL: `http://localhost:${port}`, NEXT_PUBLIC_APP_URL: `http://localhost:${port}`,

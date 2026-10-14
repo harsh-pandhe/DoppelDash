@@ -96,6 +96,31 @@ function handler(req, res) {
     }
     if (p === '/__mode' && req.method === 'POST') { const b = JSON.parse((await readBody(req)).toString() || '{}'); for (const k of ['gemini', 'ollama']) { if (b[k]) state.mode[k] = b[k]; if (b[k + 'DelayMs'] !== undefined) state.delayMs[k] = b[k + 'DelayMs'] } if (b.receipt) state.receipt = b.receipt; if (b.geminiKey) state.geminiKey = b.geminiKey; if (b.storage) Object.assign(state.storage, b.storage); return json(res, 200, { ok: true }) }
 
+    // ── Google OIDC key set (Pub/Sub push tokens) + Google Play Developer API (subscriptionsv2) + OAuth token endpoint ──
+    if (p === '/__oidc' && req.method === 'POST') { state.oidcJwks = JSON.parse((await readBody(req)).toString() || '{}').keys || []; return json(res, 200, { ok: true }) }
+    if (p === '/oidc/certs') return json(res, 200, { keys: state.oidcJwks || [] })
+    if (p === '/__play-sa' && req.method === 'POST') { state.playSaPublicPem = JSON.parse((await readBody(req)).toString() || '{}').publicPem; return json(res, 200, { ok: true }) }
+    if (p === '/__play' && req.method === 'POST') { const b = JSON.parse((await readBody(req)).toString() || '{}'); state.playSubs = state.playSubs || {}; if (b.token) { if (b.sub === null) delete state.playSubs[b.token]; else state.playSubs[b.token] = b.sub } if (b.mode) state.playMode = b.mode; if (b.reset) { state.playSubs = {}; state.playMode = 'ok'; state.playCalls = [] } return json(res, 200, { ok: true }) }
+    if (p === '/__play-calls') return json(res, 200, { calls: state.playCalls || [] })
+    if (p === '/play/token' && req.method === 'POST') {
+      const form = new URLSearchParams((await readBody(req)).toString()); const assertion = form.get('assertion') || ''; const [h, c, sig] = assertion.split('.')
+      state.playCalls = state.playCalls || []; state.playCalls.push({ kind: 'token' })
+      if (!sig || !state.playSaPublicPem) return json(res, 400, { error: 'invalid_grant' })
+      const ok = crypto.createVerify('RSA-SHA256').update(`${h}.${c}`).verify(state.playSaPublicPem, Buffer.from(sig, 'base64url'))
+      const claim = ok ? JSON.parse(Buffer.from(c, 'base64url').toString()) : null
+      if (!ok || claim.aud !== `${BASE}/play/token` || !/androidpublisher/.test(claim.scope || '') || claim.exp < Date.now() / 1000) return json(res, 400, { error: 'invalid_grant' })
+      return json(res, 200, { access_token: 'fake-play-access-token', expires_in: 3600, token_type: 'Bearer' })
+    }
+    const sv2 = /^\/play\/androidpublisher\/v3\/applications\/([^/]+)\/purchases\/subscriptionsv2\/tokens\/([^/:]+)$/.exec(p)
+    if (sv2) {
+      state.playCalls = state.playCalls || []; state.playCalls.push({ kind: 'get', token: decodeURIComponent(sv2[2]) })
+      if (req.headers.authorization !== 'Bearer fake-play-access-token') return json(res, 401, { error: { message: 'unauthenticated' } })
+      if (state.playMode === 'error500') return json(res, 500, { error: { message: 'backend error' } })
+      const sub = (state.playSubs || {})[decodeURIComponent(sv2[2])]
+      if (!sub) return json(res, 404, { error: { message: 'not found' } })
+      return json(res, 200, { kind: 'androidpublisher#subscriptionPurchaseV2', startTime: sub.startTime || new Date(Date.now() - 86400000).toISOString(), subscriptionState: sub.state, latestOrderId: sub.orderId || 'GPA.0000-0000-0000-00001', acknowledgementState: 'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED', testPurchase: {}, lineItems: sub.noExpiry ? [{ productId: sub.productId }] : [{ productId: sub.productId, expiryTime: sub.expiryTime, ...(sub.autoRenewing === false ? {} : { autoRenewingPlan: {} }) }] })
+    }
+
     // ── Gemini ──
     if (p.startsWith('/gemini/v1beta/models/') && req.method === 'POST') {
       state.calls.gemini++

@@ -52,6 +52,8 @@ const {
   canUseFeature,
   getOrganizationLimit,
 } = jiti(path.resolve(__dirname, '../lib/entitlements/entitlementService.ts'));
+const rtdnFix = require('./helpers/rtdnFixture');
+Object.assign(process.env, rtdnFix.ENV); // RTDN is authenticated (Pub/Sub OIDC): the in-process route needs the same audience/account the server has
 const { PLAY_CONFIG, RTDN_NOTIFICATION_TYPES } = jiti(path.resolve(__dirname, '../lib/billing/playConfig.ts'));
 
 const {
@@ -61,6 +63,7 @@ const {
 } = require('./helpers/testSafety');
 
 let db = null;
+let fakeProv = null;
 let baseline = null;
 
 // Helper to create disposable test tenant
@@ -117,6 +120,8 @@ async function createTestTenant(suffix) {
 }
 
 test.before(async () => {
+  fakeProv = await require('./helpers/fakeProviders').ensureFakeProviders();
+  await rtdnFix.register();
   if (mongoose.connection.readyState !== 1) {
     await mongoose.connect(process.env.MONGODB_URI);
   }
@@ -142,6 +147,7 @@ test.before(async () => {
 });
 
 test.after(async () => {
+  if (fakeProv) await fakeProv.stop();
   // Teardown any remaining foreign test orgs
   const foreignOrgs = await db.collection('organizations').find({
     orgId: { $nin: ['org_doppelmayr', 'doppelmayr'] },
@@ -523,7 +529,7 @@ test('11. duplicate RTDN event is idempotent', async () => {
     // First delivery
     const res1 = await fetch(`${BASE_URL}/api/billing/play/rtdn`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await rtdnFix.authHeaders()) },
       body: JSON.stringify(rtdnPayload),
     });
     assert.equal(res1.status, 200);
@@ -533,7 +539,7 @@ test('11. duplicate RTDN event is idempotent', async () => {
     // Duplicate delivery
     const res2 = await fetch(`${BASE_URL}/api/billing/play/rtdn`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await rtdnFix.authHeaders()) },
       body: JSON.stringify(rtdnPayload),
     });
     assert.equal(res2.status, 200);
@@ -548,7 +554,7 @@ test('12. malformed RTDN cannot grant Premium', async () => {
   // Test missing purchaseToken
   const res1 = await fetch(`${BASE_URL}/api/billing/play/rtdn`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await rtdnFix.authHeaders()) },
     body: JSON.stringify({
       subscriptionNotification: {
         notificationType: RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_RENEWED,
@@ -560,7 +566,7 @@ test('12. malformed RTDN cannot grant Premium', async () => {
   // Test non-existent token (safe ignore)
   const res2 = await fetch(`${BASE_URL}/api/billing/play/rtdn`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await rtdnFix.authHeaders()) },
     body: JSON.stringify({
       subscriptionNotification: {
         notificationType: RTDN_NOTIFICATION_TYPES.SUBSCRIPTION_PURCHASED,
@@ -793,43 +799,27 @@ test('20. Package name mismatch is rejected by verification service', async () =
   assert.ok(result.error.includes('Package name mismatch'));
 });
 
-test('21. Unauthenticated RTDN is rejected when secret is configured', async () => {
+test('21. Unauthenticated RTDN is rejected (Pub/Sub OIDC), and unconfigured authentication fails closed', async () => {
   const { POST: rtdnHandler } = jiti(path.resolve(__dirname, '../app/api/billing/play/rtdn/route.ts'));
   const { NextRequest } = require('next/server');
-  const originalSecret = PLAY_CONFIG.rtdnSecret;
+  const call = (headers, qs = '') => rtdnHandler(new NextRequest(`http://localhost:3000/api/billing/play/rtdn${qs}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify({ testNotification: true }),
+  }));
+  // 1. no credential, 2. a query-string "secret", 3. a token for the wrong audience, 4. a token for another account
+  assert.equal((await call({})).status, 401, 'Must return 401 Unauthorized when no token is presented');
+  assert.equal((await call({}, '?token=wrong_secret')).status, 401, 'Query-string secrets are never accepted');
+  assert.equal((await call(await rtdnFix.authHeaders({ aud: 'https://other.example' }))).status, 401, 'wrong audience');
+  assert.equal((await call(await rtdnFix.authHeaders({ email: 'attacker@evil.example' }))).status, 401, 'wrong service account');
+  // 5. a genuine token
+  assert.equal((await call(await rtdnFix.authHeaders())).status, 200, 'Must return 200 for a valid Pub/Sub OIDC token');
+  // 6. fail closed when the authentication settings are missing
+  const saved = [PLAY_CONFIG.rtdnAudience, PLAY_CONFIG.rtdnPushServiceAccount];
   try {
-    PLAY_CONFIG.rtdnSecret = 'super_secret_rtdn_token_123';
-
-    // 1. Call without token
-    const req1 = new NextRequest('http://localhost:3000/api/billing/play/rtdn', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testNotification: true }),
-    });
-    const res1 = await rtdnHandler(req1);
-    assert.equal(res1.status, 401, 'Must return 401 Unauthorized when secret token is missing');
-
-    // 2. Call with incorrect token
-    const reqBad = new NextRequest('http://localhost:3000/api/billing/play/rtdn?token=wrong_secret', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testNotification: true }),
-    });
-    const resBad = await rtdnHandler(reqBad);
-    assert.equal(resBad.status, 401, 'Must return 401 for incorrect secret token');
-
-    // 3. Call with correct header
-    const reqGood = new NextRequest('http://localhost:3000/api/billing/play/rtdn', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-rtdn-secret': 'super_secret_rtdn_token_123',
-      },
-      body: JSON.stringify({ testNotification: true }),
-    });
-    const resGood = await rtdnHandler(reqGood);
-    assert.equal(resGood.status, 200, 'Must return 200 for authenticated secret header');
+    PLAY_CONFIG.rtdnAudience = '';
+    assert.equal((await call(await rtdnFix.authHeaders())).status, 503, 'Unconfigured authentication must refuse everything');
   } finally {
-    PLAY_CONFIG.rtdnSecret = originalSecret;
+    [PLAY_CONFIG.rtdnAudience, PLAY_CONFIG.rtdnPushServiceAccount] = saved;
   }
 });

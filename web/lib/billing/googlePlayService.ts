@@ -8,6 +8,7 @@
  */
 
 import { PLAY_CONFIG, isValidPlayProduct } from './playConfig'
+import { isProductionLike } from '@/lib/auth/devShortcuts'
 import { SubscriptionStatus, AcknowledgementState, BillingEnvironment } from '@/models/Subscription'
 
 export interface VerifiedPurchaseResult {
@@ -48,7 +49,7 @@ async function getGoogleApiAccessToken(): Promise<string | null> {
     const claim = {
       iss: creds.client_email,
       scope: 'https://www.googleapis.com/auth/androidpublisher',
-      aud: 'https://oauth2.googleapis.com/token',
+      aud: PLAY_CONFIG.oauthTokenUrl,
       exp: now + 3600,
       iat: now,
     }
@@ -63,7 +64,7 @@ async function getGoogleApiAccessToken(): Promise<string | null> {
     const signature = signer.sign(creds.private_key, 'base64url')
     const assertion = `${unsignedToken}.${signature}`
 
-    const res = await fetch('https://oauth2.googleapis.com/token', {
+    const res = await fetch(PLAY_CONFIG.oauthTokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -123,7 +124,7 @@ export async function verifySubscriptionPurchase(params: {
 
     try {
       // Modern Google Play Android Publisher subscriptionsv2 API
-      const v2Url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(
+      const v2Url = `${PLAY_CONFIG.publisherApiBase}/androidpublisher/v3/applications/${encodeURIComponent(
         packageName
       )}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`
 
@@ -148,12 +149,16 @@ export async function verifySubscriptionPurchase(params: {
         }
 
         const lineItem = data.lineItems?.[0]
-        const expiryTime = lineItem?.expiryTime ? new Date(lineItem.expiryTime) : new Date(Date.now() + 30 * 86400000)
+        // Never invent a paid period: a response without an expiry is not an authoritative answer.
+        if (!lineItem?.expiryTime || Number.isNaN(new Date(lineItem.expiryTime).getTime())) {
+          return { verified: false, error: 'Google Play response did not contain a subscription expiry time.' }
+        }
+        const expiryTime = new Date(lineItem.expiryTime)
         const autoRenewing = Boolean(lineItem?.autoRenewingPlan)
         const isAcknowledged = data.acknowledgementState === 'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED'
 
         if (status !== 'pending' && !isAcknowledged) {
-          const ackUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(
+          const ackUrl = `${PLAY_CONFIG.publisherApiBase}/androidpublisher/v3/applications/${encodeURIComponent(
             packageName
           )}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`
           await fetch(ackUrl, {
@@ -179,7 +184,7 @@ export async function verifySubscriptionPurchase(params: {
       }
 
       // Fallback to classic v1 subscription endpoint
-      const v1Url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(
+      const v1Url = `${PLAY_CONFIG.publisherApiBase}/androidpublisher/v3/applications/${encodeURIComponent(
         packageName
       )}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}`
 
@@ -242,7 +247,7 @@ export async function verifySubscriptionPurchase(params: {
 
   // 4. Boundary behavior when real credentials are not present (Section 12 of spec):
   // Never fabricate live credentials. In production, fail safely.
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionLike()) {
     return {
       verified: false,
       error: 'Google Play Developer API service account credentials are not configured on this server.',
