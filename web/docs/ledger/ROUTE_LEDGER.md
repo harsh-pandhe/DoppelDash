@@ -146,7 +146,7 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/travel/[id]/expense` | POST | session, tenant-scoped |  | 1 | 1 | 8 |
 | `/api/travel/[id]/itinerary/[file]` | GET | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 8 |
 | `/api/uploads/sign` | POST | session, rate-limit, tenant-scoped |  | 1 | 1 | 8 |
-| `/api/user/account` | DELETE | session, tenant-scoped |  | — | 1 | 1 |
+| `/api/user/account` | DELETE | session, tenant-scoped |  | — | 1 | 2 |
 | `/api/user/email-config` | GET, POST, DELETE | session, tenant-scoped |  | — | 1 | **none** |
 | `/api/user/email-config/test` | POST | session, tenant-scoped |  | — | 1 | **none** |
 | `/api/webhooks/outlook` | GET, POST | webhook/service-auth, tenant-scoped |  | — | **none** | **none** |

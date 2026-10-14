@@ -286,6 +286,7 @@ test('F6a. dev OTP shortcut is refused on deploy platforms and in production, ac
   const snapshot = { ...process.env }
   const attempt = async env => {
     Object.assign(process.env, env)
+    process.env.DD_DEPLOY_CONTEXT = 'staging'   // the simulated platform is a DECLARED deployment (undeclared hosted deploys cannot reach the DB - tests/preview_safety.test.js); this test is about the OTP shortcut
     for (const k of ['NETLIFY', 'VERCEL', 'AWS_LAMBDA_FUNCTION_NAME']) if (!(k in env)) delete process.env[k]
     await generateOTP(org.employee.id)
     const result = await verifyOTP(org.employee.id, '112022')
@@ -310,6 +311,7 @@ test('F6b. password-reset links and OTP console logging never appear outside loc
   const snapshot = { ...process.env }
   const call = async env => {
     Object.assign(process.env, env)
+    process.env.DD_DEPLOY_CONTEXT = 'staging'   // declared deployment (see F6a); the subject here is the reset-URL / OTP-log gating
     for (const k of ['NETLIFY', 'VERCEL']) if (!(k in env)) delete process.env[k]
     const res = await route.POST(new Request('http://x/api/auth/password-reset/request', {
       method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': kit.freshIp() },

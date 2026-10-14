@@ -2312,7 +2312,8 @@
     "lib/data/repositories/auth_repository.dart"
    ],
    "tests": [
-    "tests/account_deletion.test.js"
+    "tests/account_deletion.test.js",
+    "tests/account_deletion_integrity.test.js"
    ]
   },
   {

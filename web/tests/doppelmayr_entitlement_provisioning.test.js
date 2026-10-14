@@ -57,7 +57,7 @@ test('D4. re-running is safe: nothing is written, no second audit entry, updated
 
 test('D5. a missing organisation is never created; other organisations — including look-alikes by name or slug — are untouched and get NO web access', async () => {
   const before = await Org.countDocuments({}); const r = run(applyArgs('org_does_not_exist_zzz')); assert.notEqual(r.status, 0); assert.match(r.stderr, /does not exist/); assert.equal(await Org.countDocuments({}), before)
-  const target = await legacyOrg(); const lookalike = await legacyOrg(); await Org.updateOne({ orgId: lookalike.orgId }, { $set: { name: 'Doppelmayr India', slug: 'doppelmayr' } })
+  const target = await legacyOrg(); const lookalike = await legacyOrg(); await Org.updateOne({ orgId: lookalike.orgId }, { $set: { name: 'Doppelmayr India', slug: `doppelmayr-india-${Date.now().toString(36)}` } })
   assert.equal(run(applyArgs(target.orgId)).status, 0)
   const l = await Org.findOne({ orgId: lookalike.orgId }).lean(); assert.equal(l.plan, 'free'); assert.equal(l.webEnabled, false); assert.equal(l.lifetimeGrant, false)
   const e = await ent.getOrganizationEntitlements(lookalike.orgId); assert.equal(e.webEnabled, false); assert.equal(e.plan, 'free'); assert.equal(await Audit.countDocuments({ orgId: lookalike.orgId, action: 'organization.entitlement_provisioned' }), 0)

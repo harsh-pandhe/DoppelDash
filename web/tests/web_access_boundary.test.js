@@ -169,8 +169,9 @@ test('D1. Doppelmayr resolves from persisted fields; a generic org with the same
 test('D2. no organisation-id / slug special case exists in runtime code', () => {
   const root = path.resolve(__dirname, '..')
   // Data provisioning only (never imported by request-time code — asserted below).
-  const allowed = new Set(['models/Organization.ts', 'lib/provisioning/doppelmayrBrand.ts', 'app/api/dev/seed/route.ts', 'app/api/dev/migrate/route.ts'])
+  const allowed = new Set(['models/Organization.ts', 'lib/provisioning/doppelmayrBrand.ts', 'lib/provisioning/doppelmayrEntitlement.ts', 'app/api/dev/seed/route.ts', 'app/api/dev/migrate/route.ts'])
   const importers = []
+  const entitlementImporters = []
   const offenders = []
   const walk = dir => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -181,6 +182,7 @@ test('D2. no organisation-id / slug special case exists in runtime code', () => 
         const rel = path.relative(root, full)
         const src = fs.readFileSync(full, 'utf8')
         if (/lib\/provisioning\/doppelmayrBrand/.test(src)) importers.push(rel)
+        if (/lib\/provisioning\/doppelmayrEntitlement/.test(src)) entitlementImporters.push(rel)
         if (allowed.has(rel)) continue
         if (/org_doppelmayr/.test(src) || /slug\s*[!=]==?\s*['"]doppelmayr/.test(src) || /orgId\s*[!=]==?\s*['"]org_/.test(src)) offenders.push(rel)
       }
@@ -190,6 +192,7 @@ test('D2. no organisation-id / slug special case exists in runtime code', () => 
   walk // eslint no-unused guard
   assert.deepEqual(offenders, [], `runtime code must not special-case an organisation: ${offenders.join(', ')}`)
   assert.deepEqual(importers.sort(), ['app/api/dev/migrate/route.ts'], 'only the secret-gated migrate step may import the Doppelmayr provisioning')
+  assert.deepEqual(entitlementImporters, [], 'the entitlement provisioning module is operator-script only: no request-time code may import it')
   assert.equal(fs.existsSync(path.join(root, 'middleware.ts')) && /org_doppelmayr/.test(fs.readFileSync(path.join(root, 'middleware.ts'), 'utf8')), false)
 })
 
