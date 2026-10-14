@@ -23,15 +23,17 @@ const col = n => mongoose.connection.db.collection(n)
 // every collection that holds tenant data, with the minimal document that identifies the tenant
 const TENANT = ['expenses', 'travelrequests', 'leaves', 'leavebalances', 'contacts', 'scannedcards', 'campaignlogs', 'announcements', 'publicholidays', 'shareddashboards', 'invitations', 'inboxmessages', 'orgmailconfigs', 'outlooktokens', 'syncstates', 'usagecounters', 'subscriptions', 'orgsettings', 'receiptuploads']
 let providers
+const createdUsers = []
 test.before(async () => { providers = await fake.ensureFakeProviders(); if (mongoose.connection.readyState !== 1) await mongoose.connect(process.env.MONGODB_URI) })
-test.after(async () => { for (const c of TENANT) await col(c).deleteMany({ orgId: /^org_delint_/ }); await col('auditlogs').deleteMany({ orgId: /^org_delint_/ }); await mongoose.disconnect(); await providers.stop() })
+test.after(async () => { for (const c of TENANT) await col(c).deleteMany({ orgId: /^org_delint_/ }); await col('auditlogs').deleteMany({ orgId: /^org_delint_/ }); await col('organizations').deleteMany({ orgId: /^org_delint_/ }); await col('users').deleteMany({ orgId: /^org_delint_/ }); for (const c of ['maildrafts', 'outlooktokens', 'useremailconfigs', 'passkeycredentials']) await col(c).deleteMany({ orgId: /^org_delint_/ }); await col('refreshtokens').deleteMany({ userId: { $in: createdUsers } }); await mongoose.disconnect(); await providers.stop() })
 test.beforeEach(async () => { await fake.control.reset() })
 
 async function tenant({ lifetime = false, members = 0 } = {}) {
   const orgId = `org_delint_${crypto.randomBytes(5).toString('hex')}`
   const owner = await User.create({ email: `${orgId}-o@example.com`, passwordHash: 'x', firstName: 'Own', lastName: 'Er', role: 'admin', orgId, isActive: true })
   await Organization.create({ orgId, name: 'T ' + orgId, slug: orgId.replace(/_/g, '-'), ownerId: String(owner._id), lifetimeGrant: lifetime })
-  const staff = []; for (let i = 0; i < members; i++) staff.push(await User.create({ email: `${orgId}-m${i}@example.com`, passwordHash: 'x', firstName: 'Mem', lastName: 'Ber', role: 'employee', orgId, isActive: true }))
+  createdUsers.push(String(owner._id))
+  const staff = []; for (let i = 0; i < members; i++) staff.push(await User.create({ email: `${orgId}-m${i}@example.com`, passwordHash: 'x', firstName: 'Mem', lastName: 'Ber', role: 'employee', orgId, isActive: true })); for (const m of staff) createdUsers.push(String(m._id))
   return { orgId, owner, staff, ownerToken: await signToken(owner.toPublic()) }
 }
 async function seed(t, withBlob = true) {
