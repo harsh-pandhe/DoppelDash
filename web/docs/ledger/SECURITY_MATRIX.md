@@ -9,10 +9,10 @@
 - **Public Handlers**: 18 (authentication, invitations, shared dashboard, support chat, public assets)
 - **Session-Authenticated Handlers**: 117
 - **Service-Authenticated Handlers**: 15 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
-- **Handlers with Test Coverage**: 91
-- **Handlers with Coverage Gaps**: 59
+- **Handlers with Test Coverage**: 95
+- **Handlers with Coverage Gaps**: 55
 - **P0 Launch Blockers**: 1 (RTDN Pub/Sub OIDC, Account Deletion Integrity)
-- **P1 High-Risk Gaps**: 21 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
+- **P1 High-Risk Gaps**: 17 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
 
 ## High-Risk Group Analysis (Batch 1)
 
@@ -120,7 +120,7 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/analytics` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +2 | `VERIFIED_FAKE` |
+| **GET** | `/api/analytics` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/analytics_share_security.test.js` +3 | `VERIFIED_FAKE` |
 | **GET** | `/api/analytics/drill` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/analytics/software` | session | session_jwt (user.orgId) | admin | none | `tests/batch_b.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/reports` | session | session_jwt (user.orgId) | admin | none | **NONE** | `GAPS_FOUND` |
@@ -150,10 +150,10 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/analytics/share` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/analytics/share` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **DELETE** | `/api/analytics/share/[token]` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **GET** | `/api/analytics/shared/[token]` | public | lookup_token (SharedDashboard.orgId) | none | none | **NONE** | `GAPS_FOUND` |
+| **GET** | `/api/analytics/share` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/analytics_share_security.test.js` | `VERIFIED_FAKE` |
+| **POST** | `/api/analytics/share` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/analytics_share_security.test.js` | `VERIFIED_FAKE` |
+| **DELETE** | `/api/analytics/share/[token]` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/analytics_share_security.test.js` | `VERIFIED_FAKE` |
+| **GET** | `/api/analytics/shared/[token]` | public | lookup_token (SharedDashboard.orgId) | none | none | `tests/analytics_share_security.test.js` | `VERIFIED_FAKE` |
 
 ### 3. Outlook Webhooks & OAuth / Token Handling (4 handlers)
 
@@ -264,10 +264,10 @@
 | **PATCH** | `/api/admin/users/[userId]` | `app/api/admin/users/[userId]/route.ts` | session | admin | `GAPS_FOUND` |
 | **GET** | `/api/analytics` | `app/api/analytics/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **GET** | `/api/analytics/drill` | `app/api/analytics/drill/route.ts` | session | admin | `VERIFIED_FAKE` |
-| **GET** | `/api/analytics/share` | `app/api/analytics/share/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **POST** | `/api/analytics/share` | `app/api/analytics/share/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **DELETE** | `/api/analytics/share/[token]` | `app/api/analytics/share/[token]/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **GET** | `/api/analytics/shared/[token]` | `app/api/analytics/shared/[token]/route.ts` | public | none | `GAPS_FOUND` |
+| **GET** | `/api/analytics/share` | `app/api/analytics/share/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **POST** | `/api/analytics/share` | `app/api/analytics/share/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **DELETE** | `/api/analytics/share/[token]` | `app/api/analytics/share/[token]/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **GET** | `/api/analytics/shared/[token]` | `app/api/analytics/shared/[token]/route.ts` | public | none | `VERIFIED_FAKE` |
 | **GET** | `/api/analytics/software` | `app/api/analytics/software/route.ts` | session | admin | `VERIFIED_FAKE` |
 | **GET** | `/api/announcements` | `app/api/announcements/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **POST** | `/api/announcements` | `app/api/announcements/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |

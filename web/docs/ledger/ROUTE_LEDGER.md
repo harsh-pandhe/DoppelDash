@@ -67,11 +67,11 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/admin/settings` | GET, POST, PUT, PATCH | session, role-check, tenant-scoped |  | — | **none** | 1 |
 | `/api/admin/users` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
 | `/api/admin/users/[userId]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
-| `/api/analytics` | GET | session, role-check, tenant-scoped |  | 2 | 1 | 3 |
+| `/api/analytics` | GET | session, role-check, tenant-scoped |  | 2 | 1 | 4 |
 | `/api/analytics/drill` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
-| `/api/analytics/share` | GET, POST | session, role-check, tenant-scoped |  | 1 | **none** | **none** |
-| `/api/analytics/share/[token]` | DELETE | session, tenant-scoped |  | 1 | **none** | **none** |
-| `/api/analytics/shared/[token]` | GET | tenant-scoped | **yes** | 1 | **none** | **none** |
+| `/api/analytics/share` | GET, POST | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/analytics/share/[token]` | DELETE | session, rate-limit, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/analytics/shared/[token]` | GET | rate-limit, tenant-scoped | **yes** | 1 | **none** | 1 |
 | `/api/analytics/software` | GET | session, role-check, tenant-scoped |  | — | **none** | 1 |
 | `/api/announcements` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 4 |
 | `/api/announcements/[id]` | PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 4 |

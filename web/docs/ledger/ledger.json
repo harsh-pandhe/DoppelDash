@@ -460,6 +460,7 @@
     "lib/data/repositories/analytics_repository.dart"
    ],
    "tests": [
+    "tests/analytics_share_security.test.js",
     "tests/auth_foundation.test.js",
     "tests/batch_b.test.js",
     "tests/batch_i.test.js"
@@ -495,6 +496,7 @@
    "guards": [
     "session",
     "role-check",
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
@@ -502,7 +504,9 @@
     "app/(app)/analytics/page.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/analytics_share_security.test.js"
+   ]
   },
   {
    "url": "/api/analytics/share/[token]",
@@ -512,6 +516,7 @@
    ],
    "guards": [
     "session",
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
@@ -519,7 +524,9 @@
     "app/(app)/analytics/page.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/analytics_share_security.test.js"
+   ]
   },
   {
    "url": "/api/analytics/shared/[token]",
@@ -528,6 +535,7 @@
     "GET"
    ],
    "guards": [
+    "rate-limit",
     "tenant-scoped"
    ],
    "unauthenticatedByCode": true,
@@ -535,7 +543,9 @@
     "app/shared/[token]/page.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/analytics_share_security.test.js"
+   ]
   },
   {
    "url": "/api/analytics/software",

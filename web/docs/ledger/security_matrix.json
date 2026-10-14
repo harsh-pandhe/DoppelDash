@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T17:32:40.460Z",
+    "generatedAt": "2026-10-14T18:12:06.313Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,
@@ -8,10 +8,10 @@
       "publicHandlers": 18,
       "sessionHandlers": 117,
       "serviceHandlers": 15,
-      "handlersWithTests": 91,
-      "handlersWithGaps": 59,
+      "handlersWithTests": 95,
+      "handlersWithGaps": 55,
       "p0Blockers": 1,
-      "p1HighRiskGaps": 21
+      "p1HighRiskGaps": 17
     }
   },
   "handlers": [
@@ -377,6 +377,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/analytics_share_security.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_b.test.js",
         "tests/batch_i.test.js"
@@ -414,17 +415,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`share-list:${userId}`, 60, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/analytics/share",
-        "Session test: 401 when unauthenticated",
-        "Positive test: create token with expiry (24h, 7d, 30d, never)",
-        "Negative test: empty layout snapshot rejected (400)"
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/analytics/share",
@@ -436,17 +434,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`share-list:${userId}`, 60, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/analytics/share",
-        "Session test: 401 when unauthenticated",
-        "Positive test: create token with expiry (24h, 7d, 30d, never)",
-        "Negative test: empty layout snapshot rejected (400)"
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/analytics/share/[token]",
@@ -458,16 +453,14 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`share-revoke:${userId}`, 30, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/analytics/share/[token]",
-        "Revocation test: owner deletes token -> returns 200 ok",
-        "Cross-tenant test: user from Org B cannot delete Org A token (404)"
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/analytics/shared/[token]",
@@ -479,18 +472,14 @@
       "ownerSource": "lookup_token (share.ownerId)",
       "requiredRole": "none",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`shared-analytics:${ip}`, 60, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/analytics/shared/[token]",
-        "Positive test: resolve valid token and return read-only aggregated analytics",
-        "Negative test: 404 on invalid/unknown token",
-        "Negative test: 410 Gone on expired token",
-        "Negative test: cross-tenant isolation (owner Org A cannot leak Org B)"
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/analytics/software",

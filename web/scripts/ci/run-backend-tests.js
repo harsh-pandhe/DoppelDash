@@ -55,7 +55,8 @@ async function main() {
     await waitForServer()
     const seed = await fetch(`${env.TEST_URL}/api/dev/seed`, { method: 'POST', headers: { 'x-seed-secret': env.DEV_SEED_SECRET } })
     if (!seed.ok) throw new Error(`seed failed: HTTP ${seed.status}`)
-    const files = fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.js')).sort()
+    const filter = process.env.TEST_FILTER
+    const files = fs.readdirSync(path.join(root, 'tests')).filter(f => f.endsWith('.test.js') && (!filter || f.includes(filter))).sort()
     const ordered = [...files.filter(f => !f.startsWith('z_final')), ...files.filter(f => f.startsWith('z_final'))]   // the log scan is ALWAYS last
     for (const f of ordered) {
       const t0 = Date.now()
@@ -72,7 +73,7 @@ async function main() {
   const sum = k => results.reduce((a, r) => a + (r[k] || 0), 0)
   const total = { files: results.length, tests: sum('tests'), pass: sum('pass'), fail: sum('fail'), skipped: sum('skipped') }
   console.log(`\nTOTAL files=${total.files} tests=${total.tests} pass=${total.pass} fail=${total.fail} skipped=${total.skipped}   (baseline files=${baseline.files} tests=${baseline.tests} skipped=${baseline.skipped})`)
-  if (total.files < baseline.files || total.tests < baseline.tests) { console.error('Fewer files/tests than the baseline — coverage regressed.'); failed = true }
+  if (!process.env.TEST_FILTER && (total.files < baseline.files || total.tests < baseline.tests)) { console.error('Fewer files/tests than the baseline — coverage regressed.'); failed = true }
   if (total.skipped > baseline.skipped) { console.error('Skipped tests exceed the baseline.'); failed = true }
   fs.writeFileSync(path.join(outDir, 'summary.json'), JSON.stringify({ total, results }, null, 2))
   process.exit(failed ? 1 : 0)
