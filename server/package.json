@@ -4,9 +4,10 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node -e \"console.error('server/ is the RETIRED Express prototype. The only backend is web/ (Next.js API routes). See docs/ARCHITECTURE_V1.md.');process.exit(1)\"",
+    "dev": "node -e \"console.error('server/ is the RETIRED Express prototype. The only backend is web/ (Next.js API routes). See docs/ARCHITECTURE_V1.md.');process.exit(1)\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:legacy": "node src/server.js"
   },
   "keywords": [],
   "author": "",

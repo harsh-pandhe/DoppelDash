@@ -754,10 +754,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/entitlement_hardening.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
     "tests/mail_architecture.test.js",
-    "tests/passkey_totp_concurrency.test.js",
-    "tests/passkey_totp_security.test.js"
+    "tests/passkey_totp_concurrency.test.js"
    ]
   },
   {
@@ -812,9 +812,9 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/entitlement_hardening.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/invitation_token_hygiene.test.js",
-    "tests/passkey_totp_security.test.js"
+    "tests/invitation_token_hygiene.test.js"
    ]
   },
   {
@@ -1132,10 +1132,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/entitlement_hardening.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
     "tests/passkey_totp_concurrency.test.js",
-    "tests/passkey_totp_security.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/passkey_totp_security.test.js"
    ]
   },
   {
@@ -1581,6 +1581,7 @@
    "tests": [
     "tests/batch_k.test.js",
     "tests/doppelmayr_brand_provisioning.test.js",
+    "tests/entitlement_hardening.test.js",
     "tests/web_access_boundary.test.js",
     "tests/z_final_log_secret_scan.test.js"
    ]

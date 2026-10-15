@@ -85,12 +85,15 @@ export async function getOrganizationEntitlements(orgId: string): Promise<Organi
     plan = 'free'
     source = (org?.entitlementSource as EntitlementSource) || 'subscription'
     resolvedSubStatus = org.subscriptionStatus as SubscriptionStatus
-  } else if (org?.plan === 'premium') {
+  } else if (org?.subscriptionStatus === 'grace_period' && isPeriodActive && org?.plan === 'premium') {
+    // Google's payment grace period keeps access until the period (or grace) ends
     plan = 'premium'
     source = (org?.entitlementSource as EntitlementSource) || 'subscription'
   } else {
+    // No verified subscription (none / pending / past_due / on_hold) and no lifetime grant: a stored `plan: 'premium'` alone is NOT
+    // an entitlement - it could only be stale or hand-edited. Premium comes from a verified subscription state or the grant.
     plan = 'free'
-    source = 'none'
+    source = org?.subscriptionStatus && org.subscriptionStatus !== 'none' ? ((org?.entitlementSource as EntitlementSource) || 'subscription') : 'none'
     lifetime = false
   }
 

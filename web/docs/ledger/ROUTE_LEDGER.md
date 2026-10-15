@@ -116,7 +116,7 @@ Counts: **44** Web pages · **92** API route files / **151** methods · **33** A
 | `/api/cron/receipts-cleanup` | GET, POST, PUT, PATCH, DELETE | cron-secret |  | — | **none** | 2 |
 | `/api/dev/migrate` | POST | dev-secret, role-check, webhook/service-auth, tenant-scoped |  | — | **none** | 4 |
 | `/api/dev/reset-to-admin` | POST | dev-secret, webhook/service-auth |  | — | **none** | 1 |
-| `/api/dev/seed` | POST | dev-secret, role-check, webhook/service-auth, tenant-scoped |  | 1 | **none** | 4 |
+| `/api/dev/seed` | POST | dev-secret, role-check, webhook/service-auth, tenant-scoped |  | 1 | **none** | 5 |
 | `/api/employees/[id]` | GET, PATCH | session, role-check, tenant-scoped |  | 6 | 1 | 6 |
 | `/api/employees/directory` | GET | session, role-check, tenant-scoped |  | 3 | 1 | 1 |
 | `/api/employees/me` | GET, PATCH | session, role-check, tenant-scoped |  | 6 | 1 | 5 |

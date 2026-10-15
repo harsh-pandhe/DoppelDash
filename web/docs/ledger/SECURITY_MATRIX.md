@@ -24,7 +24,7 @@
 | **HEAD** | `/api/auth/invitations/[token]` | public | none | none | none | **NONE** | `GAPS_FOUND` |
 | **POST** | `/api/auth/invitations/accept` | public | none | none | webEnabled | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/invitations/verify` | public | none | none | none | `tests/batch_f.test.js` +2 | `VERIFIED_FAKE` |
-| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +11 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/login` | public | none | none | none | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/logout` | public | none | none | none | `tests/batch_h.test.js` +6 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/auth/passkey/credentials` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_security.test.js` | `VERIFIED_FAKE` |
@@ -36,14 +36,14 @@
 | **POST** | `/api/auth/password-reset/confirm` | public | lookup_token (User by email/token) | none | none | `tests/auth_foundation.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/password-reset/request` | public | lookup_token (User by email/token) | none | none | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/refresh` | public | none | none | none | `tests/auth_foundation.test.js` +2 | `VERIFIED_FAKE` |
-| **POST** | `/api/auth/register` | public | none | none | webEnabled + plan:premium | `tests/auth_me_contract.test.js` +14 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/register` | public | none | none | webEnabled + plan:premium | `tests/auth_me_contract.test.js` +15 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/send-otp` | public | none | none | none | `tests/secret_exposure.test.js` | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/setup` | service | service_context | none | none | `tests/batch_k.test.js` | `VERIFIED_FAKE` |
 | **DELETE** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_concurrency.test.js` +1 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_concurrency.test.js` +1 | `VERIFIED_FAKE` |
 | **PUT** | `/api/auth/totp/setup` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/passkey_totp_concurrency.test.js` +1 | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/tour-seen` | session | session_jwt (unscoped / user-only) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +9 | `VERIFIED_FAKE` |
+| **POST** | `/api/auth/verify-otp` | public | none | none | webEnabled + plan:premium | `tests/auth_foundation.test.js` +10 | `VERIFIED_FAKE` |
 
 ### 10. Mail & Inbox (8 handlers)
 
@@ -131,7 +131,7 @@
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
 | **POST** | `/api/auth/change-password` | session | session_jwt (unscoped / user-only) | any_authenticated | none | `tests/auth_foundation.test.js` +4 | `VERIFIED_FAKE` |
-| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +13 | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +14 | `VERIFIED_FAKE` |
 | **GET** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **POST** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +7 | `VERIFIED_FAKE` |
@@ -185,7 +185,7 @@
 | **PUT** | `/api/cron/receipts-cleanup` | service | service_global | none | none | `tests/receipt_cleanup.test.js` +1 | `VERIFIED_FAKE` |
 | **POST** | `/api/dev/migrate` | service | service_context | none | none | `tests/batch_k.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/dev/reset-to-admin` | service | service_global | none | none | `tests/batch_k.test.js` | `VERIFIED_FAKE` |
-| **POST** | `/api/dev/seed` | service | service_context | none | none | `tests/batch_k.test.js` +3 | `VERIFIED_FAKE` |
+| **POST** | `/api/dev/seed` | service | service_context | none | none | `tests/batch_k.test.js` +4 | `VERIFIED_FAKE` |
 | **POST** | `/api/support/chat` | public | none | none | none | `tests/support_chat_security.test.js` | `VERIFIED_FAKE` |
 
 ### 6. Billing, RTDN, Entitlements & Account Deletion (3 handlers)
