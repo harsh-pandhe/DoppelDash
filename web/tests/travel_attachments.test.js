@@ -49,7 +49,13 @@ const created = async (k, docs, extra = {}, via) => { const r = await post(k, tr
 const row = pid => db.collection('receiptuploads').findOne({ publicId: pid })
 const dbTrip = id => db.collection('travelrequests').findOne({ _id: oid(id) })
 const trips = f => db.collection('travelrequests').countDocuments(f)
-const audits = (id, action) => db.collection('auditlogs').find({ targetId: String(id), action }).toArray()
+// Audit rows are written fire-and-forget after the response (CI failure on 3069026d: the row had not landed yet). Wait for the first row, then settle briefly so a DUPLICATE would also show.
+const audits = async (id, action) => {
+  const find = () => db.collection('auditlogs').find({ targetId: String(id), action }).toArray()
+  for (let i = 0; i < 60 && !(await find()).length; i++) await new Promise(r => setTimeout(r, 50))
+  await new Promise(r => setTimeout(r, 150))
+  return find()
+}
 const stored = async pid => (await fake.control.state()).files.some(f => f.startsWith(pid + '.'))
 const NO_INTERNALS = /cld:|doppeldash\/|testcloud|127\.0\.0\.1|signature|api_key|authenticated\/|stack|mongoose|E11000|MongoServer/i
 const bad = async (k, docs, field, label, status = 400) => { const before = await trips({}); const r = await post(k, trip({ itineraryDocs: docs })); assert.equal(r.status, status, `${label}: ${r.text}`); if (field) assert.ok((r.json.fields || []).includes(field), `${label}: ${JSON.stringify(r.json)}`); assert.doesNotMatch(r.text, NO_INTERNALS, label + ' leaks internals'); assert.equal(await trips({}), before, label + ': nothing created'); return r }

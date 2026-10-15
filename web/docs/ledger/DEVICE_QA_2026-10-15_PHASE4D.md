@@ -38,3 +38,6 @@ Web 67 files / 922 tests pass locally (baseline 918 → 922: +P5, P6, P7, P8); `
 
 ## Known release blockers (unchanged by this phase)
 Netlify deployment / environment isolation and deployment provenance; real SMTP + mailbox tests; isolated Cloudinary private storage and document streaming (real provider); Google Play Billing / RTDN verification; actual scheduled-job configuration and idempotency; owner-approved legacy medical-document inventory/migration; retention decisions D-02 (account deletion) and D-03 (paid claims); backup/restore, rollback, staging smoke tests and release sign-off. Not run in this phase: the Android PDF viewer (not implemented), a real phone browser, device-driven medical-document denial.
+
+## CI note (append)
+Web CI [run 38766436480](https://github.com/harsh-pandhe/DoppelDash/actions/runs/38766436480) on `3069026d` **failed one test**: `travel_attachments` E3 (`0 !== 1` on the `travel.attachments_added` audit row). Not related to this phase's changes: the route writes that audit row fire-and-forget after responding (`writeAudit` is not awaited) and the test read it with no wait. The test helper now waits for the first row and settles before reading; 3/3 isolated runs pass. No application change. Other tests that read fire-and-forget audit rows without waiting may be similarly timing-sensitive; they were not audited.
