@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { generateOTP, sendOTP, verifyPreAuthToken } from '@/lib/auth'
@@ -8,8 +9,10 @@ import { rateLimit } from '@/lib/ratelimit'
 export async function POST(req: NextRequest) {
   const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   let body: { preAuthToken?: unknown } = {}
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
   const userId = typeof body.preAuthToken === 'string' && body.preAuthToken ? await verifyPreAuthToken(body.preAuthToken) : null
   if (!userId) return NextResponse.json({ error: 'Session expired — sign in again' }, { status: 401 })

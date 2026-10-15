@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import MailDraft, { IMailRecipient } from '@/models/MailDraft'
 import { getUser } from '@/lib/auth'
@@ -30,7 +31,8 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const body = await req.json() as { subject?: string; bodyHtml?: string; recipients?: IMailRecipient[] }
+  const body = await readJsonObject<{ subject?: string; bodyHtml?: string; recipients?: IMailRecipient[] }>(req)
+  if (!body) return badBody()
   const draft = await MailDraft.create({
     ownerId:    userId,
     orgId,

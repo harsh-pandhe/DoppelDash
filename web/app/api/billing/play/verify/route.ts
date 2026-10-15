@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { applySubscriptionToOrg } from '@/lib/billing/subscriptionState'
 import { connectDB } from '@/lib/db'
 import { getUser } from '@/lib/auth'
@@ -33,10 +34,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
 
   const purchaseToken = typeof body.purchaseToken === 'string' ? body.purchaseToken.trim() : ''

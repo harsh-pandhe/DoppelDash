@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { getUser, COOKIE_NAME, COOKIE_OPTS, revokeAllMobileRefreshTokens } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -13,10 +14,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: Record<string, unknown> = {}
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
 
   const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : ''

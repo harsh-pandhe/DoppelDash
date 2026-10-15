@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sanitize } from '@/lib/sanitize'
@@ -34,7 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     ? { _id: params.id, orgId }
     : { _id: params.id, orgId, createdBy: userId }
 
-  const body = sanitize(await req.json()) as Record<string, unknown>
+  const rawBody = await readJsonObject(req)
+  if (!rawBody) return badBody()
+  const body = sanitize(rawBody) as Record<string, unknown>
 
   // timeline entry push
   if (body.timelineEntry) {
@@ -67,7 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     throw err
   }
   if (!contact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  writeAudit({
+  await writeAudit({
     action: 'contact_updated',
     performedBy: userId,
     performedByName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || userId,
@@ -91,7 +94,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const deleted = await Contact.findOneAndDelete(filter)
   if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  writeAudit({
+  await writeAudit({
     action: 'contact_deleted',
     performedBy: userId,
     performedByName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || userId,

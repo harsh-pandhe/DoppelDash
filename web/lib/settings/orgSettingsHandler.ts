@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import OrgSettings from '@/models/OrgSettings'
 import Organization from '@/models/Organization'
@@ -67,12 +68,8 @@ export async function handleMutateOrgSettings(req: NextRequest) {
 
   await connectDB()
 
-  let body: Record<string, unknown> = {}
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
+  const body = await readJsonObject(req)
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
   // Filter strictly against allowed fields; orgId cannot be supplied by client
   const payload: Record<string, unknown> = { ...pick(body as Record<string, string>, ORG_SETTINGS_FIELDS) }

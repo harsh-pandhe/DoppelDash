@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
   const result = await passkeyRegistrationVerify(userId, response as RegistrationResponseJSON, nick, orgId)
   if (!result.ok) return NextResponse.json({ error: result.reason }, { status: 400 })
 
-  writeAudit({
+  await writeAudit({
     action: 'user.passkey_added', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: { nickname: nick },

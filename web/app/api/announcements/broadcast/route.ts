@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
@@ -13,7 +14,9 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { announcementId, targetRoles } = await req.json()
+  const parsedBody = await readJsonObject(req)
+  if (!parsedBody) return badBody()
+  const { announcementId, targetRoles } = parsedBody
   if (!announcementId) return NextResponse.json({ error: 'announcementId required' }, { status: 400 })
   if (!mongoose.isValidObjectId(announcementId)) return NextResponse.json({ error: 'Invalid announcementId' }, { status: 400 })
 

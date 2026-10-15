@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser, devOnly } from '@/lib/auth'
 import { INVITE_LIMITS } from '@/lib/auth/limits'
@@ -52,12 +53,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  let body: Record<string, unknown> = {}
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
+  const body = await readJsonObject(req)
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
   const email = typeof body.email === 'string' ? body.email.trim() : ''
   const role = typeof body.role === 'string' ? body.role.trim() : 'employee'

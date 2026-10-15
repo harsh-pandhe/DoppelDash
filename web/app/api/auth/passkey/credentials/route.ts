@@ -71,7 +71,7 @@ export async function DELETE(req: NextRequest) {
   }
   if (!deleted) return NextResponse.json({ error: 'Passkey not found' }, { status: 404 })
 
-  writeAudit({
+  await writeAudit({
     action: 'user.passkey_removed', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: { nickname: deleted.nickname || '' },

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import MailDraft from '@/models/MailDraft'
 import { getUser } from '@/lib/auth'
@@ -25,7 +26,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const draft = await MailDraft.findOne({ _id: params.id, ownerId: userId, orgId })
   if (!draft) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const body = await req.json() as { subject?: string; bodyHtml?: string; recipients?: unknown[] }
+  const body = await readJsonObject<{ subject?: string; bodyHtml?: string; recipients?: unknown[] }>(req)
+  if (!body) return badBody()
 
   // Auto-snapshot the outgoing content if it actually changed
   const contentChanged =

@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest) {
   const ok = await confirmTotpSetup(userId, codeStr)
   if (!ok) return NextResponse.json({ error: 'Incorrect code — check your authenticator app and try again' }, { status: 400 })
 
-  writeAudit({
+  await writeAudit({
     action: 'user.totp_enabled', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: {},
@@ -71,7 +71,7 @@ export async function DELETE() {
   }
 
   await disableTotp(userId)
-  writeAudit({
+  await writeAudit({
     action: 'user.totp_disabled', performedBy: userId,
     performedByName: user.fullName || user.firstName,
     targetId: userId, targetType: 'user', metadata: {},

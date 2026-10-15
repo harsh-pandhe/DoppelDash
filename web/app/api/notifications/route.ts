@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
     approved++
     approvedExpenses.push(e)
 
-    writeAudit({
+    await writeAudit({
       action: selfApproved ? `expense.${toStatus}.self_approved` : `expense.${toStatus}`,
       performedBy: userId, performedByName: actorName,
       targetId: String(e._id), targetType: 'expense',

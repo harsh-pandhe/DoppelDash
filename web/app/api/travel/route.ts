@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   }
 
   try { await audit(tr) } catch (err) { console.error('[travel] audit failed', (err as Error)?.name); return auditFailed() }
-  if (refs.length) writeAudit({ action: 'travel.attachments_added', performedBy: userId, performedByName: actorName, targetId: String(tr._id), targetType: 'travel_request', orgId: effectiveOrgId, metadata: { count: refs.length } })
+  if (refs.length) await writeAudit({ action: 'travel.attachments_added', performedBy: userId, performedByName: actorName, targetId: String(tr._id), targetType: 'travel_request', orgId: effectiveOrgId, metadata: { count: refs.length } })
 
   // Notify reporting manager (+ boss); fallback to all managers if no chain set
   ;(async () => {

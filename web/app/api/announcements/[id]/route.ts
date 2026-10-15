@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
@@ -14,7 +15,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const effectiveOrgId = orgId
   await connectDB()
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
   delete body.orgId
   delete body.authorId
   delete body._id

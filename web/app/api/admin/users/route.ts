@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
@@ -75,7 +76,8 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
   const { firstName, lastName, email, newRole, department, designation, employeeType, joiningDate, privileges, skipWelcomeEmail } = body
 
   if (!firstName || !lastName || !email || !newRole) {

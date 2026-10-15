@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -22,7 +23,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json()
+    const body = await readJsonObject(req)
+    if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     const organizationName = (body.organizationName || body.companyName || '').trim()
     const email = (body.email || '').toLowerCase().trim()
     const password = body.password || ''

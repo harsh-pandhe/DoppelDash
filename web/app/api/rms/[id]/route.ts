@@ -177,7 +177,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     : `expense.${updates.status}`
   const auditAction = selfApproved ? `${baseAction}.self_approved` : baseAction
 
-  writeAudit({
+  await writeAudit({
     action:          auditAction,
     performedBy:     userId,
     performedByName: actorName,
@@ -243,7 +243,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   await expense.deleteOne()
   const files = [...(expense.receipts || []), ...((expense.lineItems || []).map((l: { receiptUrl?: string }) => l.receiptUrl).filter(Boolean) as string[])]
   if (files.length) void destroyAttachments(files, orgId)
-  writeAudit({
+  await writeAudit({
     action:          isOwner ? 'expense.withdrawn' : 'expense.deleted',
     performedBy:     userId,
     performedByName: user?.fullName || user?.firstName || 'User',

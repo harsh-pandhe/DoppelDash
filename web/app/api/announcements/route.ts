@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Announcement from '@/models/Announcement'
 import { emailUrgentAnnouncement } from '@/lib/email'
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
 
   const effectiveOrgId = orgId
   await connectDB()
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
   const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
   const isFutureScheduled = !!(scheduledFor && scheduledFor.getTime() > Date.now())
   if (typeof body.body === 'string') body.body = sanitizeMailHtml(body.body)

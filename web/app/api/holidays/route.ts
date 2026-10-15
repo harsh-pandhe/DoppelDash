@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import PublicHoliday from '@/models/PublicHoliday'
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest) {
   const effectiveOrgId = orgId
 
   await connectDB()
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
   const { name, date, type, description } = body
   if (!name || !date) return NextResponse.json({ error: 'name and date required' }, { status: 400 })
 
@@ -80,7 +82,7 @@ export async function DELETE(req: NextRequest) {
   const effectiveOrgId = orgId
 
   await connectDB()
-  const { id } = await req.json().catch(() => ({}))
+  const { id } = (await readJsonObject(req)) ?? {}
   if (!id || !mongoose.isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid holiday id' }, { status: 400 })
   }

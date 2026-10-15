@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { writeAudit } from '@/lib/audit'
 import { getUser, updateUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
@@ -57,7 +58,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const target = await User.findOne({ _id: params.userId, orgId: effectiveOrgId }).lean()
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
 
   // Self-demotion / self-ban protection: An admin cannot lock themselves out
   if (params.userId === userId) {
@@ -69,7 +71,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     }
   }
 
-  if (typeof body.role === 'string' && !VALID_ROLES.includes(body.role)) {
+  if (typeof body.role === 'string' && !VALID_ROLES.includes(body.role as UserRole)) {
     return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   }
 
@@ -103,7 +105,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const actorName = user?.fullName || 'Boss'
 
   if (body.permissions !== undefined) {
-    writeAudit({
+    await writeAudit({
       action: 'user.permissions_changed', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { permissions: body.permissions, employeeName: targetFullName },
@@ -111,7 +113,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.privileges !== undefined) {
-    writeAudit({
+    await writeAudit({
       action: 'user.privileges_changed', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { privileges: body.privileges, employeeName: targetFullName },
@@ -119,7 +121,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.role !== undefined) {
-    writeAudit({
+    await writeAudit({
       action: 'user.role_changed', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { newRole: body.role, employeeName: targetFullName },
@@ -127,7 +129,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.banned === true) {
-    writeAudit({
+    await writeAudit({
       action: 'user.banned', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { employeeName: targetFullName },
@@ -135,7 +137,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.banned === false) {
-    writeAudit({
+    await writeAudit({
       action: 'user.unbanned', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { employeeName: targetFullName },
@@ -143,7 +145,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.reportingManagerId !== undefined) {
-    writeAudit({
+    await writeAudit({
       action: 'user.reporting_manager_changed', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { reportingManagerId: body.reportingManagerId, employeeName: targetFullName },
@@ -151,7 +153,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     })
   }
   if (body.mailAccess !== undefined) {
-    writeAudit({
+    await writeAudit({
       action: 'user.mail_access_changed', performedBy: userId,
       performedByName: actorName, targetId: params.userId,
       targetType: 'user', metadata: { mailAccess: body.mailAccess, employeeName: targetFullName },
@@ -188,7 +190,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
   const targetFullName = `${target.firstName} ${target.lastName}`.trim()
   const actorName = user?.fullName || 'Boss'
 
-  writeAudit({
+  await writeAudit({
     action: 'user.deleted',
     performedBy: userId,
     performedByName: actorName,

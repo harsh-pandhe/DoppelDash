@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { sanitize } from '@/lib/sanitize'
@@ -63,7 +64,9 @@ export async function POST(req: NextRequest) {
 
   // sanitize() only strips $-operators — it does not whitelist, so pick() is
   // what stops a client seeding its own shareToken or faking isEmployee.
-  const picked = pick(sanitize(await req.json()), CONTACT_WRITE_FIELDS) as Record<string, unknown>
+  const rawBody = await readJsonObject(req)
+  if (!rawBody) return badBody()
+  const picked = pick(sanitize(rawBody), CONTACT_WRITE_FIELDS) as Record<string, unknown>
   if (typeof picked.name !== 'string' || !picked.name.trim()) {
     return NextResponse.json({ error: 'Invalid contact', fields: ['name'] }, { status: 400 })
   }
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
     throw err
   }
 
-  writeAudit({
+  await writeAudit({
     action: 'contact_created',
     performedBy: userId,
     performedByName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || userId,

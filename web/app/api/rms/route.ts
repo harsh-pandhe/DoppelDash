@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     throw err
   }
 
-  writeAudit({
+  await writeAudit({
     action: 'expense.submitted',
     performedBy: userId,
     performedByName: user?.fullName || user?.firstName || user?.email || userId,

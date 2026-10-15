@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import { verifyInvitationToken } from '@/lib/invitations/invitationService'
 import { rateLimit } from '@/lib/ratelimit'
@@ -24,8 +25,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: Record<string, unknown> = {}
-  try { body = await req.json() } catch {
-    return json({ valid: false, reason: 'missing_token', error: 'Invalid JSON body' }, 400)
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return json({ valid: false, reason: 'missing_token', error: 'Invalid JSON body' }, 400)
+    body = parsedJson as typeof body
   }
   const token = typeof body.token === 'string' ? body.token.trim() : ''
   if (!token) return json({ valid: false, reason: 'missing_token', error: 'Invitation token is required' }, 400)

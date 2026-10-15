@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { readJsonObject } from '@/lib/http/body'
 import bcrypt from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
@@ -25,8 +26,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: { email?: unknown; password?: unknown } = {}
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
   const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''
   const password = typeof body.password === 'string' ? body.password : ''

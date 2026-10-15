@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { getUser } from '@/lib/auth'
@@ -52,14 +53,15 @@ export async function POST(req: NextRequest) {
   if (!canPost) return NextResponse.json({ error: 'Mail access not granted — contact your administrator.' }, { status: 403 })
 
   await connectDB()
-  const body = await req.json() as {
+  const body = await readJsonObject<{
     tag?: string; contactIds?: string[]; subject: string; bodyTemplate: string; previewOnly?: boolean
     // Communications module: explicit recipient list + pre-built rich HTML body
     recipients?: { name?: string; email: string; company?: string }[]
     isHtml?: boolean
     // Test send: deliver one copy to this address with sample personalization
     testEmail?: string; sampleName?: string; sampleCompany?: string
-  }
+  }>(req)
+  if (!body) return badBody()
 
   if (!body.subject?.trim() || !body.bodyTemplate?.trim()) {
     return NextResponse.json({ error: 'Subject and body required' }, { status: 400 })

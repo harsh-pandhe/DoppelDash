@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -14,10 +15,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: Record<string, unknown> = {}
-  try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
 
   const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : ''

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import LeaveBalance from '@/models/LeaveBalance'
@@ -37,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   // Verify target user belongs to this organization before updating
   const targetUser = await User.findOne({ _id: params.userId, orgId: org }).lean()
   if (!targetUser) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  const body    = await req.json()
+  const body    = await readJsonObject(req)
+  if (!body) return badBody()
   const updates = pick<Record<string, number>>(body, BALANCE_FIELDS)
 
   // Entitlements are plain day counts — reject anything that isn't a sane number
@@ -55,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
     { upsert: true, returnDocument: 'after' }
   )
 
-  writeAudit({
+  await writeAudit({
     action:          'balance.updated',
     performedBy:     userId,
     performedByName: user?.fullName || 'Boss',

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { rotateMobileRefreshToken, signMobileAccessToken } from '@/lib/auth'
@@ -19,8 +20,10 @@ export async function POST(req: NextRequest) {
   }
 
   let body: { refreshToken?: unknown } = {}
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
   if (typeof body.refreshToken !== 'string' || !body.refreshToken) {
     return NextResponse.json({ error: 'refreshToken required' }, { status: 400 })

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
@@ -66,7 +67,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests — try again later' }, { status: 429 })
   }
 
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return badBody()
   const { contactId, messageType, context, prompt: rawPrompt, refineInstruction, currentDraft } = body
 
   // Ask the model to emit a subject line first, then the body. Client splits on the SUBJECT: marker.

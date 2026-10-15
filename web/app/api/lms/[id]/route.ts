@@ -89,7 +89,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   const actorName = user?.fullName || user?.firstName || 'Manager'
 
-  writeAudit({
+  await writeAudit({
     action:          selfApproved ? `leave.${body.status}.self_approved` : `leave.${body.status}`,
     performedBy:     userId,
     performedByName: actorName,
@@ -145,7 +145,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
   const documentsDeleted = await disposeLeaveDocs(orgId, params.id, leave.medicalDocs)
-  writeAudit({
+  await writeAudit({
     action:          isOwner ? 'leave.withdrawn' : 'leave.deleted',
     performedBy:     userId,
     performedByName: user?.fullName || user?.firstName || 'User',
