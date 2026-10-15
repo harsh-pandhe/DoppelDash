@@ -90,3 +90,46 @@ test('P4. only admins write payment fields and the employee cannot review at all
   assert.equal((await patch('Amanager', id, { paymentMethod: 'cash', paymentProof: 'x' })).status, 403)
   const doc = await db.collection('expenses').findOne({ _id: oid(id) }); assert.equal(doc.status, 'pending_admin'); assert.ok(!doc.paymentMethod)
 })
+
+/* ───────── UI ↔ server agreement (Phase 4D): the table the Web UI renders actions from must equal what the real route allows ───────── */
+const policy = () => kit.load('lib/expenses/reviewPolicy.ts')
+test('P5. lib/expenses/reviewPolicy (the UI action table) agrees with the real route for every reviewer × state × action', async () => {
+  const { reviewActions, ACTION_TARGET } = policy()
+  const actors = { manager: 'Amanager', admin: 'Aadmin' }
+  for (const role of ['manager', 'admin']) for (const state of ['pending_manager', 'pending_admin', 'paid', 'rejected', 'returned']) for (const action of ['approve', 'reject', 'return', 'pay', 'send_back']) {
+    const id = await newExpense(state)
+    const body = { status: ACTION_TARGET[action], ...(action === 'send_back' ? { adminNote: 'recheck' } : {}) }
+    const r = await patch(actors[role], id, body)
+    const allowed = reviewActions(role, state).includes(action)
+    assert.equal(r.status === 200, allowed, `${role} ${action} at ${state}: route ${r.status}, UI table says ${allowed ? 'allowed' : 'not allowed'}`)
+  }
+})
+
+test('P6. the table itself: admins keep the manager stage (no stuck claims in a workspace without a manager); employees and settled states get nothing', () => {
+  const { reviewActions, bulkTarget } = policy()
+  assert.deepEqual(reviewActions('admin', 'pending_manager'), ['approve', 'reject', 'return'])
+  assert.deepEqual(reviewActions('manager', 'pending_manager'), ['approve', 'reject', 'return'])
+  assert.deepEqual(reviewActions('admin', 'pending_admin'), ['pay', 'reject', 'send_back'])
+  assert.deepEqual(reviewActions('manager', 'pending_admin'), [])
+  for (const st of ['paid', 'rejected', 'returned']) for (const r of ['admin', 'manager', 'employee']) assert.deepEqual(reviewActions(r, st), [])
+  assert.deepEqual(reviewActions('employee', 'pending_manager'), [])
+  assert.equal(bulkTarget('admin', 'pending_manager', 'approve'), 'pending_admin'); assert.equal(bulkTarget('admin', 'pending_admin', 'approve'), 'paid')
+  assert.equal(bulkTarget('manager', 'pending_admin', 'approve'), null); assert.equal(bulkTarget('manager', 'pending_admin', 'reject'), null)
+})
+
+test('P7. the Web page renders its review actions from the shared table (no re-implemented role/state conditions left)', () => {
+  const src = require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../app/(app)/rms/page.tsx'), 'utf8')
+  assert.match(src, /from '@\/lib\/expenses\/reviewPolicy'/)
+  assert.doesNotMatch(src, /isManager && !isAdmin && (exp|expense|e)\.status === 'pending_manager'/)
+  assert.doesNotMatch(src, /isAdmin && (exp|expense)\.status === 'pending_admin'/)
+})
+
+test('P8. CHARACTERISATION pending owner decision D-03 (paid-claim deletion): today a manager/admin DELETE removes a claim in ANY status, including `paid`; the employee owner cannot delete a paid/pending-admin claim. Change this test together with the decision (void/correction instead of delete).', async () => {
+  const own = (id, k) => kit.api(`/api/rms/${id}`, { method: 'DELETE', token: tok[k] })
+  const p1 = await newExpense('paid'); assert.equal((await own(p1, 'Aemployee')).status, 403, 'the owner cannot delete a paid claim')
+  const pa = await newExpense('pending_admin'); assert.equal((await own(pa, 'Aemployee')).status, 403)
+  assert.equal((await own(p1, 'Bmanager')).status, 404, 'other tenant')
+  assert.equal((await own(p1, 'Amanager')).status, 200, 'CURRENT behaviour (decision pending): a manager can delete a paid claim')
+  const p2 = await newExpense('paid'); assert.equal((await own(p2, 'Aadmin')).status, 200, 'CURRENT behaviour (decision pending): an admin can delete a paid claim')
+  assert.equal(await db.collection('expenses').countDocuments({ _id: { $in: [oid(p1), oid(p2)] } }), 0)
+})

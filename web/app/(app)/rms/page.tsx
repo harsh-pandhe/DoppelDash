@@ -4,6 +4,7 @@ import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, D
 import { ListSkeleton } from '@/components/ui/skeleton'
 import { timeAgo } from '@/lib/timeAgo'
 import Link from 'next/link'
+import { reviewActions, bulkTarget } from '@/lib/expenses/reviewPolicy'
 import { useUser } from '@/lib/useUser'
 import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
@@ -467,8 +468,10 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
     setActing(true); await onAction(expense._id, status, note, proof); setActing(false); onClose()
   }
 
-  // Line decisions follow the review stage (the server refuses a manager once the claim is with the admin or settled)
-  const canReviewLines = (isManager && !isAdmin && expense.status === 'pending_manager') || (isAdmin && (expense.status === 'pending_manager' || expense.status === 'pending_admin'))
+  // Review actions follow the shared policy (lib/expenses/reviewPolicy.ts; the server refuses anything else)
+  const reviewRole = isAdmin ? 'admin' : isManager ? 'manager' : 'employee'
+  const actions = reviewActions(reviewRole, expense.status)
+  const canReviewLines = actions.length > 0
   const updateItemStatus = async (index: number, status: 'approved' | 'rejected') => {
     setItemActing(index)
     const res = await fetch(`/api/rms/${expense._id}`, {
@@ -640,14 +643,11 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
         )}
       </SheetBody>
 
-      {isManager && !showReject && (
-        (isManager && !isAdmin && expense.status === 'pending_manager') ||
-        (isAdmin && expense.status === 'pending_admin')
-      ) ? (
+      {isManager && !showReject && actions.length > 0 ? (
         <SheetFooter>
           <div className="space-y-2">
             <div className="flex gap-2">
-              {isAdmin ? (
+              {actions.includes('pay') ? (
                 <div className="flex-1">
                   <PaymentProofDialog onConfirm={(proof, method, note) => act('paid', note, proof)} />
                 </div>
@@ -664,13 +664,13 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
               </Button>
             </div>
             {/* Send-back row */}
-            {isAdmin && expense.status === 'pending_admin' && (
+            {actions.includes('send_back') && (
               <Button variant="outline" className="w-full gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50"
                 onClick={() => act('pending_manager', 'Sent back for manager review')} disabled={acting}>
                 <RotateCcw className="w-3.5 h-3.5" /> Send Back to Manager
               </Button>
             )}
-            {!isAdmin && expense.status === 'pending_manager' && (
+            {actions.includes('return') && (
               <Button variant="outline" className="w-full gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
                 onClick={() => act('returned', 'Please revise and resubmit')} disabled={acting}>
                 <RotateCcw className="w-3.5 h-3.5" /> Return to Employee
@@ -864,10 +864,8 @@ export default function RMSPage() {
   const totalPending = expenses.filter(e => e.status === 'pending_manager' || e.status === 'pending_admin')
     .reduce((s, e) => s + e.amount, 0)
 
-  const bulkPendingExpenses = expenses.filter(e =>
-    (isManager && !isAdmin && e.status === 'pending_manager') ||
-    (isAdmin && e.status === 'pending_admin')
-  )
+  const listRole = isAdmin ? 'admin' : isManager ? 'manager' : 'employee'
+  const bulkPendingExpenses = expenses.filter(e => reviewActions(listRole, e.status).length > 0)
   const toggleSelect = (id: string) => setSelected(prev => {
     const next = new Set(prev)
     if (next.has(id)) next.delete(id); else next.add(id)
@@ -877,18 +875,20 @@ export default function RMSPage() {
     if (selected.size === bulkPendingExpenses.length) setSelected(new Set())
     else setSelected(new Set(bulkPendingExpenses.map(e => e._id)))
   }
-  const bulkAction = async (status: string) => {
+  const bulkAction = async (kind: 'approve' | 'reject') => {
     if (!selected.size) return
     setBulking(true)
-    const results = await Promise.all(Array.from(selected).map(id =>
-      fetch(`/api/rms/${id}`, {
+    // Each claim moves to the target its own stage allows for this reviewer (manager stage → forward, admin stage → pay)
+    const plan = Array.from(selected).map(id => ({ id, status: bulkTarget(listRole, expenses.find(e => e._id === id)?.status ?? '', kind) })).filter((p): p is { id: string; status: string } => !!p.status)
+    const results = await Promise.all(plan.map(p =>
+      fetch(`/api/rms/${p.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: p.status }),
       })
     ))
-    const failed = results.filter(r => !r.ok).length
-    const okCount = results.length - failed
-    if (okCount > 0) toast(`${okCount} expense${okCount > 1 ? 's' : ''} ${status === 'rejected' ? 'rejected' : 'approved'}`, status === 'rejected' ? 'error' : 'success')
+    const failed = results.filter(r => !r.ok).length + (selected.size - plan.length)
+    const okCount = results.length - results.filter(r => !r.ok).length
+    if (okCount > 0) toast(`${okCount} expense${okCount > 1 ? 's' : ''} ${kind === 'reject' ? 'rejected' : 'approved'}`, kind === 'reject' ? 'error' : 'success')
     if (failed > 0) toast(`${failed} expense${failed > 1 ? 's' : ''} failed to update`, 'error')
     setSelected(new Set())
     setBulking(false)
@@ -1009,13 +1009,13 @@ export default function RMSPage() {
               <>
                 <span className="text-xs text-orange-600">{selected.size} selected</span>
                 <Button type="button" size="sm" disabled={bulking}
-                  onClick={() => bulkAction(isAdmin ? 'paid' : 'pending_admin')}
+                  onClick={() => bulkAction('approve')}
                   className="gap-1.5 bg-green-600 hover:bg-green-700 text-white">
                   {bulking ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
                   Approve Selected
                 </Button>
                 <Button type="button" size="sm" variant="outline" disabled={bulking}
-                  onClick={() => bulkAction('rejected')}
+                  onClick={() => bulkAction('reject')}
                   className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50">
                   {bulking ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
                   Reject Selected
@@ -1095,21 +1095,21 @@ export default function RMSPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1.5">
-                            {isManager && !isAdmin && exp.status === 'pending_manager' && (
+                            {reviewActions(listRole, exp.status).includes('approve') && (
                               <>
                                 <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_admin')}>Approve</Button>
                                 <Button type="button" size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 gap-1" onClick={() => handleAction(exp._id, 'returned', 'Please revise and resubmit')}><RotateCcw className="w-3 h-3" />Return</Button>
                                 <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                               </>
                             )}
-                            {isAdmin && exp.status === 'pending_admin' && (
+                            {reviewActions(listRole, exp.status).includes('pay') && (
                               <>
                                 <PaymentProofDialog onConfirm={(proof, method, note) => handleAction(exp._id, 'paid', note, proof, method)} />
                                 <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1" onClick={() => handleAction(exp._id, 'pending_manager', 'Sent back for manager review')}><RotateCcw className="w-3 h-3" />Send Back</Button>
                                 <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                               </>
                             )}
-                            {(!isManager || (exp.status !== 'pending_manager' && exp.status !== 'pending_admin')) && (
+                            {reviewActions(listRole, exp.status).length === 0 && (
                               <Link href={`/rms/${exp._id}`}>
                                 <Button type="button" size="sm" variant="outline">View</Button>
                               </Link>
@@ -1204,7 +1204,7 @@ export default function RMSPage() {
 
                       {/* Actions — stop propagation so card click doesn't open sheet */}
                       <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                        {isManager && !isAdmin && exp.status === 'pending_manager' && (
+                        {reviewActions(listRole, exp.status).includes('approve') && (
                           <>
                             <Button type="button" size="sm" onClick={() => handleAction(exp._id, 'pending_admin')}>Approve</Button>
                             <Button type="button" size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 gap-1 text-[11px]"
@@ -1214,7 +1214,7 @@ export default function RMSPage() {
                             <RejectDialog onConfirm={n => handleAction(exp._id, 'rejected', n)} />
                           </>
                         )}
-                        {isAdmin && exp.status === 'pending_admin' && (
+                        {reviewActions(listRole, exp.status).includes('pay') && (
                           <>
                             <PaymentProofDialog onConfirm={(proof, method, note) => handleAction(exp._id, 'paid', note, proof, method)} />
                             <Button type="button" size="sm" variant="outline" className="text-amber-600 border-amber-200 hover:bg-amber-50 gap-1 text-[11px]"
