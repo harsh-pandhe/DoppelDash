@@ -41,7 +41,11 @@ const SECURITY_HEADERS = [
   { key: 'Content-Security-Policy', value: CSP },
 ]
 
+// Deployment provenance: the commit this bundle was built from (non-secret; Netlify sets COMMIT_REF at build, GitHub Actions GITHUB_SHA).
+const BUILD_SHA = (process.env.COMMIT_REF || process.env.GITHUB_SHA || process.env.DD_BUILD_SHA || '').slice(0, 40)
+
 const nextConfig = {
+  env: { DD_BUILD_SHA: BUILD_SHA },
   // Lets a second, isolated production build exist next to the dev build (used by the production-config test).
   distDir: process.env.NEXT_DIST_DIR || '.next',
   output: process.env.BUILD_STANDALONE === '1' ? 'standalone' : undefined,

@@ -24,6 +24,7 @@ const PUBLIC_EXACT = [
   '/api/support/chat',
   '/api/dev/seed',       // secret-gated inside route (DEV_SEED_SECRET)
   '/api/dev/migrate',    // secret-gated inside route (DEV_SEED_SECRET) — non-destructive data migration
+  '/api/health',         // deployment provenance + liveness (no data, no secrets)
   '/api/billing/play/rtdn', // Google Play RTDN webhook (secret/signature authenticated inside route)
 ]
 

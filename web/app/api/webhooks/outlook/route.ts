@@ -1,17 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import OutlookToken from '@/models/OutlookToken'
 
+import crypto from 'node:crypto'
+
+/** Constant-time comparison of the notification's clientState with our secret. */
+function secretMatches(got: unknown, expected: string): boolean {
+  if (typeof got !== 'string') return false
+  const a = Buffer.from(got), b = Buffer.from(expected)
+  return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
+
 // Graph API sends a GET with validationToken on subscription creation
 export async function GET(req: NextRequest) {
   const token = new URL(req.url).searchParams.get('validationToken')
-  if (token) return new NextResponse(token, { headers: { 'Content-Type': 'text/plain' } })
+  // Graph's subscription handshake: echo the token as inert text (never HTML), bounded in size.
+  if (token) {
+    if (token.length > 1024) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    return new NextResponse(token, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' } })
+  }
   return NextResponse.json({ error: 'Not found' }, { status: 404 })
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
+  const body = await readJsonObject<{ value?: unknown }>(req)
+  if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   const notifications = body?.value as Array<{
     clientState?: string
     subscriptionId?: string
@@ -19,7 +34,8 @@ export async function POST(req: NextRequest) {
     changeType?: string
   }> | undefined
 
-  if (!notifications?.length) return NextResponse.json({ ok: true })
+  if (!Array.isArray(notifications) || !notifications.length) return NextResponse.json({ ok: true })
+  if (notifications.length > 100) return NextResponse.json({ error: 'Too many notifications' }, { status: 413 })
 
   // No fallback — clientState is this endpoint's only auth. A hardcoded
   // default (present in the public repo) would let anyone forge notifications.
@@ -29,7 +45,7 @@ export async function POST(req: NextRequest) {
   await connectDB()
 
   for (const n of notifications) {
-    if (n.clientState !== expectedSecret) continue
+    if (!secretMatches(n.clientState, expectedSecret)) continue
     if (!n.subscriptionId || !n.resourceData?.id) continue
 
     // Find which user this subscription belongs to
