@@ -126,7 +126,7 @@ export async function PUT(req: NextRequest) {
     await OrgMailConfig.updateOne({ orgId: a.orgId }, { $set: { verifiedAt: new Date() } })
   }
 
-  void writeAudit({
+  await writeAudit({
     action: failureCode ? 'org_mail.verify_failed' : 'org_mail.configured',
     performedBy: a.userId, performedByName: a.user.fullName || 'Admin',
     targetId: a.orgId, targetType: 'user', orgId: a.orgId,
@@ -147,7 +147,7 @@ export async function DELETE(req: NextRequest) {
   if (a.error) return a.error
   await connectDB()
   await OrgMailConfig.deleteOne({ orgId: a.orgId })
-  void writeAudit({
+  await writeAudit({
     action: 'org_mail.removed', performedBy: a.userId, performedByName: a.user.fullName || 'Admin',
     targetId: a.orgId, targetType: 'user', orgId: a.orgId,
   })

@@ -17,6 +17,20 @@ export function imapConfigured(): boolean {
   return !!(process.env.IMAP_HOST && process.env.IMAP_USER && process.env.IMAP_PASS)
 }
 
+/**
+ * The platform IMAP mailbox (IMAP_HOST/USER/PASS in the environment) is ONE mailbox. Its mail belongs to exactly one organisation —
+ * IMAP_OWNER_ORG_ID (the operator's organisation id). Without that binding every tenant could trigger a sync and have the operator's mail matched
+ * against THEIR contacts' timelines (cross-tenant leak) and could hammer the mailbox. Fail closed: unset → nobody may use the shared mailbox.
+ */
+export function imapOwnerOrgId(env: NodeJS.ProcessEnv = process.env): string | null {
+  const v = (env.IMAP_OWNER_ORG_ID || '').trim()
+  return v || null
+}
+export function canUseSharedImap(orgId: string | null | undefined, env: NodeJS.ProcessEnv = process.env): boolean {
+  const owner = imapOwnerOrgId(env)
+  return !!owner && !!orgId && owner === orgId
+}
+
 // Gmail app passwords are shown as 4 space-separated groups ("xxxx xxxx xxxx xxxx")
 // but IMAP/SMTP auth expects them with no spaces. Normalize defensively.
 function imapPass(): string {
@@ -91,13 +105,13 @@ export interface SyncResult {
  * Fetch messages with UID greater than the highest already stored, parse +
  * sanitize + upsert into InboxMessage. Returns counts. Re-runnable safely.
  */
-export async function syncInbox(): Promise<SyncResult> {
-  if (!imapConfigured()) {
+export async function syncInbox(orgId: string): Promise<SyncResult> {
+  if (!imapConfigured() || !canUseSharedImap(orgId)) {
     return { synced: 0, skipped: 0, total: 0, configured: false }
   }
   await connectDB()
 
-  const newest = await InboxMessage.findOne({ mailbox: INBOX_MAILBOX })
+  const newest = await InboxMessage.findOne({ orgId, mailbox: INBOX_MAILBOX })
     .sort({ uid: -1 }).select('uid').lean()
   const sinceUid = newest?.uid ?? 0
 
@@ -150,9 +164,10 @@ export async function syncInbox(): Promise<SyncResult> {
             .replace(/\s+/g, ' ').trim().slice(0, 200)
 
           await InboxMessage.updateOne(
-            { mailbox: INBOX_MAILBOX, uid: msg.uid },
+            { orgId, mailbox: INBOX_MAILBOX, uid: msg.uid },
             {
               $set: {
+                orgId,
                 mailbox:     INBOX_MAILBOX,
                 uid:         msg.uid,
                 messageId:   parsed.messageId,
@@ -183,9 +198,10 @@ export async function syncInbox(): Promise<SyncResult> {
           // (derived from the max stored uid) advances past it next poll —
           // otherwise a single poisoned message would block all newer mail forever.
           await InboxMessage.updateOne(
-            { mailbox: INBOX_MAILBOX, uid: msg.uid },
+            { orgId, mailbox: INBOX_MAILBOX, uid: msg.uid },
             {
               $set: {
+                orgId,
                 mailbox:  INBOX_MAILBOX,
                 uid:      msg.uid,
                 subject:  '(failed to parse message)',

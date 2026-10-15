@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import InboxMessage from '@/models/InboxMessage'
 import { getUser } from '@/lib/auth'
-import { syncInbox, imapConfigured } from '@/lib/imap'
+import { syncInbox, imapConfigured, canUseSharedImap } from '@/lib/imap'
 
 // IMAP needs raw TCP/TLS → Node runtime (not edge). Allow extra time for the
 // cold connect + fetch on serverless; the default ~10s can truncate a sync.
@@ -26,12 +26,13 @@ export async function GET(req: NextRequest) {
   await connectDB()
 
   let syncInfo = null
-  if (req.nextUrl.searchParams.get('sync') === '1') {
+  const sharedMailbox = canUseSharedImap(orgId)   // the platform mailbox belongs to one organisation only
+  if (req.nextUrl.searchParams.get('sync') === '1' && sharedMailbox) {
     try {
-      syncInfo = await syncInbox()
+      syncInfo = await syncInbox(orgId!)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'IMAP sync failed'
-      return NextResponse.json({ error: msg, configured: imapConfigured() }, { status: 502 })
+      return NextResponse.json({ error: msg, configured: imapConfigured() && sharedMailbox }, { status: 502 })
     }
   }
 
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
     total,
     unread,
     hasMore: skip + messages.length < total,
-    configured: imapConfigured(),
+    configured: imapConfigured() && sharedMailbox,
     sync: syncInfo,
   })
 }

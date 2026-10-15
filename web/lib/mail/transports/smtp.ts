@@ -1,5 +1,6 @@
 import { MailTransportError, type MailEnvelope, type MailTransport } from '../types'
 import { isSendableAddress, singleLine } from '../escape'
+import { assertPublicSmtpHost, smtpHostPolicyEnforced, SmtpPolicyError } from '../smtpHostPolicy'
 
 export interface SmtpSettings {
   host: string
@@ -49,7 +50,7 @@ function addressOf(from: string): string {
 
 export class SmtpMailTransport implements MailTransport {
   /** `brandedSender`: apply `envelope.fromName` as the From display name (address stays this transport's own). */
-  constructor(readonly id: string, private readonly settings: () => SmtpSettings | null, private readonly opts: { brandedSender?: boolean } = {}) {}
+  constructor(readonly id: string, private readonly settings: () => SmtpSettings | null, private readonly opts: { brandedSender?: boolean; publicHostsOnly?: boolean } = {}) {}
 
   isConfigured(): boolean {
     const s = this.settings()
@@ -62,6 +63,11 @@ export class SmtpMailTransport implements MailTransport {
 
     const recipients = (Array.isArray(envelope.to) ? envelope.to : [envelope.to]).filter(isSendableAddress)
     if (recipients.length === 0) throw new MailTransportError('No sendable recipient', 'invalid_recipient')
+
+    // User/organisation-supplied servers must resolve to PUBLIC addresses (SSRF guard); the platform's env-configured SMTP is trusted.
+    if (this.opts.publicHostsOnly && smtpHostPolicyEnforced()) {
+      try { await assertPublicSmtpHost(s.host) } catch (e) { throw new MailTransportError('SMTP host not allowed', e instanceof SmtpPolicyError ? 'host_not_allowed' : 'provider_error') }
+    }
 
     const key = cacheKey(this.id, s)
     let transporter = cache.get(key)

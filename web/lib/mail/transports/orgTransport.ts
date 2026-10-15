@@ -30,7 +30,7 @@ export async function loadOrgTransport(orgId: string, opts: { requireVerified?: 
     pass: decrypt(cfg.passwordEnc),
     from: displayFrom(cfg.fromName, cfg.fromEmail),
   }
-  return new SmtpMailTransport(`org:${orgId}`, () => settings)
+  return new SmtpMailTransport(`org:${orgId}`, () => settings, { publicHostsOnly: true })
 }
 
 /**
@@ -53,5 +53,5 @@ export async function loadUserMailboxTransport(userId: string, orgId: string): P
     pass: decrypt(cfg.appPassword),
     from: `"DoppelDash" <${cfg.emailAddress}>`,
   }
-  return new SmtpMailTransport(`user:${userId}`, () => settings, { brandedSender: true })
+  return new SmtpMailTransport(`user:${userId}`, () => settings, { brandedSender: true, publicHostsOnly: true })
 }

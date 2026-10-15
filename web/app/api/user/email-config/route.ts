@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isSendableAddress } from '@/lib/mail/escape'
+import { checkSmtpHostSyntax, checkSmtpPort, SmtpPolicyError, SMTP_POLICY_MESSAGES } from '@/lib/mail/smtpHostPolicy'
+import { isProductionLike } from '@/lib/auth/devShortcuts'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import UserEmailConfig from '@/models/UserEmailConfig'
 import { encrypt } from '@/lib/encrypt'
@@ -25,20 +29,33 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { emailAddress?: string; smtpHost?: string; smtpPort?: number; appPassword?: string }
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+  {
+    const parsedJson = await readJsonObject(req)
+    if (!parsedJson) return NextResponse.json({ error: 'Invalid body' }, { status: 400 })
+    body = parsedJson as typeof body
   }
 
   const { emailAddress, smtpHost, smtpPort = 587, appPassword } = body
   if (!emailAddress || !smtpHost || !appPassword) {
     return NextResponse.json({ error: 'emailAddress, smtpHost, and appPassword are required' }, { status: 400 })
   }
+  // Destination policy (SSRF guard) + shape checks: the server will connect to this host, so it must be a public SMTP server on a standard port.
+  if (typeof emailAddress !== 'string' || !isSendableAddress(emailAddress.trim()) || typeof smtpHost !== 'string' || typeof appPassword !== 'string' || appPassword.length > 512) {
+    return NextResponse.json({ error: 'Invalid request', fields: ['emailAddress', 'smtpHost', 'appPassword'] }, { status: 400 })
+  }
+  try {
+    if (!(process.env.ALLOW_PRIVATE_SMTP_HOSTS === 'true' && !isProductionLike())) checkSmtpHostSyntax(smtpHost)
+    checkSmtpPort(smtpPort)
+  } catch (e) {
+    const code = e instanceof SmtpPolicyError ? e.code : 'invalid_host'
+    return NextResponse.json({ error: SMTP_POLICY_MESSAGES[code], code, fields: [code === 'invalid_port' ? 'smtpPort' : 'smtpHost'] }, { status: 400 })
+  }
 
   await connectDB()
   const encrypted = encrypt(appPassword)
   await UserEmailConfig.findOneAndUpdate(
     { userId, orgId },
-    { userId, orgId, emailAddress, smtpHost, smtpPort, appPassword: encrypted, isVerified: false },
+    { userId, orgId, emailAddress: emailAddress.trim(), smtpHost: smtpHost.trim().toLowerCase(), smtpPort: Number(smtpPort), appPassword: encrypted, isVerified: false },
     { upsert: true, returnDocument: 'after' }
   )
 
