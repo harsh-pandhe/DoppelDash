@@ -474,6 +474,8 @@ function NewLeaveDialog({ onCreated, myLeaves = [] }: { onCreated: () => void; m
                 variant={sickReq ? 'danger' : 'default'}
                 onChange={setDocs}
                 disabled={loading}
+                kind="receipt"
+                purpose="leave_medical"
               />
             )}
 

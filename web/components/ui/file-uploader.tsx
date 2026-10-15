@@ -18,7 +18,7 @@ interface FileUploaderProps {
   /** Server-side storage policy for what is uploaded ('receipt' = private authenticated storage). */
   kind?: UploadKind
   /** What a private upload is for (server-recorded): travel itinerary documents use 'travel_itinerary'. */
-  purpose?: 'expense_receipt' | 'travel_itinerary'
+  purpose?: 'expense_receipt' | 'travel_itinerary' | 'leave_medical'
 }
 
 async function compressImage(file: File): Promise<File> {

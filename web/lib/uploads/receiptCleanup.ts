@@ -19,6 +19,7 @@
 import ReceiptUpload from '@/models/ReceiptUpload'
 import Expense from '@/models/Expense'
 import TravelRequest from '@/models/TravelRequest'
+import Leave from '@/models/Leave'
 import { ALLOWED_FORMATS, destroyReceiptAsset, formatsForMime, storageConfig, tenantFolder } from '@/lib/uploads/attachmentStorage'
 
 export const MIN_AGE_MS = 24 * 3600_000                 // hard floor: configuration can never lower it
@@ -51,7 +52,9 @@ export async function isReferenced(orgId: string, publicId: string): Promise<boo
   const refs = refsOf(publicId)
   if (await Expense.exists({ orgId, $or: [{ receipts: { $in: refs } }, { 'lineItems.receiptUrl': { $in: refs } }] })) return true
   // Travel itinerary documents are references too: the cleanup must never delete a file a trip still uses.
-  return !!(await TravelRequest.exists({ orgId, itineraryDocs: { $in: refs } }))
+  if (await TravelRequest.exists({ orgId, itineraryDocs: { $in: refs } })) return true
+  // Leave medical documents too (sensitive; the cleanup must never delete one a leave still references).
+  return !!(await Leave.exists({ orgId, medicalDocs: { $in: refs } }))
 }
 
 export async function runReceiptCleanup(opts: CleanupOptions): Promise<CleanupReport> {
@@ -116,7 +119,7 @@ export async function runReceiptCleanup(opts: CleanupOptions): Promise<CleanupRe
 }
 
 /** Records a freshly issued receipt ticket. Throws on DB failure: the caller must then refuse the ticket (fail closed). */
-export async function recordReceiptTicket(orgId: string, publicId: string, declaredMime?: string, meta: { purpose?: 'expense_receipt' | 'travel_itinerary'; userId?: string } = {}, now = new Date()) {
+export async function recordReceiptTicket(orgId: string, publicId: string, declaredMime?: string, meta: { purpose?: 'expense_receipt' | 'travel_itinerary' | 'leave_medical'; userId?: string } = {}, now = new Date()) {
   await ReceiptUpload.create({ orgId, publicId, state: 'issued', issuedAt: now, nextCheckAt: new Date(now.getTime() + MIN_AGE_MS), ...(declaredMime ? { declaredMime } : {}), ...(meta.purpose ? { purpose: meta.purpose } : {}), ...(meta.userId ? { userId: meta.userId } : {}) })
 }
 
@@ -138,7 +141,7 @@ export async function markReceiptRejected(orgId: string, publicId: string) {
  */
 export async function claimReceiptForAttach(orgId: string, publicId: string, now = new Date()): Promise<boolean> {
   const upd = await ReceiptUpload.findOneAndUpdate(
-    { orgId, publicId, state: { $in: ['issued', 'attached'] }, purpose: { $ne: 'travel_itinerary' } },   // a travel file is never claimable as an expense receipt
+    { orgId, publicId, state: { $in: ['issued', 'attached'] }, purpose: { $nin: ['travel_itinerary', 'leave_medical'] } },   // a travel or leave file is never claimable as an expense receipt
     { $set: { state: 'attached', attachedAt: now, nextCheckAt: new Date(now.getTime() + MIN_AGE_MS) } },
   ).lean()
   if (upd) return true

@@ -52,7 +52,7 @@ interface UploadTicket { mode: 'signed' | 'unsigned'; uploadUrl: string; fields:
 // `kind` selects the server-side storage policy. Only 'receipt' is stored privately (authenticated delivery); the other
 // kinds are still signed, tenant-foldered uploads but remain publicly deliverable until their features are migrated.
 /** `purpose` states what a private receipt-storage upload is FOR (travel itinerary documents); the server records it and enforces it. */
-export async function uploadToCloudinary(file: File, kind: UploadKind = 'document', purpose?: 'expense_receipt' | 'travel_itinerary'): Promise<string> {
+export async function uploadToCloudinary(file: File, kind: UploadKind = 'document', purpose?: 'expense_receipt' | 'travel_itinerary' | 'leave_medical'): Promise<string> {
   const tooBig = oversizeMessage(file.name, file.size, (await planUploadLimit()) ?? MAX_BYTES)
   if (tooBig) throw new Error(tooBig)
   const mimeType = mimeOf(file)

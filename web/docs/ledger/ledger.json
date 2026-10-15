@@ -4,8 +4,8 @@
  },
  "counts": {
   "webPages": 44,
-  "apiRoutes": 91,
-  "apiMethods": 150,
+  "apiRoutes": 92,
+  "apiMethods": 151,
   "androidRoutes": 33,
   "cronJobs": 4
  },
@@ -1751,7 +1751,8 @@
    "unauthenticatedByCode": false,
    "webCallers": [
     "app/(app)/lms/page.tsx",
-    "app/(app)/lms/team/page.tsx"
+    "app/(app)/lms/team/page.tsx",
+    "lib/leave/attachments.ts"
    ],
    "androidCallers": [
     "lib/data/repositories/leave_repository.dart"
@@ -1762,6 +1763,7 @@
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/web_access_boundary.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -1794,6 +1796,35 @@
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
+    "tests/leave_medical_docs.test.js",
+    "tests/web_access_boundary.test.js",
+    "tests/web_android_shared_data.test.js"
+   ]
+  },
+  {
+   "url": "/api/lms/[id]/document/[file]",
+   "file": "app/api/lms/[id]/document/[file]/route.ts",
+   "methods": [
+    "GET"
+   ],
+   "guards": [
+    "session",
+    "role-check",
+    "rate-limit",
+    "tenant-scoped"
+   ],
+   "unauthenticatedByCode": false,
+   "webCallers": [
+    "lib/leave/attachments.ts"
+   ],
+   "androidCallers": [],
+   "tests": [
+    "tests/auth_foundation.test.js",
+    "tests/batch_c.test.js",
+    "tests/batch_i.test.js",
+    "tests/batch_j.test.js",
+    "tests/entitlement_matrix_mobile_web.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/web_access_boundary.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -2026,7 +2057,7 @@
     "tests/expense_idempotency_receipts.test.js",
     "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js"
+    "tests/leave_medical_docs.test.js"
    ]
   },
   {
@@ -2060,7 +2091,7 @@
     "tests/expense_idempotency_receipts.test.js",
     "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js"
+    "tests/leave_medical_docs.test.js"
    ]
   },
   {
@@ -2088,7 +2119,7 @@
     "tests/expense_idempotency_receipts.test.js",
     "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js"
+    "tests/leave_medical_docs.test.js"
    ]
   },
   {
@@ -2203,10 +2234,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/travel_api.test.js",
     "tests/travel_attachments.test.js",
-    "tests/travel_conversion.test.js",
-    "tests/travel_patch.test.js"
+    "tests/travel_conversion.test.js"
    ]
   },
   {
@@ -2236,10 +2267,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/travel_api.test.js",
     "tests/travel_attachments.test.js",
-    "tests/travel_conversion.test.js",
-    "tests/travel_patch.test.js"
+    "tests/travel_conversion.test.js"
    ]
   },
   {
@@ -2264,10 +2295,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/travel_api.test.js",
     "tests/travel_attachments.test.js",
-    "tests/travel_conversion.test.js",
-    "tests/travel_patch.test.js"
+    "tests/travel_conversion.test.js"
    ]
   },
   {
@@ -2292,10 +2323,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/travel_api.test.js",
     "tests/travel_attachments.test.js",
-    "tests/travel_conversion.test.js",
-    "tests/travel_patch.test.js"
+    "tests/travel_conversion.test.js"
    ]
   },
   {
@@ -2319,12 +2350,12 @@
    "tests": [
     "tests/expense_idempotency_receipts.test.js",
     "tests/expenses_vertical.test.js",
+    "tests/leave_medical_docs.test.js",
     "tests/receipt_cleanup.test.js",
     "tests/receipt_client_limits.test.js",
     "tests/receipt_ocr_vertical.test.js",
     "tests/receipt_type_contract.test.js",
-    "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js"
+    "tests/travel_api.test.js"
    ]
   },
   {

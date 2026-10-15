@@ -9,6 +9,7 @@ import { getUser } from '@/lib/auth'
 import { pick } from '@/lib/pick'
 import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
 import { LEAVE_REVIEW_FIELDS } from '@/lib/apiFields'
+import { disposeLeaveDocs, presentLeave } from '@/lib/leave/attachments'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
@@ -22,7 +23,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!leave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (role === 'employee' && (leave as unknown as { userId: string }).userId !== userId)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  return NextResponse.json(leave)
+  return NextResponse.json(presentLeave(leave as never))
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -33,7 +34,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
-  const body  = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid request', fields: ['body'] }, { status: 400 })
 
   const existingLeave = await Leave.findOne({ _id: params.id, orgId })
   if (!existingLeave) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -109,7 +111,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     })
   }
 
-  return NextResponse.json(leave)
+  return NextResponse.json(presentLeave(leave.toObject()))
 }
 
 // Employee can withdraw their own pending request; managers/boss can delete any.
@@ -129,6 +131,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   }
 
   await leave.deleteOne()
+  void disposeLeaveDocs(orgId, params.id, leave.medicalDocs)   // private documents are no longer referenced (best effort, tenant-safe)
   writeAudit({
     action:          isOwner ? 'leave.withdrawn' : 'leave.deleted',
     performedBy:     userId,

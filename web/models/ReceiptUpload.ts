@@ -25,11 +25,11 @@ export interface IReceiptUpload extends Document {
   failures: number
   /** MIME type the uploader declared when the ticket was issued (bound into the signed `allowed_formats`). */
   declaredMime?: string
-  /** What this upload was issued FOR. Absent = legacy/expense receipt. A `travel_itinerary` file can never be attached to an expense receipt, and vice versa. */
-  purpose?: 'expense_receipt' | 'travel_itinerary'
+  /** What this upload was issued FOR. Absent = legacy/expense receipt. A `travel_itinerary` or `leave_medical` file can never be attached to an expense receipt (or to each other), and vice versa. */
+  purpose?: 'expense_receipt' | 'travel_itinerary' | 'leave_medical'
   /** The authenticated user the ticket was issued to (travel itinerary files may only be used by that user). */
   userId?: string
-  /** Exclusive claim: the id of the record (TravelRequest) that has taken this file. One file ↔ one claim. */
+  /** Exclusive claim: the id of the record (TravelRequest / Leave) that has taken this file. One file ↔ one claim. */
   claimedBy?: string
   /** Set by the trip→expense conversion: the expense that now ALSO references this file. The trip keeps its claim (nothing is released or deleted). */
   transferredTo?: string
@@ -45,7 +45,7 @@ const ReceiptUploadSchema = new Schema<IReceiptUpload>({
   leaseUntil: { type: Date },
   failures: { type: Number, default: 0 },
   declaredMime: { type: String },
-  purpose: { type: String, enum: ['expense_receipt', 'travel_itinerary'] },
+  purpose: { type: String, enum: ['expense_receipt', 'travel_itinerary', 'leave_medical'] },
   userId: { type: String },
   claimedBy: { type: String },
   transferredTo: { type: String },

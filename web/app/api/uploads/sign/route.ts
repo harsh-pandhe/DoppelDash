@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
   const kind = body.kind
   if (typeof kind !== 'string' || !(UPLOAD_KINDS as string[]).includes(kind)) return NextResponse.json({ error: 'Invalid upload kind', code: 'invalid_kind', fields: ['kind'] }, { status: 400 })
   // What the upload is FOR (receipts only). Absent = expense receipt. Recorded server-side with the issuing user.
-  let purpose: 'expense_receipt' | 'travel_itinerary' = 'expense_receipt'
+  let purpose: 'expense_receipt' | 'travel_itinerary' | 'leave_medical' = 'expense_receipt'
   if (body.purpose !== undefined) {
-    if (kind !== 'receipt' || (body.purpose !== 'expense_receipt' && body.purpose !== 'travel_itinerary')) return NextResponse.json({ error: 'Invalid upload purpose', code: 'invalid_purpose', fields: ['purpose'] }, { status: 400 })
+    if (kind !== 'receipt' || (body.purpose !== 'expense_receipt' && body.purpose !== 'travel_itinerary' && body.purpose !== 'leave_medical')) return NextResponse.json({ error: 'Invalid upload purpose', code: 'invalid_purpose', fields: ['purpose'] }, { status: 400 })
     purpose = body.purpose
   }
   const mime = typeof body.mimeType === 'string' ? body.mimeType.toLowerCase().replace('image/jpg', 'image/jpeg') : ''

@@ -1,15 +1,15 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T09:33:51.133Z",
+    "generatedAt": "2026-10-15T10:18:40.674Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
-      "totalRouteFiles": 91,
-      "totalHandlers": 150,
+      "totalRouteFiles": 92,
+      "totalHandlers": 151,
       "publicHandlers": 18,
-      "sessionHandlers": 117,
+      "sessionHandlers": 118,
       "serviceHandlers": 15,
       "handlersWithTests": 105,
-      "handlersWithGaps": 45,
+      "handlersWithGaps": 46,
       "p0Blockers": 1,
       "p1HighRiskGaps": 7
     }
@@ -2155,6 +2155,7 @@
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2180,6 +2181,7 @@
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2243,6 +2245,25 @@
       "missingTests": [],
       "status": "VERIFIED_FAKE",
       "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/[id]/document/[file]",
+      "method": "GET",
+      "file": "app/api/lms/[id]/document/[file]/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`leave-doc:${userId}`, 300, 60_000",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/lms/[id]/document/[file]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
     },
     {
       "url": "/api/lms/balance",
@@ -2647,6 +2668,7 @@
         "tests/expense_idempotency_receipts.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
@@ -2681,6 +2703,7 @@
         "tests/expense_idempotency_receipts.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
@@ -2915,6 +2938,7 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
@@ -2943,6 +2967,7 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
@@ -3069,6 +3094,7 @@
       "existingTests": [
         "tests/expense_idempotency_receipts.test.js",
         "tests/expenses_vertical.test.js",
+        "tests/leave_medical_docs.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_client_limits.test.js",
         "tests/receipt_ocr_vertical.test.js",

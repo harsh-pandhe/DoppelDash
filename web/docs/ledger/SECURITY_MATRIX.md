@@ -4,13 +4,13 @@
 
 ## Executive Summary
 
-- **Total API Route Files**: 91
-- **Total Method Handlers**: 150
+- **Total API Route Files**: 92
+- **Total Method Handlers**: 151
 - **Public Handlers**: 18 (authentication, invitations, shared dashboard, support chat, public assets)
-- **Session-Authenticated Handlers**: 117
+- **Session-Authenticated Handlers**: 118
 - **Service-Authenticated Handlers**: 15 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
 - **Handlers with Test Coverage**: 105
-- **Handlers with Coverage Gaps**: 45
+- **Handlers with Coverage Gaps**: 46
 - **P0 Launch Blockers**: 1 (RTDN Pub/Sub OIDC, Account Deletion Integrity)
 - **P1 High-Risk Gaps**: 7 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
 
@@ -90,7 +90,7 @@
 | **POST** | `/api/user/email-config` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
 | **POST** | `/api/user/email-config/test` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
 
-### 12. Leave, Holidays & LMS (9 handlers)
+### 12. Leave, Holidays & LMS (10 handlers)
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
@@ -100,6 +100,7 @@
 | **DELETE** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
 | **PATCH** | `/api/lms/[id]` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/batch_i.test.js` | `VERIFIED_FAKE` |
+| **GET** | `/api/lms/[id]/document/[file]` | session | session_jwt (user.orgId) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
 | **GET** | `/api/lms/balance` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/batch_j.test.js` +2 | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/calendar` | session | session_jwt (user.orgId) | admin | none | **NONE** | `GAPS_FOUND` |
 | **GET** | `/api/lms/workload` | session | session_jwt (user.orgId) | admin | none | **NONE** | `GAPS_FOUND` |
@@ -133,8 +134,8 @@
 | **GET** | `/api/auth/me` | session | session_jwt (user.orgId) | admin | webEnabled + plan:premium | `tests/auth_foundation.test.js` +13 | `VERIFIED_FAKE` |
 | **GET** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
 | **POST** | `/api/crm` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +12 | `VERIFIED_FAKE` |
-| **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
-| **POST** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +6 | `VERIFIED_FAKE` |
+| **GET** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +7 | `VERIFIED_FAKE` |
+| **POST** | `/api/lms` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/auth_foundation.test.js` +7 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
 | **GET** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
 | **PUT** | `/api/org/mail-config` | session | session_jwt (user.orgId) | admin | plan:premium | `tests/mail_architecture.test.js` +1 | `VERIFIED_FAKE` |
@@ -168,7 +169,7 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **POST** | `/api/uploads/sign` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/expense_idempotency_receipts.test.js` +11 | `VERIFIED_FAKE` |
+| **POST** | `/api/uploads/sign` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/expense_idempotency_receipts.test.js` +12 | `VERIFIED_FAKE` |
 
 ### 5. Support Chat, Cron & Destructive Dev Endpoints (12 handlers)
 
@@ -220,8 +221,8 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/travel` | session | session_jwt (user.orgId) | admin | none | `tests/auth_foundation.test.js` +9 | `VERIFIED_FAKE` |
-| **POST** | `/api/travel` | session | session_jwt (user.orgId) | admin | none | `tests/auth_foundation.test.js` +9 | `VERIFIED_FAKE` |
+| **GET** | `/api/travel` | session | session_jwt (user.orgId) | admin | none | `tests/auth_foundation.test.js` +10 | `VERIFIED_FAKE` |
+| **POST** | `/api/travel` | session | session_jwt (user.orgId) | admin | none | `tests/auth_foundation.test.js` +10 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/travel/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **GET** | `/api/travel/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **PATCH** | `/api/travel/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
@@ -232,8 +233,8 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +15 | `VERIFIED_FAKE` |
-| **POST** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +15 | `VERIFIED_FAKE` |
+| **GET** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +16 | `VERIFIED_FAKE` |
+| **POST** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +16 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **GET** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **PATCH** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
@@ -350,6 +351,7 @@
 | **DELETE** | `/api/lms/[id]` | `app/api/lms/[id]/route.ts` | session | admin | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/[id]` | `app/api/lms/[id]/route.ts` | session | admin | `VERIFIED_FAKE` |
 | **PATCH** | `/api/lms/[id]` | `app/api/lms/[id]/route.ts` | session | admin | `VERIFIED_FAKE` |
+| **GET** | `/api/lms/[id]/document/[file]` | `app/api/lms/[id]/document/[file]/route.ts` | session | any_authenticated | `GAPS_FOUND` |
 | **GET** | `/api/lms/balance` | `app/api/lms/balance/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **GET** | `/api/lms/calendar` | `app/api/lms/calendar/route.ts` | session | admin | `GAPS_FOUND` |
 | **GET** | `/api/lms/workload` | `app/api/lms/workload/route.ts` | session | admin | `GAPS_FOUND` |
