@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T11:34:24.584Z",
+    "generatedAt": "2026-10-15T11:43:47.748Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 92,
       "totalHandlers": 151,
       "publicHandlers": 18,
-      "sessionHandlers": 118,
-      "serviceHandlers": 15,
-      "handlersWithTests": 105,
-      "handlersWithGaps": 46,
+      "sessionHandlers": 119,
+      "serviceHandlers": 14,
+      "handlersWithTests": 107,
+      "handlersWithGaps": 44,
       "p0Blockers": 1,
-      "p1HighRiskGaps": 7
+      "p1HighRiskGaps": 5
     }
   },
   "handlers": [
@@ -802,7 +802,7 @@
       "file": "app/api/auth/outlook/route.ts",
       "group": "3. Outlook Webhooks & OAuth / Token Handling",
       "authType": "session",
-      "tenantSource": "session_jwt (unscoped / user-only)",
+      "tenantSource": "session_jwt (user.orgId)",
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
@@ -810,39 +810,33 @@
       "providers": [
         "Microsoft Graph"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/auth/outlook",
-        "OAuth start: redirects to Microsoft login with state=userId",
-        "Webhook handshake: echoes validationToken query param with text/plain",
-        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      "existingTests": [
+        "tests/outlook_oauth_state.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/outlook/callback",
       "method": "GET",
       "file": "app/api/auth/outlook/callback/route.ts",
       "group": "3. Outlook Webhooks & OAuth / Token Handling",
-      "authType": "service",
-      "tenantSource": "service_global",
-      "ownerSource": "none",
-      "requiredRole": "none",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [
         "Microsoft Graph"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/auth/outlook/callback",
-        "OAuth start: redirects to Microsoft login with state=userId",
-        "Webhook handshake: echoes validationToken query param with text/plain",
-        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      "existingTests": [
+        "tests/outlook_oauth_state.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/passkey/credentials",

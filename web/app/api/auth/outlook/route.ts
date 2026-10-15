@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
+import { signOAuthState } from '@/lib/auth/oauthState'
 
 export async function GET() {
-  const { userId } = await getUser()
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId, orgId } = await getUser()
+  if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const clientId    = process.env.OUTLOOK_CLIENT_ID
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/outlook/callback`
@@ -15,7 +16,7 @@ export async function GET() {
     response_type: 'code',
     redirect_uri:  redirectUri,
     scope:         'openid email profile offline_access Mail.Read',
-    state:         userId,
+    state:         signOAuthState(userId, orgId),
     response_mode: 'query',
   })
 

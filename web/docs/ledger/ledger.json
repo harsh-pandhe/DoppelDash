@@ -824,12 +824,15 @@
     "GET"
    ],
    "guards": [
-    "session"
+    "session",
+    "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
    "webCallers": [],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/outlook_oauth_state.test.js"
+   ]
   },
   {
    "url": "/api/auth/outlook/callback",
@@ -838,12 +841,16 @@
     "GET"
    ],
    "guards": [
-    "webhook/service-auth"
+    "session",
+    "webhook/service-auth",
+    "tenant-scoped"
    ],
    "unauthenticatedByCode": false,
    "webCallers": [],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/outlook_oauth_state.test.js"
+   ]
   },
   {
    "url": "/api/auth/passkey/credentials",

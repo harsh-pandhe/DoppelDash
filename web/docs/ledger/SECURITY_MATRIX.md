@@ -7,12 +7,12 @@
 - **Total API Route Files**: 92
 - **Total Method Handlers**: 151
 - **Public Handlers**: 18 (authentication, invitations, shared dashboard, support chat, public assets)
-- **Session-Authenticated Handlers**: 118
-- **Service-Authenticated Handlers**: 15 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
-- **Handlers with Test Coverage**: 105
-- **Handlers with Coverage Gaps**: 46
+- **Session-Authenticated Handlers**: 119
+- **Service-Authenticated Handlers**: 14 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
+- **Handlers with Test Coverage**: 107
+- **Handlers with Coverage Gaps**: 44
 - **P0 Launch Blockers**: 1 (RTDN Pub/Sub OIDC, Account Deletion Integrity)
-- **P1 High-Risk Gaps**: 7 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
+- **P1 High-Risk Gaps**: 5 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
 
 ## High-Risk Group Analysis (Batch 1)
 
@@ -160,8 +160,8 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/auth/outlook` | session | session_jwt (unscoped / user-only) | any_authenticated | none | **NONE** | `GAPS_FOUND` |
-| **GET** | `/api/auth/outlook/callback` | service | service_global | none | none | **NONE** | `GAPS_FOUND` |
+| **GET** | `/api/auth/outlook` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/outlook_oauth_state.test.js` | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/outlook/callback` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/outlook_oauth_state.test.js` | `VERIFIED_FAKE` |
 | **GET** | `/api/webhooks/outlook` | service | service_context | none | none | **NONE** | `GAPS_FOUND` |
 | **POST** | `/api/webhooks/outlook` | service | service_context | none | none | **NONE** | `GAPS_FOUND` |
 
@@ -283,8 +283,8 @@
 | **POST** | `/api/auth/login` | `app/api/auth/login/route.ts` | public | none | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/logout` | `app/api/auth/logout/route.ts` | public | none | `VERIFIED_FAKE` |
 | **GET** | `/api/auth/me` | `app/api/auth/me/route.ts` | session | admin | `VERIFIED_FAKE` |
-| **GET** | `/api/auth/outlook` | `app/api/auth/outlook/route.ts` | session | any_authenticated | `GAPS_FOUND` |
-| **GET** | `/api/auth/outlook/callback` | `app/api/auth/outlook/callback/route.ts` | service | none | `GAPS_FOUND` |
+| **GET** | `/api/auth/outlook` | `app/api/auth/outlook/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
+| **GET** | `/api/auth/outlook/callback` | `app/api/auth/outlook/callback/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **DELETE** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **GET** | `/api/auth/passkey/credentials` | `app/api/auth/passkey/credentials/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **POST** | `/api/auth/passkey/login` | `app/api/auth/passkey/login/route.ts` | public | none | `VERIFIED_FAKE` |

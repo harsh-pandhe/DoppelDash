@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import OutlookToken from '@/models/OutlookToken'
+import { getUser } from '@/lib/auth'
+import { verifyOAuthState } from '@/lib/auth/oauthState'
 
 async function createGraphSubscription(accessToken: string, appUrl: string): Promise<{ id: string; expirationDateTime: string } | null> {
+  if (!process.env.OUTLOOK_WEBHOOK_SECRET) return null   // never subscribe with a guessable clientState
   const expiry = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 days
   try {
     const res = await fetch('https://graph.microsoft.com/v1.0/subscriptions', {
@@ -13,7 +16,7 @@ async function createGraphSubscription(accessToken: string, appUrl: string): Pro
         notificationUrl:    `${appUrl}/api/webhooks/outlook`,
         resource:           'me/mailFolders/inbox/messages',
         expirationDateTime: expiry.toISOString(),
-        clientState:        process.env.OUTLOOK_WEBHOOK_SECRET || 'doppeldash-secret',
+        clientState:        process.env.OUTLOOK_WEBHOOK_SECRET,
       }),
     })
     if (!res.ok) return null
@@ -26,10 +29,14 @@ async function createGraphSubscription(accessToken: string, appUrl: string): Pro
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code   = searchParams.get('code')
-  const userId = searchParams.get('state')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
 
-  if (!code || !userId) return NextResponse.redirect(`${appUrl}/settings?outlook=error`)
+  if (!code) return NextResponse.redirect(`${appUrl}/settings?outlook=error`)
+  // The state must be OUR signed, unexpired state, and the browser session must be the user it was issued to (before any provider call).
+  const state = verifyOAuthState(searchParams.get('state'))
+  const session = state ? await getUser() : null
+  if (!state || !session?.userId || session.userId !== state.userId || session.orgId !== state.orgId) return NextResponse.redirect(`${appUrl}/settings?outlook=error`)
+  const { userId, orgId } = state
 
   const clientId     = process.env.OUTLOOK_CLIENT_ID     || ''
   const clientSecret = process.env.OUTLOOK_CLIENT_SECRET || ''
@@ -66,9 +73,10 @@ export async function GET(req: NextRequest) {
   const sub = await createGraphSubscription(tokens.access_token, appUrl)
 
   await OutlookToken.findOneAndUpdate(
-    { userId },
+    { userId, orgId },
     {
       userId,
+      orgId,
       email,
       accessToken:        tokens.access_token,
       refreshToken:       tokens.refresh_token,
