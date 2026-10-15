@@ -208,16 +208,22 @@ test('X12. no key: an identical rapid resubmission is a 409 (not a second claim)
   assert.equal((await kit.api('/api/rms', { method: 'POST', ...who('Aemployee'), body: { ...body, title: 'Rapid b' } })).status, 201)
 })
 
-test('X13. concurrent reviewers: exactly one transition wins, the rest get 409; one audit entry, one notification', async () => {
+test('X13. concurrent reviewers: no double transition from the same state — every 200 is a step of one legal serial order, the rest get 409; one audit entry per applied step', async () => {
   const e = await create('Aemployee', { title: 'Race' })
   const rs = await Promise.all([patch('Amanager', e._id, { status: 'pending_admin' }), patch('Aadmin', e._id, { status: 'pending_admin' }), patch('Amanager', e._id, { status: 'rejected' }), patch('Aadmin', e._id, { status: 'returned' })])
   const ok = rs.filter(r => r.status === 200), conflict = rs.filter(r => r.status === 409)
-  assert.equal(ok.length, 1, rs.map(r => r.status).join()); assert.equal(conflict.length, 3)
+  assert.ok(ok.length >= 1 && ok.length + conflict.length === 4, rs.map(r => r.status).join())
   const doc = await db.collection('expenses').findOne({ _id: new mongoose.Types.ObjectId(e._id) })
-  assert.equal(doc.status, ok[0].json.status)
+  const applied = ok.map(r => r.json.status).sort()
+  if (ok.length === 1) assert.equal(doc.status, applied[0])
+  else {
+    // A request that starts after the first commit is judged against the NEW state (pending_admin → rejected is a legal second step by design);
+    // two transitions out of the SAME state can never both win. Only this one serial order is possible with these four requests:
+    assert.equal(ok.length, 2, rs.map(r => r.status).join()); assert.deepEqual(applied, ['pending_admin', 'rejected']); assert.equal(doc.status, 'rejected')
+  }
   await sleep(600)
   const total = (await db.collection('auditlogs').countDocuments({ targetId: e._id, action: { $in: ['expense.pending_admin', 'expense.rejected', 'expense.returned_to_employee', 'expense.returned'] } }))
-  assert.equal(total, 1, 'one audit row for the single winning transition')
+  assert.equal(total, ok.length, 'one audit row per applied transition')
 })
 
 /* ───────────── 5. tenancy ───────────── */
