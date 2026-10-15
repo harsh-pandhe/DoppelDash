@@ -467,6 +467,8 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
     setActing(true); await onAction(expense._id, status, note, proof); setActing(false); onClose()
   }
 
+  // Line decisions follow the review stage (the server refuses a manager once the claim is with the admin or settled)
+  const canReviewLines = (isManager && !isAdmin && expense.status === 'pending_manager') || (isAdmin && (expense.status === 'pending_manager' || expense.status === 'pending_admin'))
   const updateItemStatus = async (index: number, status: 'approved' | 'rejected') => {
     setItemActing(index)
     const res = await fetch(`/api/rms/${expense._id}`, {
@@ -568,7 +570,7 @@ function ExpenseDetailSheet({ expense, open, onClose, isManager, isAdmin, onRevi
                       {itemStatus === 'approved' && <span className="text-[9px] font-bold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0 rounded-full">OK</span>}
                       {itemStatus === 'rejected' && <span className="text-[9px] font-bold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0 rounded-full">Rej</span>}
                       {itemStatus === 'pending' && <span className="text-[9px] text-surface-muted">Pending</span>}
-                      {isManager && (
+                      {canReviewLines && (
                         <div className="flex gap-0.5">
                           <button type="button" title="Approve item" aria-label="Approve item"
                             onClick={() => updateItemStatus(i, 'approved')}

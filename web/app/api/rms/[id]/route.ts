@@ -65,6 +65,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const checked = validateReview(body, role)
     if ('problems' in checked) return NextResponse.json(checked.problems, { status: 400 })
     updates = checked.data
+    // Review policy (Phase 4C): the manager stage belongs to managers (and admins); once a claim is `pending_admin` — or settled — only an
+    // admin may make any review write (status, notes, line decisions). Decided before anything is written, so a refusal changes nothing.
+    if (role === 'manager' && existingExpense.status !== 'pending_manager') {
+      return NextResponse.json({ error: 'Only an admin can review a claim at this stage.', code: 'review_stage_admin_only' }, { status: 403 })
+    }
   }
 
   if (updates.travelRequestId) {
@@ -117,6 +122,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     if (!VALID_TRANSITIONS[existingExpense.status]?.includes(updates.status as string)) {
       return NextResponse.json({ error: `Cannot move from ${existingExpense.status} to ${updates.status}` }, { status: 409 })
+    }
+    // Sending a claim back from the admin stage to manager review is an explicit, reasoned step (audited as expense.returned_to_manager).
+    if (updates.status === 'pending_manager' && String(updates.adminNote ?? updates.managerNote ?? '').trim().length === 0) {
+      return NextResponse.json({ error: 'A reason is required to send a claim back to manager review.', fields: ['adminNote'], code: 'reason_required' }, { status: 400 })
     }
     if (updates.status === 'paid' && role !== 'admin') {
       return NextResponse.json({ error: 'Only the boss can mark expenses as paid' }, { status: 403 })
@@ -174,7 +183,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     performedByName: actorName,
     targetId:        params.id,
     targetType:      'expense',
-    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote, ...(selfApproved ? { selfApproved: true } : {}) },
+    metadata:        { status: updates.status, employeeName: expense.userName, amount: expense.amount, note: updates.managerNote || updates.adminNote, from: existingExpense.status, ...(selfApproved ? { selfApproved: true } : {}) },
     orgId,
   })
 

@@ -624,7 +624,7 @@ export default function ContactDetailPage() {
 
   const fetchContact = useCallback(() => {
     fetch(`/api/crm/${id}`)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })   // a 404/403 body is an error, not a contact
       .then(data => {
         setContact(data)
         setForm({
@@ -637,7 +637,7 @@ export default function ContactDetailPage() {
         })
         setLoading(false)
       })
-      .catch(() => { setError('Failed to load contact.'); setLoading(false) })
+      .catch(() => { setError('Failed to load contact. It may not exist, or you may not have access to it.'); setLoading(false) })
   }, [id])
 
   useEffect(() => { fetchContact() }, [fetchContact])
