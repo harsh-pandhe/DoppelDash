@@ -15,10 +15,12 @@ export async function GET(req: NextRequest) {
   const today = new Date()
   const month = today.getMonth() + 1
   const day   = today.getDate()
+  const year  = today.getFullYear()
 
+  // Candidates: birthday today and not yet claimed THIS YEAR (the old boolean + Jan-1 reset could re-send on a second Jan-1 run).
   const contacts = await Contact.find({
     birthday: { $exists: true },
-    birthdayGreetingSent: { $ne: true },
+    birthdayGreetingYear: { $ne: year },
   }).lean()
 
   const todayBirthdays = contacts.filter(c => {
@@ -31,22 +33,26 @@ export async function GET(req: NextRequest) {
   }
 
   let sent = 0
+  const names: string[] = []
   for (const contact of todayBirthdays) {
     // A record without a tenant is never assigned one — skip it.
     if (!contact.orgId) continue
-    const managerEmails = await getBirthdayNotificationRecipients(contact.orgId)
-
-    if (managerEmails.length) {
-      await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails, orgId: contact.orgId })
+    // ATOMIC CLAIM before sending: two overlapping runs (a retried trigger, two schedulers) cannot both win, so a reminder goes out once.
+    const claimed = await Contact.findOneAndUpdate(
+      { _id: contact._id, birthdayGreetingYear: { $ne: year } },
+      { $set: { birthdayGreetingYear: year, birthdayGreetingSent: true } },
+      { projection: { _id: 1 } },
+    )
+    if (!claimed) continue
+    try {
+      const managerEmails = await getBirthdayNotificationRecipients(contact.orgId)
+      if (managerEmails.length) await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails, orgId: contact.orgId })
+      sent++; names.push(contact.name)
+    } catch {
+      // Could not even attempt delivery: release the claim so the next run retries (at-least-once, never silently dropped).
+      await Contact.updateOne({ _id: contact._id, birthdayGreetingYear: year }, { $unset: { birthdayGreetingYear: 1 }, $set: { birthdayGreetingSent: false } }).catch(() => undefined)
     }
-    await Contact.findByIdAndUpdate(contact._id, { birthdayGreetingSent: true })
-    sent++
   }
 
-  // Reset birthdayGreetingSent on Jan 1 for the new year
-  if (month === 1 && day === 1) {
-    await Contact.updateMany({}, { birthdayGreetingSent: false })
-  }
-
-  return NextResponse.json({ sent, contacts: todayBirthdays.map(c => c.name) })
+  return NextResponse.json({ sent, contacts: names })
 }

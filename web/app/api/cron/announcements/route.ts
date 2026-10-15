@@ -24,23 +24,23 @@ export async function GET(req: NextRequest) {
   if (!due.length) return NextResponse.json({ sent: 0 })
 
   let sent = 0
+  const titles: string[] = []
   for (const a of due) {
     // A record without a tenant is never assigned one — skip it.
     if (!a.orgId) continue
-    const emails = await getAnnouncementRecipients(a.orgId)
-
-    if (emails.length) {
-      await emailUrgentAnnouncement({
-        orgId: a.orgId,
-        emails,
-        title:      a.title,
-        body:       a.body,
-        senderName: a.authorName || 'Management',
-      })
+    // ATOMIC CLAIM before sending (overlapping runs cannot both send the same announcement).
+    const claimed = await Announcement.findOneAndUpdate({ _id: a._id, urgentEmailSent: { $ne: true } }, { $set: { urgentEmailSent: true } }, { projection: { _id: 1 } })
+    if (!claimed) continue
+    try {
+      const emails = await getAnnouncementRecipients(a.orgId)
+      if (emails.length) {
+        await emailUrgentAnnouncement({ orgId: a.orgId, emails, title: a.title, body: a.body, senderName: a.authorName || 'Management' })
+      }
+      sent++; titles.push(a.title)
+    } catch {
+      await Announcement.updateOne({ _id: a._id }, { $set: { urgentEmailSent: false } }).catch(() => undefined)   // retry on the next run
     }
-    await Announcement.findByIdAndUpdate(a._id, { urgentEmailSent: true })
-    sent++
   }
 
-  return NextResponse.json({ sent, titles: due.map(a => a.title) })
+  return NextResponse.json({ sent, titles })
 }

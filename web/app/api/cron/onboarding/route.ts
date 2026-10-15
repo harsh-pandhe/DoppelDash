@@ -30,17 +30,21 @@ export async function GET(req: NextRequest) {
   for (const e of candidates) {
     if (!e.email) continue
     const daysSinceJoining = Math.floor((now.getTime() - new Date(e.joiningDate).getTime()) / 86400000)
+    // ATOMIC CLAIM (still due: never nudged, or last nudged 7+ days ago) before sending, so overlapping runs cannot double-send.
+    const claimed = await Employee.findOneAndUpdate(
+      { clerkUserId: e.clerkUserId, orgId: e.orgId, onboardingComplete: { $ne: true }, $or: [{ onboardingNudgeSentAt: { $exists: false } }, { onboardingNudgeSentAt: { $lte: sevenDaysAgo } }] },
+      { $set: { onboardingNudgeSentAt: now } },
+      { returnDocument: 'before', projection: { onboardingNudgeSentAt: 1 } },
+    ).lean()
+    if (!claimed) continue
     try {
-      await emailOnboardingNudge({
-        orgId: e.orgId,
-        employeeEmail: e.email,
-        employeeName: e.firstName || 'there',
-        daysSinceJoining,
-        step: e.onboardingStep || 0,
-      })
-      await Employee.updateOne({ clerkUserId: e.clerkUserId }, { onboardingNudgeSentAt: now })
+      await emailOnboardingNudge({ orgId: e.orgId, employeeEmail: e.email, employeeName: e.firstName || 'there', daysSinceJoining, step: e.onboardingStep || 0 })
       sent++
-    } catch { /* best-effort, retry next run */ }
+    } catch {
+      // best-effort: restore the previous marker so the next run retries
+      const prev = (claimed as { onboardingNudgeSentAt?: Date }).onboardingNudgeSentAt
+      await Employee.updateOne({ clerkUserId: e.clerkUserId, orgId: e.orgId, onboardingNudgeSentAt: now }, prev ? { $set: { onboardingNudgeSentAt: prev } } : { $unset: { onboardingNudgeSentAt: 1 } }).catch(() => undefined)
+    }
   }
 
   return NextResponse.json({ sent, candidates: candidates.length })

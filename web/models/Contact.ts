@@ -33,6 +33,8 @@ export interface IContact extends Document {
   birthday?: Date
   anniversary?: Date
   birthdayGreetingSent?: boolean
+  /** Calendar year the birthday reminder was last CLAIMED for (atomic claim by the cron; replaces the Jan-1 reset of the boolean). */
+  birthdayGreetingYear?: number
   reminderDate?: Date
   reminderNote?: string
   reminderDismissedAt?: Date
@@ -87,6 +89,7 @@ const ContactSchema = new Schema<IContact>(
     birthday:             { type: Date },
     anniversary:          { type: Date },
     birthdayGreetingSent: { type: Boolean, default: false },
+    birthdayGreetingYear: { type: Number },
     reminderDate:         { type: Date },
     reminderNote:         { type: String },
     reminderDismissedAt:  { type: Date },
