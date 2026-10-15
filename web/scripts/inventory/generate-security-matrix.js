@@ -29,6 +29,9 @@ const walk = (dir, pred, out = []) => {
   return out
 }
 
+const overridesPath = path.join(outDir, 'evidence_overrides.json')
+const evidenceOverrides = fs.existsSync(overridesPath) ? JSON.parse(fs.readFileSync(overridesPath, 'utf8')) : {}
+
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 const apiFiles = walk(path.join(root, 'app/api'), p => p.endsWith('/route.ts')).sort()
 const testFiles = walk(path.join(root, 'tests'), p => p.endsWith('.test.js')).map(p => ({
@@ -132,9 +135,23 @@ function inspectHandler(url, method, src, relPath) {
   if (/otplib/i.test(src)) providers.push('TOTP')
 
   // Tests mentioning this exact route
-  const existingTests = testFiles
-    .filter(t => t.content.includes(url))
-    .map(t => t.file)
+  // Evidence = a test file that names THIS route (dynamic segments `[id]` match `${x}`, `:id`, 24-hex ids or any path segment) AND this HTTP
+  // method within 160 characters of the route (GET: any mention with no other method in the window). Route-level mention alone is NOT evidence for
+  // every method. Manually reviewed mappings live in docs/ledger/evidence_overrides.json (reviewed test names, not counts).
+  const esc = x => x.replace(/[.*+?^${}()|\\]/g, '\\$&')
+  const routeRx = new RegExp(url.split(/(\[[^\]]+\])/).map(part => /^\[/.test(part) ? "(?:\\$\\{[^}]*\\}|:[A-Za-z]+|[0-9a-f]{24}|[^/'\"`\\s]+)" : esc(part)).join(''), 'g')
+  const methodsRx = /['"`](GET|POST|PUT|PATCH|DELETE|HEAD)['"`]/g
+  const existingTests = testFiles.filter(t => {
+    let m
+    routeRx.lastIndex = 0
+    while ((m = routeRx.exec(t.content))) {
+      const win = t.content.slice(Math.max(0, m.index - 160), m.index + m[0].length + 160)
+      const found = new Set(); let mm; methodsRx.lastIndex = 0
+      while ((mm = methodsRx.exec(win))) found.add(mm[1])
+      if (method === 'GET' ? (found.size === 0 || found.has('GET')) : found.has(method)) return true
+    }
+    return false
+  }).map(t => t.file).concat((evidenceOverrides[`${method} ${url}`] || []).map(e => `${e} (reviewed)`))
 
   // Status and gaps assessment
   let status = 'VERIFIED_FAKE'

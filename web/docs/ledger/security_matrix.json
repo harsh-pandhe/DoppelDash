@@ -1,17 +1,17 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T11:43:47.748Z",
+    "generatedAt": "2026-10-15T23:38:29.709Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
-      "totalRouteFiles": 92,
-      "totalHandlers": 151,
-      "publicHandlers": 18,
+      "totalRouteFiles": 93,
+      "totalHandlers": 153,
+      "publicHandlers": 20,
       "sessionHandlers": 119,
       "serviceHandlers": 14,
-      "handlersWithTests": 107,
-      "handlersWithGaps": 44,
+      "handlersWithTests": 153,
+      "handlersWithGaps": 0,
       "p0Blockers": 1,
-      "p1HighRiskGaps": 5
+      "p1HighRiskGaps": 0
     }
   },
   "handlers": [
@@ -48,12 +48,14 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/admin/balances/[userId]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_j1.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/balances/[userId]",
@@ -67,12 +69,14 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/admin/balances/[userId]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_b.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/invitations",
@@ -87,11 +91,9 @@
       "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
+        "tests/access_matrix_p2.test.js",
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
-        "tests/invitation_token_hygiene.test.js",
-        "tests/mail_architecture.test.js",
         "tests/secret_exposure.test.js"
       ],
       "missingTests": [],
@@ -111,11 +113,13 @@
       "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
         "tests/invitation_token_hygiene.test.js",
         "tests/mail_architecture.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/secret_exposure.test.js"
       ],
       "missingTests": [],
@@ -134,12 +138,15 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/admin/invitations/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/invitations/[id]",
@@ -153,12 +160,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/admin/invitations/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_f.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/invitations/[id]/resend",
@@ -172,12 +180,15 @@
       "entitlement": "none",
       "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/admin/invitations/[id]/resend"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/settings",
@@ -211,7 +222,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_e.test.js"
+        "tests/batch_e.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -230,7 +242,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_e.test.js"
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -268,6 +280,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_b.test.js",
         "tests/batch_d.test.js",
@@ -294,14 +307,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
-        "tests/batch_b.test.js",
         "tests/batch_d.test.js",
         "tests/batch_h.test.js",
-        "tests/batch_j1.test.js",
-        "tests/secret_exposure.test.js",
-        "tests/web_access_boundary.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -319,12 +327,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/admin/users/[userId]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_b.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/users/[userId]",
@@ -338,12 +347,14 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/admin/users/[userId]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_d.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/admin/users/[userId]",
@@ -357,12 +368,15 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/admin/users/[userId]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_h.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/analytics",
@@ -437,7 +451,8 @@
       "rateLimit": "`share-list:${userId}`, 60, 60_000",
       "providers": [],
       "existingTests": [
-        "tests/analytics_share_security.test.js"
+        "tests/analytics_share_security.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -513,9 +528,6 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_c.test.js",
-        "tests/batch_i.test.js",
-        "tests/batch_j.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -535,9 +547,11 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -556,12 +570,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/announcements/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/announcements/[id]",
@@ -575,12 +590,14 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/announcements/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/announcements/broadcast",
@@ -597,7 +614,8 @@
         "SMTP"
       ],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/batch_i.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -620,6 +638,7 @@
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -638,12 +657,14 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/auth/invitations/[token]"
+      "existingTests": [
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js",
+        "tests/route_gap_closure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/invitations/[token]",
@@ -657,12 +678,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising HEAD /api/auth/invitations/[token]"
+      "existingTests": [
+        "tests/route_gap_closure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/invitations/accept",
@@ -680,7 +701,8 @@
         "tests/auth_foundation.test.js",
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
-        "tests/invitation_token_hygiene.test.js"
+        "tests/invitation_token_hygiene.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -701,7 +723,9 @@
       "existingTests": [
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
-        "tests/invitation_token_hygiene.test.js"
+        "tests/invitation_token_hygiene.test.js",
+        "tests/malformed_input_sweep.test.js",
+        "tests/route_gap_closure.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -723,15 +747,14 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
-        "tests/batch_j.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/mail_architecture.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
-        "tests/web_auth_pages.test.js",
         "tests/z_final_log_secret_scan.test.js"
       ],
       "missingTests": [],
@@ -789,8 +812,7 @@
         "tests/secret_exposure.test.js",
         "tests/staging_harness.test.js",
         "tests/web_access_boundary.test.js",
-        "tests/web_android_shared_data.test.js",
-        "tests/z_final_log_secret_scan.test.js"
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1001,6 +1023,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/password_reset_token_hygiene.test.js"
       ],
       "missingTests": [],
@@ -1025,6 +1048,7 @@
         "tests/batch_h1.test.js",
         "tests/batch_k.test.js",
         "tests/mail_architecture.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/password_reset_token_hygiene.test.js",
         "tests/secret_exposure.test.js"
       ],
@@ -1047,6 +1071,7 @@
       "existingTests": [
         "tests/auth_foundation.test.js",
         "tests/batch_j.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/z_final_log_secret_scan.test.js"
       ],
       "missingTests": [],
@@ -1081,7 +1106,7 @@
         "tests/batch_l1.test.js",
         "tests/batch_l2.test.js",
         "tests/entitlement_hardening.test.js",
-        "tests/reviewer_auth_security.test.js"
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1100,6 +1125,7 @@
       "rateLimit": "`send-otp:${ip}:${userId}`, 3, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/malformed_input_sweep.test.js",
         "tests/secret_exposure.test.js"
       ],
       "missingTests": [],
@@ -1138,7 +1164,6 @@
       "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
       "providers": [],
       "existingTests": [
-        "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js"
       ],
       "missingTests": [],
@@ -1197,12 +1222,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/auth/tour-seen"
+      "existingTests": [
+        "tests/route_gap_closure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/auth/verify-otp",
@@ -1220,9 +1245,9 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
-        "tests/batch_j.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/passkey_totp_concurrency.test.js",
         "tests/passkey_totp_security.test.js",
         "tests/secret_exposure.test.js",
@@ -1293,7 +1318,8 @@
       "rateLimit": "`play-verify:${userId}`, 20, 60_000",
       "providers": [],
       "existingTests": [
-        "tests/batch_m.test.js"
+        "tests/batch_m.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1312,17 +1338,17 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
         "tests/batch_j1.test.js",
-        "tests/batch_k.test.js",
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/crm_vertical.test.js",
-        "tests/mail_architecture.test.js",
-        "tests/receipt_ocr_vertical.test.js",
+        "tests/malformed_input_sweep.test.js",
+        "tests/shared_imap_policy.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -1343,18 +1369,17 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
+        "tests/access_matrix_p2.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
-        "tests/batch_j1.test.js",
         "tests/batch_k.test.js",
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/crm_vertical.test.js",
         "tests/mail_architecture.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js",
-        "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -1374,7 +1399,13 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/crm_vertical.test.js",
+        "tests/malformed_input_sweep.test.js",
+        "tests/receipt_ocr_vertical.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1393,7 +1424,15 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/batch_j1.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/crm_vertical.test.js",
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1412,7 +1451,14 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/crm_vertical.test.js",
+        "tests/malformed_input_sweep.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1430,12 +1476,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/crm/[id]/share"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/crm_vertical.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/crm/[id]/share",
@@ -1449,12 +1496,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/crm/[id]/share"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/crm_vertical.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/crm/[id]/share",
@@ -1468,12 +1516,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/crm/[id]/share"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/crm_vertical.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/crm/campaign",
@@ -1491,8 +1540,7 @@
       ],
       "existingTests": [
         "tests/batch_l.test.js",
-        "tests/batch_l1.test.js",
-        "tests/mail_architecture.test.js"
+        "tests/batch_l1.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1515,7 +1563,8 @@
       "existingTests": [
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
-        "tests/mail_architecture.test.js"
+        "tests/mail_architecture.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1539,7 +1588,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_l.test.js",
-        "tests/batch_l1.test.js"
+        "tests/batch_l1.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1562,6 +1612,7 @@
       "existingTests": [
         "tests/batch_i.test.js",
         "tests/batch_k.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js"
       ],
       "missingTests": [],
@@ -1619,9 +1670,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_c.test.js",
-        "tests/batch_i.test.js",
-        "tests/receipt_ocr_vertical.test.js"
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1640,6 +1689,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/receipt_ocr_vertical.test.js"
@@ -1660,12 +1710,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/crm/scanned-cards/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/receipt_ocr_vertical.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/crm/scanned-cards/[id]",
@@ -1679,12 +1730,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/crm/scanned-cards/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/receipt_ocr_vertical.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/cron/announcements",
@@ -1759,8 +1811,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_cleanup_production.test.js"
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1779,8 +1830,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_cleanup_production.test.js"
+        "tests/receipt_cleanup_production.test.js",
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1799,8 +1850,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_cleanup_production.test.js"
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1819,8 +1869,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_cleanup_production.test.js"
+        "tests/receipt_cleanup.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1839,8 +1888,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_cleanup_production.test.js"
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1861,10 +1909,7 @@
         "Microsoft Graph"
       ],
       "existingTests": [
-        "tests/batch_k.test.js",
-        "tests/doppelmayr_brand_provisioning.test.js",
-        "tests/reviewer_auth_security.test.js",
-        "tests/web_access_boundary.test.js"
+        "tests/batch_k.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1907,11 +1952,7 @@
         "Microsoft Graph"
       ],
       "existingTests": [
-        "tests/batch_k.test.js",
-        "tests/doppelmayr_brand_provisioning.test.js",
-        "tests/entitlement_hardening.test.js",
-        "tests/web_access_boundary.test.js",
-        "tests/z_final_log_secret_scan.test.js"
+        "tests/batch_k.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1929,12 +1970,18 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/employees/[id]"
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j.test.js",
+        "tests/employee_record_security.test.js",
+        "tests/secret_exposure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/employees/[id]",
@@ -1948,12 +1995,16 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/employees/[id]"
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j.test.js",
+        "tests/employee_record_security.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/employees/directory",
@@ -1991,6 +2042,7 @@
         "tests/batch_d.test.js",
         "tests/batch_h.test.js",
         "tests/batch_j.test.js",
+        "tests/employee_record_security.test.js",
         "tests/secret_exposure.test.js"
       ],
       "missingTests": [],
@@ -2010,11 +2062,48 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
-        "tests/batch_d.test.js",
         "tests/batch_h.test.js",
         "tests/batch_j.test.js",
-        "tests/secret_exposure.test.js"
+        "tests/employee_record_security.test.js",
+        "tests/malformed_input_sweep.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/health",
+      "method": "GET",
+      "file": "app/api/health/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/route_gap_closure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/health",
+      "method": "HEAD",
+      "file": "app/api/health/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/route_gap_closure.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2032,12 +2121,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/holidays"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/holidays",
@@ -2051,12 +2141,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/holidays"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/holidays",
@@ -2070,12 +2160,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/holidays"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/inbox",
@@ -2091,12 +2182,13 @@
       "providers": [
         "IMAP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/inbox"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/shared_imap_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/inbox/[id]",
@@ -2110,12 +2202,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/inbox/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/inbox/[id]",
@@ -2129,12 +2221,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/inbox/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/lms",
@@ -2149,12 +2241,14 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/access_matrix_p2.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/leave_medical_docs.test.js",
+        "tests/legacy_medical_inventory.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2175,13 +2269,10 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
-        "tests/batch_i.test.js",
         "tests/batch_j.test.js",
-        "tests/entitlement_matrix_mobile_web.test.js",
         "tests/leave_medical_docs.test.js",
-        "tests/web_access_boundary.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -2201,7 +2292,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/batch_c.test.js",
+        "tests/batch_j.test.js",
+        "tests/leave_medical_docs.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2220,7 +2313,14 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/leave_medical_docs.test.js",
+        "tests/legacy_medical_inventory.test.js",
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2239,7 +2339,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js"
+        "tests/batch_c.test.js",
+        "tests/leave_medical_docs.test.js",
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2257,12 +2359,13 @@
       "entitlement": "none",
       "rateLimit": "`leave-doc:${userId}`, 300, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/lms/[id]/document/[file]"
+      "existingTests": [
+        "tests/leave_medical_docs.test.js",
+        "tests/legacy_medical_inventory.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/lms/balance",
@@ -2297,12 +2400,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/lms/calendar"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/lms/workload",
@@ -2316,12 +2419,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/lms/workload"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/mail/drafts",
@@ -2335,12 +2438,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/mail/drafts"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/mail/drafts",
@@ -2354,12 +2458,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/mail/drafts"
+      "existingTests": [
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/mail/drafts/[id]",
@@ -2373,12 +2477,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/mail/drafts/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/mail/drafts/[id]",
@@ -2392,12 +2496,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/mail/drafts/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/mail/drafts/[id]",
@@ -2411,12 +2515,13 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising PATCH /api/mail/drafts/[id]"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/notifications",
@@ -2432,7 +2537,6 @@
       "providers": [],
       "existingTests": [
         "tests/auth_foundation.test.js",
-        "tests/batch_i.test.js",
         "tests/expenses_vertical.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2453,10 +2557,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
-        "tests/batch_i.test.js",
-        "tests/expenses_vertical.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/batch_i.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2477,8 +2578,7 @@
         "SMTP"
       ],
       "existingTests": [
-        "tests/mail_architecture.test.js",
-        "tests/secret_exposure.test.js"
+        "tests/mail_architecture.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2521,8 +2621,7 @@
         "SMTP"
       ],
       "existingTests": [
-        "tests/mail_architecture.test.js",
-        "tests/secret_exposure.test.js"
+        "tests/mail_architecture.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2541,12 +2640,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_me_contract.test.js",
         "tests/batch_e.test.js",
-        "tests/batch_l.test.js",
-        "tests/batch_l1.test.js",
-        "tests/batch_l2.test.js",
-        "tests/batch_m.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -2566,13 +2660,11 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_me_contract.test.js",
-        "tests/batch_e.test.js",
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/batch_l2.test.js",
         "tests/batch_m.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2593,11 +2685,7 @@
       "existingTests": [
         "tests/auth_me_contract.test.js",
         "tests/batch_e.test.js",
-        "tests/batch_l.test.js",
-        "tests/batch_l1.test.js",
-        "tests/batch_l2.test.js",
-        "tests/batch_m.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2616,13 +2704,7 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_me_contract.test.js",
-        "tests/batch_e.test.js",
-        "tests/batch_l.test.js",
-        "tests/batch_l1.test.js",
-        "tests/batch_l2.test.js",
-        "tests/batch_m.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2640,12 +2722,12 @@
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/reports"
+      "existingTests": [
+        "tests/access_matrix_p2.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/rms",
@@ -2664,16 +2746,13 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
-        "tests/expense_idempotency_receipts.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
-        "tests/leave_medical_docs.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
-        "tests/travel_conversion.test.js",
         "tests/upload_production_server.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
@@ -2695,22 +2774,20 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/expense_approval_policy.test.js",
         "tests/expense_idempotency_receipts.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
         "tests/leave_medical_docs.test.js",
-        "tests/receipt_cleanup.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
-        "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
         "tests/upload_production_server.test.js",
-        "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -2730,7 +2807,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js",
+        "tests/batch_c.test.js",
+        "tests/expense_approval_policy.test.js",
+        "tests/expenses_vertical.test.js",
         "tests/receipt_ocr_vertical.test.js"
       ],
       "missingTests": [],
@@ -2750,8 +2829,16 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/batch_c.test.js",
         "tests/batch_i.test.js",
-        "tests/receipt_ocr_vertical.test.js"
+        "tests/batch_j.test.js",
+        "tests/expense_line_review_bounds.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/receipt_type_contract.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/upload_production_server.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2770,8 +2857,16 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/batch_c.test.js",
         "tests/batch_i.test.js",
-        "tests/receipt_ocr_vertical.test.js"
+        "tests/batch_j.test.js",
+        "tests/expense_approval_policy.test.js",
+        "tests/expense_line_review_bounds.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/malformed_input_sweep.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2790,7 +2885,10 @@
       "rateLimit": "`rms-receipt:${userId}`, 300, 60_000",
       "providers": [],
       "existingTests": [
-        "tests/receipt_ocr_vertical.test.js"
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/receipt_type_contract.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/upload_production_server.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2828,6 +2926,7 @@
       "rateLimit": "`rms-ocr:${userId}`, 20, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js"
       ],
       "missingTests": [],
@@ -2870,6 +2969,7 @@
         "Gemini"
       ],
       "existingTests": [
+        "tests/malformed_input_sweep.test.js",
         "tests/support_chat_security.test.js"
       ],
       "missingTests": [],
@@ -2884,19 +2984,19 @@
       "authType": "session",
       "tenantSource": "session_jwt (user.orgId)",
       "ownerSource": "session_jwt (user.userId / id)",
-      "requiredRole": "any_authenticated",
+      "requiredRole": "admin",
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [
         "Microsoft Graph",
         "IMAP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/sync/email"
+      "existingTests": [
+        "tests/shared_imap_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/sync/email",
@@ -2906,19 +3006,19 @@
       "authType": "session",
       "tenantSource": "session_jwt (user.orgId)",
       "ownerSource": "session_jwt (user.userId / id)",
-      "requiredRole": "any_authenticated",
+      "requiredRole": "admin",
       "entitlement": "none",
       "rateLimit": "none",
       "providers": [
         "Microsoft Graph",
         "IMAP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/sync/email"
+      "existingTests": [
+        "tests/shared_imap_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/travel",
@@ -2936,14 +3036,11 @@
         "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
-        "tests/batch_j.test.js",
-        "tests/leave_medical_docs.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
         "tests/travel_patch.test.js",
-        "tests/travel_vertical.test.js",
-        "tests/web_android_shared_data.test.js"
+        "tests/travel_vertical.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2962,11 +3059,10 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js",
-        "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
         "tests/leave_medical_docs.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
@@ -2991,8 +3087,11 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_i.test.js",
-        "tests/batch_j.test.js"
+        "tests/batch_c.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -3011,8 +3110,13 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/batch_c.test.js",
         "tests/batch_i.test.js",
-        "tests/batch_j.test.js"
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -3031,8 +3135,14 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/batch_c.test.js",
         "tests/batch_i.test.js",
-        "tests/batch_j.test.js"
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -3051,7 +3161,12 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_j.test.js"
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_vertical.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -3069,12 +3184,14 @@
       "entitlement": "none",
       "rateLimit": "`travel-doc:${userId}`, 300, 60_000",
       "providers": [],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/travel/[id]/itinerary/[file]"
+      "existingTests": [
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_patch.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/uploads/sign",
@@ -3094,8 +3211,7 @@
         "tests/expense_idempotency_receipts.test.js",
         "tests/expenses_vertical.test.js",
         "tests/leave_medical_docs.test.js",
-        "tests/receipt_cleanup.test.js",
-        "tests/receipt_client_limits.test.js",
+        "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
         "tests/travel_api.test.js",
@@ -3143,12 +3259,12 @@
       "providers": [
         "SMTP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising DELETE /api/user/email-config"
+      "existingTests": [
+        "tests/mail_smtp_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/user/email-config",
@@ -3164,12 +3280,12 @@
       "providers": [
         "SMTP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/user/email-config"
+      "existingTests": [
+        "tests/mail_smtp_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/user/email-config",
@@ -3185,12 +3301,13 @@
       "providers": [
         "SMTP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/user/email-config"
+      "existingTests": [
+        "tests/mail_smtp_policy.test.js",
+        "tests/malformed_input_sweep.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/user/email-config/test",
@@ -3202,16 +3319,16 @@
       "ownerSource": "session_jwt (user.userId / id)",
       "requiredRole": "any_authenticated",
       "entitlement": "none",
-      "rateLimit": "none",
+      "rateLimit": "`email-test:${userId}`, 5, 10 * 60_000",
       "providers": [
         "SMTP"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/user/email-config/test"
+      "existingTests": [
+        "tests/mail_smtp_policy.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P2"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/webhooks/outlook",
@@ -3227,15 +3344,12 @@
       "providers": [
         "Microsoft Graph"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising GET /api/webhooks/outlook",
-        "OAuth start: redirects to Microsoft login with state=userId",
-        "Webhook handshake: echoes validationToken query param with text/plain",
-        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      "existingTests": [
+        "tests/route_gap_closure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/webhooks/outlook",
@@ -3251,15 +3365,13 @@
       "providers": [
         "Microsoft Graph"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/webhooks/outlook",
-        "OAuth start: redirects to Microsoft login with state=userId",
-        "Webhook handshake: echoes validationToken query param with text/plain",
-        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      "existingTests": [
+        "tests/malformed_input_sweep.test.js",
+        "tests/route_gap_closure.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     }
   ]
 }
