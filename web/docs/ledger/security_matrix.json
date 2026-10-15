@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T00:24:41.936Z",
+    "generatedAt": "2026-10-15T09:33:51.133Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,
@@ -2644,6 +2644,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/expense_idempotency_receipts.test.js",
+        "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_ocr_vertical.test.js",
@@ -2676,6 +2678,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/expense_idempotency_receipts.test.js",
+        "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_ocr_vertical.test.js",
@@ -3063,6 +3067,7 @@
         "Cloudinary"
       ],
       "existingTests": [
+        "tests/expense_idempotency_receipts.test.js",
         "tests/expenses_vertical.test.js",
         "tests/receipt_cleanup.test.js",
         "tests/receipt_client_limits.test.js",

@@ -56,6 +56,16 @@ export async function POST(req: NextRequest) {
   const checked = validateExpense(pick(raw, EXPENSE_CREATE_FIELDS), 'create', { orgId: effectiveOrgId })
   if ('problems' in checked) return NextResponse.json(checked.problems, { status: 400 })
   const body = checked.data
+
+  // Idempotency FIRST: a retried or double-tapped submit (same caller, same clientRequestId) must return the claim it already created —
+  // including when it carries receipts. Checking attachments first made the retry fail with `attachment_in_use` because the first
+  // attempt had already attached them.
+  const clientRequestId = body.clientRequestId as string | undefined
+  if (clientRequestId) {
+    const prior = await Expense.findOne({ orgId: effectiveOrgId, userId, clientRequestId }).lean()
+    if (prior) return NextResponse.json(presentExpense(prior as never), { status: 200 })
+  }
+
   const attach = await checkNewReceipts(checked.newRefs, effectiveOrgId)
   if (attach) return attach
 
@@ -69,12 +79,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Idempotency / duplicate submission: a retried or double-tapped submit must not create two claims.
-  const clientRequestId = body.clientRequestId as string | undefined
-  if (clientRequestId) {
-    const prior = await Expense.findOne({ orgId: effectiveOrgId, userId, clientRequestId }).lean()
-    if (prior) return NextResponse.json(presentExpense(prior as never), { status: 200 })
-  } else {
+  // Duplicate submission without a key: refuse an identical claim created in the last few seconds (the keyed case is handled above).
+  if (!clientRequestId) {
     const dup = await Expense.findOne({
       orgId: effectiveOrgId, userId, title: body.title as string, amount: body.amount as number, startDate: body.startDate as Date,
       createdAt: { $gte: new Date(Date.now() - 10_000) },

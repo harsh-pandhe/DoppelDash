@@ -2023,10 +2023,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/expense_idempotency_receipts.test.js",
+    "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js",
-    "tests/receipt_ocr_vertical.test.js",
-    "tests/receipt_type_contract.test.js"
+    "tests/receipt_cleanup.test.js"
    ]
   },
   {
@@ -2057,10 +2057,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/expense_idempotency_receipts.test.js",
+    "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js",
-    "tests/receipt_ocr_vertical.test.js",
-    "tests/receipt_type_contract.test.js"
+    "tests/receipt_cleanup.test.js"
    ]
   },
   {
@@ -2085,10 +2085,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/expense_idempotency_receipts.test.js",
+    "tests/expense_line_review_bounds.test.js",
     "tests/expenses_vertical.test.js",
-    "tests/receipt_cleanup.test.js",
-    "tests/receipt_ocr_vertical.test.js",
-    "tests/receipt_type_contract.test.js"
+    "tests/receipt_cleanup.test.js"
    ]
   },
   {
@@ -2317,14 +2317,14 @@
     "lib/data/services/cloudinary_service.dart"
    ],
    "tests": [
+    "tests/expense_idempotency_receipts.test.js",
     "tests/expenses_vertical.test.js",
     "tests/receipt_cleanup.test.js",
     "tests/receipt_client_limits.test.js",
     "tests/receipt_ocr_vertical.test.js",
     "tests/receipt_type_contract.test.js",
     "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js",
-    "tests/travel_conversion.test.js"
+    "tests/travel_attachments.test.js"
    ]
   },
   {

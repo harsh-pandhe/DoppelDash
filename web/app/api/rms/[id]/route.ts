@@ -83,7 +83,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   let touchedLineItems = false
   if (role !== 'employee') {
     for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
-      if (/^lineItems\.\d+\.status$/.test(key) && (value === 'approved' || value === 'rejected')) {
+      const m = /^lineItems\.(\d+)\.status$/.exec(key)
+      if (m && (value === 'approved' || value === 'rejected')) {
+        // The index must name an existing line. MongoDB would otherwise PAD the array up to it with empty elements
+        // (`lineItems.99.status` on a 3-line claim → 100 lines, and later writes fail validation).
+        if (Number(m[1]) >= (existingExpense.lineItems?.length ?? 0)) {
+          return NextResponse.json({ error: 'Invalid line item', fields: [key] }, { status: 400 })
+        }
         updates[key] = value
         touchedLineItems = true
       }

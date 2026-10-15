@@ -168,7 +168,7 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **POST** | `/api/uploads/sign` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/expenses_vertical.test.js` +10 | `VERIFIED_FAKE` |
+| **POST** | `/api/uploads/sign` | session | session_jwt (user.orgId) | any_authenticated | plan:premium | `tests/expense_idempotency_receipts.test.js` +11 | `VERIFIED_FAKE` |
 
 ### 5. Support Chat, Cron & Destructive Dev Endpoints (12 handlers)
 
@@ -232,8 +232,8 @@
 
 | Method | Route | Auth | Tenant Source | Role | Entitlement | Tests | Status |
 |---|---|---|---|---|---|---|---|
-| **GET** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +13 | `VERIFIED_FAKE` |
-| **POST** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +13 | `VERIFIED_FAKE` |
+| **GET** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +15 | `VERIFIED_FAKE` |
+| **POST** | `/api/rms` | session | session_jwt (user.orgId) | any_authenticated | none | `tests/auth_foundation.test.js` +15 | `VERIFIED_FAKE` |
 | **DELETE** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **GET** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
 | **PATCH** | `/api/rms/[id]` | session | session_jwt (user.orgId) | admin | none | `tests/batch_i.test.js` +1 | `VERIFIED_FAKE` |
