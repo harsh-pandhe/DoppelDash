@@ -126,7 +126,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     clerkUserId:      { type: String, required: true, unique: true, index: true },
     employeeId:       { type: String, required: true },
     createdByUserId:  { type: String, required: true },
-    orgId:            { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId:            { type: String, required: true, index: true },
 
     firstName:        { type: String, required: true, trim: true },
     lastName:         { type: String, required: true, trim: true },
@@ -184,7 +184,7 @@ EmployeeSchema.index({ orgId: 1, employeeId: 1 }, { unique: true })
 EmployeeSchema.pre('validate', async function () {
   if (!this.isNew || (this.employeeId && this.employeeId.trim())) return
   const ModelConstructor = this.constructor as Model<IEmployee>
-  const orgFilter = { orgId: this.orgId || 'org_doppelmayr' }
+  const orgFilter = { orgId: this.orgId }
 
   // Query highest existing numeric sequence number matching EMP-xxx within this organization
   const lastEmp = await ModelConstructor.findOne({ ...orgFilter, employeeId: /^EMP-\d+$/ })
@@ -217,7 +217,7 @@ EmployeeSchema.pre('validate', async function () {
 EmployeeSchema.pre('save', async function () {
   if (!this.isNew || (this.employeeId && this.employeeId.trim())) return
   const ModelConstructor = this.constructor as Model<IEmployee>
-  const orgFilter = { orgId: this.orgId || 'org_doppelmayr' }
+  const orgFilter = { orgId: this.orgId }
   const count = await ModelConstructor.countDocuments(orgFilter)
   let nextNum = count + 1
   let candidate = `EMP-${String(nextNum).padStart(3, '0')}`

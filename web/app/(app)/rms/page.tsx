@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Plus, Receipt, IndianRupee, CheckCircle2, XCircle, Clock, CreditCard, Download, Filter, Loader2, History, LayoutList, Table2, ScanLine, Sparkles, AlertCircle, RotateCcw, MapPin, Calendar, Save, FileText, Trash2 } from 'lucide-react'
 import { ListSkeleton } from '@/components/ui/skeleton'
 import { timeAgo } from '@/lib/timeAgo'
@@ -144,7 +144,10 @@ function NewExpenseDialog({
 
   const lineTotal = lineItems.reduce((s, l) => s + (l.amount || 0), 0)
 
+  // One idempotency key per opened form: a double click / retry of the same submit can never create two claims.
+  const submitKey = useRef<string>(typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
   const resetAll = () => {
+    submitKey.current = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`
     setForm(EMPTY_FORM); setReceipts([]); setPreviews([]); setOcrSrc(null); setOcrFlds(new Set()); setError('')
     setLineItems([EMPTY_LINE()]); setMode('simple')
   }
@@ -169,7 +172,7 @@ function NewExpenseDialog({
   const uploadLineReceipt = async (i: number, file: File) => {
     setLineUploading(i)
     try {
-      const url = await uploadToCloudinary(file)
+      const url = await uploadToCloudinary(file, 'receipt')
       updateLine(i, 'receiptUrl', url)
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Receipt upload failed', 'error')
@@ -184,7 +187,12 @@ function NewExpenseDialog({
     try {
       const { base64 } = await compressImage(first)
       const res = await fetch('/api/rms/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64, mimeType: 'image/jpeg' }) })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        // Quota / plan messages are for the user; everything else just falls back to manual entry.
+        const d = await res.json().catch(() => null)
+        if (d?.code === 'quota_exceeded' || d?.code === 'feature_unavailable') setError(d.error)
+        throw new Error()
+      }
       const data = await res.json()
       const p = data.parsed as Record<string, string | number | null>
       const filled = new Set<string>()
@@ -227,15 +235,15 @@ function NewExpenseDialog({
           amount: total,
           receipts,
           ...(mode === 'table' ? { lineItems: resetLines, hasLineItems: true } : {}),
-          ...(isEdit ? { status: 'pending_manager' } : {}),
+          ...(isEdit ? { status: 'pending_manager' } : { clientRequestId: submitKey.current }),
         }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) { const d = await res.json().catch(() => null); throw new Error(d?.error || '') }
       toast(isEdit ? 'Expense revised and resubmitted' : 'Expense submitted', 'success')
       setCurrentOpen(false)
       resetAll()
       onCreated()
-    } catch { setError(isEdit ? 'Failed to resubmit.' : 'Failed to submit.') }
+    } catch (err) { setError((err as Error)?.message || (isEdit ? 'Failed to resubmit.' : 'Failed to submit.')) }
     finally { setSaving(false) }
   }
 
@@ -285,7 +293,7 @@ function NewExpenseDialog({
                 </p>
                 {ocrSrc && <button type="button" onClick={resetAll} className="flex items-center gap-1 text-xs text-surface-muted hover:text-ink-muted transition-colors"><RotateCcw className="w-3 h-3" /> Reset</button>}
               </div>
-              <FileUploader value={receipts} label="" hint="JPG, PNG, PDF · Max 5 · First image auto-filled by AI" maxFiles={5} onChange={setReceipts} onFilePicked={handleFilePicked} disabled={saving} />
+              <FileUploader value={receipts} kind="receipt" label="" hint="JPG, PNG, PDF · Max 5 · First image auto-filled by AI" maxFiles={5} onChange={setReceipts} onFilePicked={handleFilePicked} disabled={saving} />
               {previews.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
                   {previews.map((src, i) => (
@@ -833,8 +841,8 @@ export default function RMSPage() {
         body: JSON.stringify(body),
       })
       if (!res.ok) {
-        const text = await res.text()
-        toast(`Action failed: ${text || 'Unable to update status'}`, 'error')
+        const d = await res.json().catch(() => null)
+        toast(`Action failed: ${d?.error || 'Unable to update status'}`, 'error')
         return
       }
       const labels: Record<string, string> = {

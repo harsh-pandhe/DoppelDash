@@ -276,6 +276,8 @@ export default function NewTravelRequestPage() {
             hint="Flight/train tickets, hotel bookings, meeting agenda · JPG, PNG, PDF"
             onChange={setItineraryDocs}
             disabled={saving}
+            kind="receipt"
+            purpose="travel_itinerary"
           />
         </div>
 

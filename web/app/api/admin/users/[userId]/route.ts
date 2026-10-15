@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Employee from '@/models/Employee'
 import LeaveBalance from '@/models/LeaveBalance'
+import RefreshToken from '@/models/RefreshToken'
 import type { UserRole } from '@/models/User'
 
 const VALID_ROLES: UserRole[] = ['admin', 'manager', 'employee']
@@ -15,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: { userId: str
   const role = user?.role || 'employee'
   if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   // Target user must strictly belong to the calling admin's organization
@@ -49,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   const role = user?.role || 'employee'
   if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   // Verify target user belongs to the calling admin's organization
@@ -171,7 +172,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
     return NextResponse.json({ error: 'Cannot delete your own admin account' }, { status: 400 })
   }
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   // Target user must strictly belong to the calling admin's organization
@@ -181,6 +182,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
   await User.findOneAndDelete({ _id: params.userId, orgId: effectiveOrgId })
   await Employee.findOneAndDelete({ clerkUserId: params.userId, orgId: effectiveOrgId })
   await LeaveBalance.deleteMany({ userId: params.userId, orgId: effectiveOrgId })
+  // Deleted account: its mobile sessions must not outlive it.
+  await RefreshToken.deleteMany({ userId: params.userId })
 
   const targetFullName = `${target.firstName} ${target.lastName}`.trim()
   const actorName = user?.fullName || 'Boss'

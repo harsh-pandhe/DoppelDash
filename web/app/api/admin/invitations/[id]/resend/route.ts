@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUser } from '@/lib/auth'
+import crypto from 'node:crypto'
+import { getUser, devOnly } from '@/lib/auth'
+import { INVITE_LIMITS } from '@/lib/auth/limits'
+import { rateLimit } from '@/lib/ratelimit'
+import Invitation from '@/models/Invitation'
 import { connectDB } from '@/lib/db'
 import { resendInvitation } from '@/lib/invitations/invitationService'
 
@@ -8,7 +12,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') {
@@ -16,7 +20,19 @@ export async function POST(
   }
 
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
+
+  // Same abuse limits as creation, keyed to the stored recipient (org-scoped lookup).
+  const existing = await Invitation.findOne({ _id: id, orgId }).select('email').lean<{ email: string } | null>()
+  if (existing) {
+    const recipientKey = crypto.createHash('sha256').update(existing.email.toLowerCase()).digest('hex').slice(0, 32)
+    const limited =
+      !(await rateLimit(`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs)) ||
+      !(await rateLimit(`invite:org-rcpt:${orgId}:${recipientKey}`, INVITE_LIMITS.perOrgRecipientPerDay, INVITE_LIMITS.dayMs)) ||
+      !(await rateLimit(`invite:rcpt:${recipientKey}`, INVITE_LIMITS.perRecipientPerDay, INVITE_LIMITS.dayMs))
+    if (limited) {
+      return NextResponse.json({ error: 'Too many invitations sent — please try again later.' }, { status: 429 })
+    }
+  }
 
   try {
     const result = await resendInvitation({
@@ -33,8 +49,8 @@ export async function POST(
     return NextResponse.json({
       message: 'Invitation resent successfully',
       invitation: result.invitation,
-      rawToken: result.rawToken,
-      inviteUrl: result.inviteUrl,
+      rawToken: devOnly(result.rawToken),
+      inviteUrl: result.emailDelivery.delivered ? devOnly(result.inviteUrl) : result.inviteUrl,
       emailDelivery: result.emailDelivery,
     })
   } catch (err: unknown) {

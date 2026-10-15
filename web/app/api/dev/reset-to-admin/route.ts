@@ -10,7 +10,7 @@ import mongoose from 'mongoose'
  * Secret-gated exactly like /api/dev/seed — in production it stays disabled
  * unless ALLOW_DEV_SEED=true, so a leaked DEV_SEED_SECRET alone can't erase data.
  *
- *   POST /api/dev/reset-to-admin?secret=<DEV_SEED_SECRET>   (header x-seed-secret also accepted)
+ *   POST /api/dev/reset-to-admin   header  x-seed-secret: <DEV_SEED_SECRET>   (never in the URL)
  *
  * KEEPS:   users(role=admin) + their Employee profile / LeaveBalance / passkeys /
  *          email config / outlook token, all PublicHolidays, all OrgSettings.
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (!required) {
     return NextResponse.json({ error: 'DEV_SEED_SECRET must be configured to run reset' }, { status: 403 })
   }
-  const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+  const provided = req.headers.get('x-seed-secret')   // header only: a query string would be written to access logs
   if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()

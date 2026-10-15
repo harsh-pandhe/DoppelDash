@@ -1,0 +1,81 @@
+name: web-ci
+on:
+  push:
+    branches: ['integration/**']
+  pull_request:
+    branches: ['integration/**', 'main']
+  workflow_dispatch:
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: web
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      # true only when the owner has created the read-only deploy-key secret (see web/docs/CI.md)
+      MOBILE_KEY_SET: ${{ secrets.MOBILE_REPO_DEPLOY_KEY != '' }}
+    services:
+      mongo:
+        image: mongo:7
+        ports: ['27017:27017']
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out the Flutter repo (design-token parity test T8)
+        if: env.MOBILE_KEY_SET == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: harsh-pandhe/DoppelDash-mobile
+          ref: integration/phase0-recovery
+          ssh-key: ${{ secrets.MOBILE_REPO_DEPLOY_KEY }}
+          path: DoppelDash-mobile
+          persist-credentials: false
+      - name: Point T8 at the Flutter tokens
+        if: env.MOBILE_KEY_SET == 'true'
+        run: echo "DD_MOBILE_TOKENS=${{ github.workspace }}/DoppelDash-mobile/tool/design/tokens.json" >> "$GITHUB_ENV"
+        working-directory: .
+      - name: Interim exception notice
+        if: env.MOBILE_KEY_SET != 'true'
+        run: echo "::warning::MOBILE_REPO_DEPLOY_KEY is not configured - ds_tokens T8 will be skipped (documented interim exception); this run is NOT a fully reproduced 681/0 baseline."
+        working-directory: .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci --legacy-peer-deps
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx next lint
+      - name: Production build
+        # throw-away values only: the build must not need real secrets
+        env:
+          NEXT_DIST_DIR: .next-ci-build
+          MONGODB_URI: mongodb://127.0.0.1:27017/dd_ci_build_test
+          JWT_SECRET: ci-build-only-not-a-secret-0000000000000000
+          ENCRYPTION_SECRET: ci-build-only-not-a-secret-0000000000000000
+        run: npx next build
+      - name: Backend tests (disposable MongoDB, local fake providers, secret-log scan last)
+        env:
+          TEST_ARTIFACT_DIR: ${{ github.workspace }}/test-artifacts
+        run: node scripts/ci/run-backend-tests.js
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-logs
+          path: test-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

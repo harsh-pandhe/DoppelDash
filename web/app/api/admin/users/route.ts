@@ -1,20 +1,21 @@
+import { randomInt } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Employee from '@/models/Employee'
 import LeaveBalance from '@/models/LeaveBalance'
-import { sendEmail } from '@/lib/email'
+import { getMailService } from '@/lib/mail'
+import { devOnly } from '@/lib/auth/devShortcuts'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
-  const orgId     = user?.orgId || 'org_doppelmayr'
   const year      = new Date().getFullYear()
   const allUsers  = await User.find({ orgId }).lean()
   const balances  = await LeaveBalance.find({ orgId, year }).lean()
@@ -69,7 +70,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -85,7 +86,6 @@ export async function POST(req: NextRequest) {
   }
 
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   const maxMembers = await getOrganizationLimit(orgId, 'maxMembers')
   const currentMembers = await getOrganizationUsage(orgId, 'members')
@@ -101,7 +101,8 @@ export async function POST(req: NextRequest) {
 
   // Generate temp password
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
-  const tempPassword = Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('') + '#1'
+  // CSPRNG — a credential must never come from Math.random().
+  const tempPassword = Array.from({ length: 10 }, () => chars[randomInt(chars.length)]).join('') + '#1'
   const hash = await User.hashPassword(tempPassword)
 
   const newUser = await User.create({
@@ -153,33 +154,28 @@ export async function POST(req: NextRequest) {
     throw err
   }
 
-  // Send welcome email with credentials — unless silent add requested.
-  // skipWelcomeEmail lets an admin create real users (e.g. onboarding a directory)
-  // without firing real emails; the temp password is returned in the response instead.
+  // Welcome e-mail with the temporary password — unless silent add was requested.
+  // Rendered by the mail service (every value escaped); provider failures never throw.
   let emailSent = false
   if (!skipWelcomeEmail) {
-    try {
-      await sendEmail(
-        email,
-        'Welcome to DoppelDash — Your Login Details',
-        `<div style="font-family:sans-serif;max-width:500px">
-          <h2>Welcome to DoppelDash, ${firstName}!</h2>
-          <p>Your account has been created. Use these credentials to sign in:</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Temporary Password:</strong> <code style="font-size:18px;letter-spacing:2px;background:#f3f4f6;padding:4px 8px;border-radius:4px">${tempPassword}</code></p>
-          <p>You will be asked to set a new password on first login.</p>
-          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || ''}/sign-in">Sign in to DoppelDash →</a></p>
-        </div>`
-      )
-      emailSent = true
-    } catch { /* best-effort */ }
+    const result = await getMailService().sendAccountWelcome({
+      to: email,
+      orgId,
+      firstName,
+      tempPassword,
+      signInUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/sign-in`,
+    })
+    emailSent = result.delivered
   }
 
   return NextResponse.json({
     success:     true,
     userId:      newUid,
     employeeId:  emp.employeeId,
-    tempPassword,
+    // The temporary password is a credential. It is handed back to the (authenticated)
+    // admin ONLY when there is no other way for it to reach the new user: a silent
+    // add, or a failed e-mail delivery — or on a developer machine for automation.
+    tempPassword: (skipWelcomeEmail || !emailSent) ? tempPassword : devOnly(tempPassword),
     emailSent,
   })
 }

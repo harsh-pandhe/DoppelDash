@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   const leave = await Leave.create({
     ...pick(body, LEAVE_CREATE_FIELDS),
     userId,
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       const employeeName = user?.fullName || user?.firstName || 'An employee'
       for (const email of recipients) {
         emailLeaveSubmitted({
-          managerEmail: email,
+          orgId, managerEmail: email,
           employeeName,
           leaveType: body.type,
           days: body.days,

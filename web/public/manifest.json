@@ -1,7 +1,7 @@
 {
-  "name": "DoppelDash",
-  "short_name": "DoppelDash",
-  "description": "Unified Operations, Travel, Expenses & CRM Platform",
+  "name": "Doppelmayr India",
+  "short_name": "Doppelmayr",
+  "description": "Doppelmayr India employee workspace",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",

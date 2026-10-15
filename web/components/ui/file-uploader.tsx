@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Upload, X, FileText, Loader2 } from 'lucide-react'
-import { uploadToCloudinary } from '@/lib/cloudinary'
+import { uploadToCloudinary, type UploadKind } from '@/lib/cloudinary'
 
 interface UploadedFile { name: string; url: string; isImage: boolean }
 
@@ -15,6 +15,10 @@ interface FileUploaderProps {
   onFilePicked?: (files: File[]) => void
   disabled?: boolean
   variant?: 'default' | 'danger'
+  /** Server-side storage policy for what is uploaded ('receipt' = private authenticated storage). */
+  kind?: UploadKind
+  /** What a private upload is for (server-recorded): travel itinerary documents use 'travel_itinerary'. */
+  purpose?: 'expense_receipt' | 'travel_itinerary'
 }
 
 async function compressImage(file: File): Promise<File> {
@@ -44,7 +48,7 @@ async function compressImage(file: File): Promise<File> {
 }
 
 export default function FileUploader({
-  label, hint, required, maxFiles = 5, value, onChange, onFilePicked, disabled, variant = 'default',
+  label, hint, required, maxFiles = 5, value, onChange, onFilePicked, disabled, variant = 'default', kind, purpose,
 }: FileUploaderProps) {
   const inputRef                      = useRef<HTMLInputElement>(null)
   const [files,     setFiles]         = useState<UploadedFile[]>([])
@@ -88,7 +92,7 @@ export default function FileUploader({
       const results = await Promise.all(
         toProcess.map(async raw => {
           const file    = await compressImage(raw)
-          const url     = await uploadToCloudinary(file)
+          const url     = await uploadToCloudinary(file, kind, purpose)
           const isImage = raw.type.startsWith('image/')
           return { name: raw.name, url, isImage }
         })
@@ -102,7 +106,7 @@ export default function FileUploader({
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
     }
-  }, [files, maxFiles, onChange])
+  }, [files, maxFiles, onChange, kind, purpose])
 
   const remove = (idx: number) => {
     const next = files.filter((_, i) => i !== idx)

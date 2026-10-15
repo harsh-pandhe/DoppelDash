@@ -12,7 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const body = await req.json()
   delete body.orgId
@@ -35,7 +35,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const res = await Announcement.findOneAndDelete({ _id: params.id, orgId: effectiveOrgId })
   if (!res) return NextResponse.json({ error: 'Not found' }, { status: 404 })

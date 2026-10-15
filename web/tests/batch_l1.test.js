@@ -41,7 +41,9 @@ const jiti = require(path.resolve(__dirname, '../node_modules/jiti'))(__filename
 // Import models and services via jiti
 const User = jiti(path.resolve(__dirname, '../models/User.ts')).default;
 const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const {
   getOrganizationEntitlements,
   canUseFeature,
@@ -587,7 +589,7 @@ test('11. Web gateway rejects public organization', async () => {
     const restrictedPageRes = await fetch(`${BASE_URL}/web-access-restricted`);
     assert.equal(restrictedPageRes.status, 200, 'Restricted landing page must be accessible');
     const pageHtml = await restrictedPageRes.text();
-    assert.ok(pageHtml.includes('Web Portal In Preview') || pageHtml.includes('Mobile Access Enabled'), 'Landing page content matches');
+    assert.ok(pageHtml.includes('web workspace') && /Web access isn(&#x27;|&#39;|’|')t enabled/.test(pageHtml), 'Landing page content matches');
   } finally {
     await safeTeardownTestOrg(db, freeOrgId);
     await safeTeardownTestOrg(db, premOrgId);

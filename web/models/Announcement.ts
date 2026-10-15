@@ -16,7 +16,7 @@ export interface IAnnouncement extends Document {
 
 const AnnouncementSchema = new Schema<IAnnouncement>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     authorId:   { type: String, required: true },
     authorName: { type: String, required: true },
     title:      { type: String, required: true, trim: true },

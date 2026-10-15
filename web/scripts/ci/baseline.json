@@ -1,0 +1,14 @@
+{
+  "note": "Reference totals of the recovered backend suite (fake providers, standalone MongoDB). The runner FAILS if the run has fewer tests/files than this, any failure, or any skip that is not listed in allowedSkips. Raise the numbers when tests are added; never lower them to make a run pass.",
+  "files": 62,
+  "tests": 828,
+  "skipped": 1,
+  "allowedSkips": [
+    {
+      "file": "ds_tokens.test.js",
+      "max": 1,
+      "reason": "T8 compares design/tokens.json with the Android copy and can only run when the DoppelDash-mobile repo is checked out beside this one (or DD_MOBILE_TOKENS is set). INTERIM EXCEPTION: it only applies while DD_MOBILE_TOKENS is unset, i.e. while the GitHub secret MOBILE_REPO_DEPLOY_KEY (read-only deploy key on harsh-pandhe/DoppelDash-mobile) has not been configured. As soon as the Flutter checkout is available the runner allows 0 skips, so the exception cannot be used silently. A run that used the exception is NOT a fully reproduced 681/0 baseline. Remove this entry after a green Actions run with the checkout.",
+      "unlessEnv": "DD_MOBILE_TOKENS"
+    }
+  ]
+}

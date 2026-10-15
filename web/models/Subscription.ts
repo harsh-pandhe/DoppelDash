@@ -30,6 +30,9 @@ export interface ISubscription extends Document {
   canceledAt?: Date
   linkedUserId?: string
   rawEventId?: string
+  /** Pub/Sub message ids already reconciled (last 25) — duplicate deliveries are acknowledged without work. */
+  processedEventIds?: string[]
+  lastEventTimeMillis?: number
   lastVerifiedAt: Date
   environment: BillingEnvironment
   createdAt: Date
@@ -113,6 +116,8 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: String,
       index: true,
     },
+    processedEventIds: { type: [String], default: [] },
+    lastEventTimeMillis: { type: Number },
     lastVerifiedAt: {
       type: Date,
       default: Date.now,

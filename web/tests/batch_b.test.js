@@ -25,7 +25,9 @@ const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).
 const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).default;
 const OrgSettings = jiti(path.resolve(__dirname, '../models/OrgSettings.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const { writeAudit } = jiti(path.resolve(__dirname, '../lib/audit.ts'));
 const { getUserById, updateUser } = jiti(path.resolve(__dirname, '../lib/auth/userService.ts'));
 const { getAnnouncementRecipients, getBirthdayNotificationRecipients } = jiti(path.resolve(__dirname, '../lib/cron-recipients.ts'));

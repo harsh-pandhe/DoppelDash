@@ -28,6 +28,35 @@ const createdTestOrgs = new Set();
 const createdTestUserIds = new Set();
 const createdTestResetTokenIds = new Set();
 
+
+/** Web-cookie behaviour only exists for web-enabled organisations: enable the fixture tenant, then sign in for real. */
+async function enableWebAndLogin(orgId, email, password) {
+  await mongoose.connection.db.collection('organizations').updateOne({ orgId }, { $set: { webEnabled: true } });
+  const l = await fetch(`${BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.99.7.${Math.floor(Math.random() * 250)}` },
+    body: JSON.stringify({ email, password }),
+  });
+  const lj = await l.json();
+  const o = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.99.7.${Math.floor(Math.random() * 250)}` },
+    body: JSON.stringify({ preAuthToken: lj.preAuthToken, otp: '112022', method: 'email' }),
+  });
+  assert.equal(o.status, 200);
+  const sc = o.headers.get('set-cookie') || '';
+  const m = sc.match(/dd_session=([^;]+)/);
+  assert.ok(m, 'a web-enabled organisation must receive the dd_session cookie');
+  return `dd_session=${m[1]}`;
+}
+
+
+/** The reset link carries its token in the URL fragment (never sent to the server); a legacy ?token= link is still parsed. */
+function tokenFromResetUrl(u) {
+  const url = new URL(u);
+  return new URLSearchParams(url.hash.replace(/^#/, '')).get('token') || url.searchParams.get('token');
+}
+
 let tenantHData = null;
 let tokenAdminH = null;
 let cookieAdminH = null;
@@ -97,13 +126,10 @@ test('1. Setup: Register Tenant H admin with secure session cookie', async () =>
   createdTestOrgs.add(tenantHData.organization.orgId);
   createdTestUserIds.add(tenantHData.user.id);
 
-  // Extract dd_session cookie
-  const setCookie = res.headers.get('set-cookie');
-  assert.ok(setCookie, 'Must set auth cookie');
-  assert.match(setCookie, /dd_session=/);
-  const cookieMatch = setCookie.match(/dd_session=([^;]+)/);
-  assert.ok(cookieMatch, 'Must capture dd_session value');
-  cookieAdminH = `dd_session=${cookieMatch[1]}`;
+  // Registration itself mints no web cookie (public org → mobile only). Tenant H is made a web-enabled
+  // fixture so the web session-cookie behaviour under test here can still be exercised end to end.
+  assert.doesNotMatch(res.headers.get('set-cookie') || '', /dd_session=[^;]/);
+  cookieAdminH = await enableWebAndLogin(tenantHData.organization.orgId, adminEmail, 'SecurePassword123!');
 });
 
 // -------------------------------------------------------------
@@ -520,8 +546,7 @@ test('8. Password reset request: generic response prevents enumeration, raw toke
   assert.ok(validData.resetUrl, 'Dev/test environment surfaces resetUrl');
 
   // Extract token from URL
-  const resetUrl = new URL(validData.resetUrl);
-  resetTokenRaw = resetUrl.searchParams.get('token');
+  resetTokenRaw = tokenFromResetUrl(validData.resetUrl);
   assert.ok(resetTokenRaw);
   assert.equal(resetTokenRaw.length, 64, 'Token must be high-entropy 256-bit hex (64 chars)');
 
@@ -534,7 +559,11 @@ test('8. Password reset request: generic response prevents enumeration, raw toke
   assert.equal(tokenDoc.tokenHash, PasswordResetToken.hashToken(resetTokenRaw));
 
   // C. Token verification endpoint
-  const resVerify = await fetch(`${BASE_URL}/api/auth/password-reset/confirm?token=${resetTokenRaw}`);
+  const resVerify = await fetch(`${BASE_URL}/api/auth/password-reset/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.99.8.${ipSeq++}` },
+    body: JSON.stringify({ token: resetTokenRaw }),
+  });
   assert.equal(resVerify.status, 200);
   const verifyData = await resVerify.json();
   assert.equal(verifyData.valid, true);
@@ -614,7 +643,7 @@ test('10. Password reset expiration: expired token is rejected', async () => {
   });
   assert.equal(resReq.status, 200);
   const data = await resReq.json();
-  const token = new URL(data.resetUrl).searchParams.get('token');
+  const token = tokenFromResetUrl(data.resetUrl);
 
   // Backdate expiration in DB to 10 minutes ago
   const tokenHash = PasswordResetToken.hashToken(token);

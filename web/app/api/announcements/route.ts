@@ -10,7 +10,7 @@ import { ANNOUNCEMENT_CREATE_FIELDS } from '@/lib/apiFields'
 export async function GET() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const now = new Date()
   // Hide future-scheduled posts from everyone except their author
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role === 'employee') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
   const body = await req.json()
   const scheduledFor = body.scheduledFor ? new Date(body.scheduledFor) : null
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         const users  = await listUsers({ limit: 500, orgId: effectiveOrgId })
         const emails = users.map(u => u.email).filter((e): e is string => Boolean(e))
         if (emails.length) {
-          emailUrgentAnnouncement({
+          emailUrgentAnnouncement({ orgId: effectiveOrgId,
             emails,
             title:      body.title,
             body:       body.body,

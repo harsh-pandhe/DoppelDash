@@ -59,9 +59,8 @@ const MESSAGE_PROMPTS: Record<string, (c: { name: string; company?: string; desi
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   if (!(await rateLimit(`generate:${userId}`, 20, 60 * 60_000))) {
     return NextResponse.json({ error: 'Too many requests — try again later' }, { status: 429 })

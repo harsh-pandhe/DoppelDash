@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { applySubscriptionToOrg } from '@/lib/billing/subscriptionState'
 import { connectDB } from '@/lib/db'
 import { getUser } from '@/lib/auth'
-import Organization from '@/models/Organization'
 import Subscription from '@/models/Subscription'
 import { isValidPlayProduct } from '@/lib/billing/playConfig'
 import { verifySubscriptionPurchase } from '@/lib/billing/googlePlayService'
@@ -77,8 +77,6 @@ export async function POST(req: NextRequest) {
   }
 
   const effectiveStatus = verification.status || 'active'
-  const isPeriodActive = verification.currentPeriodEnd ? verification.currentPeriodEnd.getTime() > Date.now() : true
-  const grantsPremium = (effectiveStatus === 'active' || effectiveStatus === 'trialing' || effectiveStatus === 'canceled') && isPeriodActive
 
   // Idempotently upsert Subscription record
   const subDoc = await Subscription.findOneAndUpdate(
@@ -102,21 +100,8 @@ export async function POST(req: NextRequest) {
     { upsert: true, returnDocument: 'after' }
   )
 
-  // Update Organization model (preserving existing webEnabled separation)
-  await Organization.updateOne(
-    { orgId },
-    {
-      $set: {
-        plan: grantsPremium ? 'premium' : 'free',
-        entitlementSource: 'subscription',
-        subscriptionStatus: effectiveStatus,
-        subscriptionId: subDoc._id.toString(),
-        currentPeriodEnd: subDoc.currentPeriodEnd,
-        cancelAtPeriodEnd: !subDoc.autoRenewing,
-        // webEnabled remains strictly unchanged
-      },
-    }
-  )
+  // Update the Organization through the shared mapper (never rewrites a lifetime-granted organisation's plan; webEnabled untouched)
+  await applySubscriptionToOrg(orgId, subDoc)
 
   // Return authoritative entitlement state
   const entitlements = await getOrganizationEntitlements(orgId)

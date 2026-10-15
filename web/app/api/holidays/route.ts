@@ -35,7 +35,7 @@ function indiaHolidays(year: number) {
 export async function GET(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   await connectDB()
 
   const { searchParams } = new URL(req.url)
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   await connectDB()
   const body = await req.json()
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  const effectiveOrgId = user?.orgId || orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   await connectDB()
   const { id } = await req.json().catch(() => ({}))

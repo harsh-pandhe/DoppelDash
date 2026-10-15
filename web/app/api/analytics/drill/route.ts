@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const rangeEnd   = toQS   ? new Date(toQS)   : now
   rangeEnd.setHours(23, 59, 59, 999)
 
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   // Owner scope (same rules as analytics route)
   const ownerFilter: Record<string, unknown> = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }

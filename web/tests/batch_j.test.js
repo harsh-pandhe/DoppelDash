@@ -54,7 +54,9 @@ const Announcement = jiti(path.resolve(__dirname, '../models/Announcement.ts')).
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
 const RevokedToken = jiti(path.resolve(__dirname, '../models/RevokedToken.ts')).default;
 const AuditLog = jiti(path.resolve(__dirname, '../models/AuditLog.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return mongoose.connection;

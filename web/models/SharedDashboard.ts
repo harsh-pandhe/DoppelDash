@@ -15,7 +15,7 @@ export interface ISharedDashboard extends Document {
 
 const SharedDashboardSchema = new Schema<ISharedDashboard>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     token:     { type: String, required: true, unique: true, index: true },
     ownerId:   { type: String, required: true, index: true },
     ownerName: { type: String, required: true },

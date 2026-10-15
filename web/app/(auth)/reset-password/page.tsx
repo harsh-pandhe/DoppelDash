@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { PASSWORD_MAX, passwordRuleState } from '@/lib/auth/passwordRules'
 import Link from 'next/link'
 import {
   Lock,
@@ -22,8 +22,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 function ResetPasswordContent() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  // The reset token travels in the URL FRAGMENT (never sent to a server / logged). Legacy ?token= links are still
+  // read, then the address bar is scrubbed so the secret does not stay in history, screenshots or referrers.
+  const [token, setToken] = useState<string | null>(null)
+  const [tokenRead, setTokenRead] = useState(false)
 
   const [verifying, setVerifying] = useState(true)
   const [tokenStatus, setTokenStatus] = useState<{
@@ -41,11 +43,25 @@ function ResetPasswordContent() {
   const [formError, setFormError] = useState('')
 
   useEffect(() => {
+    const read = () => {
+      const fromHash = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token')
+      const fromQuery = new URLSearchParams(window.location.search).get('token')
+      const found = fromHash || fromQuery
+      if (found) { setToken(found); window.history.replaceState(null, '', window.location.pathname) }
+      setTokenRead(true)
+    }
+    read()
+    window.addEventListener('hashchange', read)
+    return () => window.removeEventListener('hashchange', read)
+  }, [])
+
+  useEffect(() => {
+    if (!tokenRead) return
     if (!token) {
       setTokenStatus({
         valid: false,
         reason: 'missing_token',
-        error: 'No password reset token was provided in the URL.',
+        error: 'This password reset link is incomplete. Request a new one.',
       })
       setVerifying(false)
       return
@@ -54,7 +70,7 @@ function ResetPasswordContent() {
     let isMounted = true
     async function verify() {
       try {
-        const res = await fetch(`/api/auth/password-reset/confirm?token=${encodeURIComponent(token!)}`)
+        const res = await fetch('/api/auth/password-reset/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
         const data = await res.json()
         if (isMounted) {
           setTokenStatus(data)
@@ -65,7 +81,7 @@ function ResetPasswordContent() {
           setTokenStatus({
             valid: false,
             reason: 'network_error',
-            error: 'Failed to verify reset token. Please check your network connection.',
+            error: 'We couldn’t check this link. Check your connection and reload the page.',
           })
           setVerifying(false)
         }
@@ -76,15 +92,13 @@ function ResetPasswordContent() {
     return () => {
       isMounted = false
     }
-  }, [token])
+  }, [token, tokenRead])
 
   // Validation rules
-  const hasMinLength = newPassword.length >= 8
-  const hasUppercase = /[A-Z]/.test(newPassword)
-  const hasLowercase = /[a-z]/.test(newPassword)
-  const hasNumber = /[0-9]/.test(newPassword)
-  const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword
-  const isFormValid = hasMinLength && hasUppercase && hasLowercase && hasNumber && passwordsMatch
+  // Canonical contract (identical on every endpoint and on Android): 8–128 characters. No composition rules.
+  const hasMinLength = passwordRuleState(newPassword).length
+  const passwordsMatch = passwordRuleState(newPassword, confirmPassword).match
+  const isFormValid = hasMinLength && passwordsMatch
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,6 +125,7 @@ function ResetPasswordContent() {
         return
       }
 
+      setToken(null)
       setResetSuccess(true)
     } catch {
       setFormError('Network connection error. Please try again.')
@@ -128,8 +143,8 @@ function ResetPasswordContent() {
       {/* Header */}
       <header className="relative z-10 w-full p-6 flex items-center justify-between max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="DoppelDash" className="h-9 w-9 rounded-xl shadow-md" />
-          <span className="font-bold text-white tracking-tight text-lg">DoppelDash</span>
+          <img src="/icon-192.png" alt="Doppelmayr India" className="h-9 w-9 rounded-xl shadow-md" />
+          <span className="font-bold text-white tracking-tight text-lg">Doppelmayr India</span>
         </div>
         <Link
           href="/sign-in"
@@ -309,19 +324,7 @@ function ResetPasswordContent() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                     <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-400' : 'text-slate-400'}`}>
                       <Check className={`w-3.5 h-3.5 ${hasMinLength ? 'text-emerald-400' : 'opacity-30'}`} />
-                      <span>8+ characters</span>
-                    </div>
-                    <div className={`flex items-center gap-1.5 ${hasUppercase ? 'text-emerald-400' : 'text-slate-400'}`}>
-                      <Check className={`w-3.5 h-3.5 ${hasUppercase ? 'text-emerald-400' : 'opacity-30'}`} />
-                      <span>1 uppercase letter</span>
-                    </div>
-                    <div className={`flex items-center gap-1.5 ${hasLowercase ? 'text-emerald-400' : 'text-slate-400'}`}>
-                      <Check className={`w-3.5 h-3.5 ${hasLowercase ? 'text-emerald-400' : 'opacity-30'}`} />
-                      <span>1 lowercase letter</span>
-                    </div>
-                    <div className={`flex items-center gap-1.5 ${hasNumber ? 'text-emerald-400' : 'text-slate-400'}`}>
-                      <Check className={`w-3.5 h-3.5 ${hasNumber ? 'text-emerald-400' : 'opacity-30'}`} />
-                      <span>1 number</span>
+                      <span>{`8–${PASSWORD_MAX} characters`}</span>
                     </div>
                   </div>
                   {confirmPassword.length > 0 && (
@@ -355,7 +358,7 @@ function ResetPasswordContent() {
       {/* Footer */}
       <footer className="relative z-10 w-full p-6 text-center text-xs text-slate-500 max-w-5xl mx-auto flex items-center justify-center gap-1.5">
         <Shield className="w-3.5 h-3.5 text-slate-600" />
-        <span>DoppelDash Enterprise · Protected by Cryptographic Session Architecture</span>
+        <span>Doppelmayr India · Employee workspace</span>
       </footer>
     </div>
   )

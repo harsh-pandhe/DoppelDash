@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = new URL(req.url)
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   const data = await computeAnalytics(userId, user?.role || 'employee', {
     from:     url.searchParams.get('from'),
     to:       url.searchParams.get('to'),

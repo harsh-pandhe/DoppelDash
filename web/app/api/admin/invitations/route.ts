@@ -1,5 +1,8 @@
+import crypto from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { getUser } from '@/lib/auth'
+import { getUser, devOnly } from '@/lib/auth'
+import { INVITE_LIMITS } from '@/lib/auth/limits'
+import { rateLimit } from '@/lib/ratelimit'
 import { connectDB } from '@/lib/db'
 import Invitation from '@/models/Invitation'
 import User from '@/models/User'
@@ -7,7 +10,7 @@ import { createInvitation } from '@/lib/invitations/invitationService'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') {
@@ -15,7 +18,6 @@ export async function GET() {
   }
 
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   const query: Record<string, unknown> = { orgId }
   if (role === 'manager') {
@@ -43,7 +45,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const userRole = user?.role || 'employee'
   if (userRole !== 'admin' && userRole !== 'manager') {
@@ -85,8 +87,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Managers can only invite employees' }, { status: 403 })
   }
 
+  // Abuse limits (documented in lib/auth/limits.ts). Counters are per inviter,
+  // per (org, recipient) and per recipient — never per organisation — so one
+  // abusive member cannot block the rest of their organisation.
+  const recipientKey = crypto.createHash('sha256').update(email.toLowerCase()).digest('hex').slice(0, 32)
+  const limited =
+    !(await rateLimit(`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs)) ||
+    !(await rateLimit(`invite:org-rcpt:${orgId}:${recipientKey}`, INVITE_LIMITS.perOrgRecipientPerDay, INVITE_LIMITS.dayMs)) ||
+    !(await rateLimit(`invite:rcpt:${recipientKey}`, INVITE_LIMITS.perRecipientPerDay, INVITE_LIMITS.dayMs))
+  if (limited) {
+    return NextResponse.json({ error: 'Too many invitations sent — please try again later.' }, { status: 429 })
+  }
+
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   // Pre-validate existing user to return 409 Conflict prior to capacity checks
   const existingUser = await User.findOne({ email }).lean()
@@ -127,12 +140,16 @@ export async function POST(req: NextRequest) {
       invitedByName: user?.fullName || 'Administrator',
     })
 
+    // The invite link is an authentication secret (whoever holds it can claim the
+    // seat). It is returned ONLY on a developer machine, or when e-mail delivery
+    // failed and the admin has to hand it over manually. The bare token never
+    // leaves the server outside development.
     return NextResponse.json(
       {
         message: 'Invitation created successfully',
         invitation: result.invitation,
-        rawToken: result.rawToken,
-        inviteUrl: result.inviteUrl,
+        rawToken: devOnly(result.rawToken),
+        inviteUrl: result.emailDelivery.delivered ? devOnly(result.inviteUrl) : result.inviteUrl,
         emailDelivery: result.emailDelivery,
       },
       { status: 201 }

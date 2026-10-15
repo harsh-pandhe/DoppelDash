@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') {
@@ -17,7 +17,6 @@ export async function GET(
   }
 
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   const query: Record<string, unknown> = { _id: id, orgId }
   if (role === 'manager') {
@@ -40,7 +39,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
   if (role !== 'admin' && role !== 'manager') {
@@ -48,7 +47,6 @@ export async function DELETE(
   }
 
   await connectDB()
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   try {
     const revoked = await revokeInvitation({

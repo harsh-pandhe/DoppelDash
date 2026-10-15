@@ -7,6 +7,15 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# P0-05: deploy previews and branch deploys run unreviewed code next to the site's environment variables. Cancel those builds
+# (an ignore command that exits 0 skips the build) until the owner has provisioned an isolated preview environment, then
+# remove these two blocks and set DD_DEPLOY_CONTEXT=staging for previews. See docs/PREVIEW_AND_ENVIRONMENT_SAFETY.md.
+[context.deploy-preview]
+  ignore = "exit 0"
+
+[context.branch-deploy]
+  ignore = "exit 0"
+
 # Static assets were re-fetched on every navigation (icon-192.png, manifest.json
 # showed 4x each in the HAR). Cache them so the browser stops re-downloading.
 [[headers]]

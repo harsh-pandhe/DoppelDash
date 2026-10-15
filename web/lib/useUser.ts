@@ -20,18 +20,28 @@ export interface ClientUser {
   unsafeMetadata: { role: string; permissions: string[] }
 }
 
-interface UseUserResult {
+/** Server-resolved context from GET /api/auth/me (never derived or defaulted on the client). */
+export interface MeContext {
+  organization?: { orgId: string; name: string; slug: string | null }
+  entitlements?: { plan: string; webEnabled: boolean; androidEnabled: boolean; limits?: Record<string, number> }
+  onboarding?: { tourSeen: boolean; profileComplete: boolean; orgSetupRequired: boolean }
+}
+
+interface UseUserResult extends MeContext {
   isLoaded: boolean
   isSignedIn: boolean
   user: ClientUser | null
+  /** The signed-in user's role, or `null` until the server has answered. There is deliberately NO default role. */
+  role: ClientUser['role'] | null
 }
 
-let cached: ClientUser | null = null
+type Me = ClientUser & MeContext
+let cached: Me | null = null
 let cachedAt = 0
 const TTL = 30_000   // 30s
 
 export function useUser(): UseUserResult {
-  const [user,    setUser]    = useState<ClientUser | null>(cached)
+  const [user,    setUser]    = useState<Me | null>(cached)
   const [loaded,  setLoaded]  = useState<boolean>(cached !== null && Date.now() - cachedAt < TTL)
 
   useEffect(() => {
@@ -44,7 +54,7 @@ export function useUser(): UseUserResult {
     return () => { cancelled = true }
   }, [])
 
-  return { isLoaded: loaded, isSignedIn: !!user, user }
+  return { isLoaded: loaded, isSignedIn: !!user, user, role: user?.role ?? null, organization: user?.organization, entitlements: user?.entitlements, onboarding: user?.onboarding }
 }
 
 export function clearUserCache() { cached = null; cachedAt = 0 }

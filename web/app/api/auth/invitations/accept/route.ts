@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import { acceptInvitation } from '@/lib/invitations/invitationService'
-import { COOKIE_NAME, COOKIE_OPTS } from '@/lib/auth'
+import { isWebAccessAllowed, setWebSessionCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 export async function POST(req: NextRequest) {
@@ -42,9 +42,11 @@ export async function POST(req: NextRequest) {
       lastName,
     })
 
+    const webAccess = await isWebAccessAllowed((result.user as { orgId: string }).orgId)
     const res = NextResponse.json(
       {
         message: 'Invitation accepted successfully',
+        webAccess,
         user: result.user,
         employee: result.employee,
         accessToken: result.accessToken,
@@ -53,7 +55,8 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     )
 
-    res.cookies.set(COOKIE_NAME, result.accessToken, COOKIE_OPTS)
+    // The web cookie carries the session JWT; mobile clients use accessToken + refreshToken.
+    if (webAccess) setWebSessionCookie(res, result.sessionToken)
     return res
   } catch (err: unknown) {
     const error = err as { statusCode?: number; message?: string }

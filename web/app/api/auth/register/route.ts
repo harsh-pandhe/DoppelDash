@@ -8,8 +8,8 @@ import OrgSettings from '@/models/OrgSettings'
 import Organization from '@/models/Organization'
 import {
   signToken,
-  COOKIE_NAME,
-  COOKIE_OPTS,
+  isWebAccessAllowed,
+  setWebSessionCookie,
   signMobileAccessToken,
   issueMobileRefreshToken,
 } from '@/lib/auth'
@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
         name: organizationName,
         slug,
         ownerId: uid,
+        setupRequired: true,
         plan: 'free' as const,
         entitlementSource: 'none' as const,
         lifetimeGrant: false,
@@ -210,11 +211,14 @@ export async function POST(req: NextRequest) {
       const pub = newUser.toPublic()
       const token = await signToken(pub)
       const accessToken = await signMobileAccessToken(pub)
-      const refreshToken = await issueMobileRefreshToken(pub.id)
+      const refreshToken = await issueMobileRefreshToken(pub.id, { sessionVersion: pub.sessionVersion })
 
+      // A fresh public organisation is mobile-only; the web cookie is minted only if its entitlement allows it.
+      const webAccess = await isWebAccessAllowed(orgId)
       const res = NextResponse.json(
         {
           message: 'Organization created successfully',
+          webAccess,
           user: pub,
           organization: {
             orgId,
@@ -229,7 +233,7 @@ export async function POST(req: NextRequest) {
         { status: 201 }
       )
 
-      res.cookies.set(COOKIE_NAME, token, COOKIE_OPTS)
+      if (webAccess) setWebSessionCookie(res, token)
       return res
     } catch (innerError: unknown) {
       if (useTransaction && session) {

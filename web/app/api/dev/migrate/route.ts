@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import mongoose from 'mongoose'
+import { ensureDoppelmayrBrand } from '@/lib/provisioning/doppelmayrBrand'
 
 export async function POST(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!required) {
     return NextResponse.json({ error: 'DEV_SEED_SECRET must be configured to run migrate' }, { status: 403 })
   }
-  const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+  const provided = req.headers.get('x-seed-secret')   // header only: a query string would be written to access logs
   if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
       result[`org_${coll}`] = 0
     }
   }
+
+  // Outbound-mail brand for the Doppelmayr tenant: stored configuration, idempotent, never overwrites admin edits.
+  const brand = await ensureDoppelmayrBrand()
+  result.doppelmayrBrandFieldsWritten = brand.changed.length
 
   // sanity: current role distribution
   const roles = await db.collection('users').aggregate([{ $group: { _id: '$role', n: { $sum: 1 } } }]).toArray()

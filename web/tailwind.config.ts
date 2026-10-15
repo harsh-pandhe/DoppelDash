@@ -1,4 +1,6 @@
 import type { Config } from 'tailwindcss'
+import plugin from 'tailwindcss/plugin'
+import { dsThemeExtension } from './design/tailwind-ds'
 
 const config: Config = {
   content: [
@@ -120,6 +122,8 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Design system (additive ds-* utilities only)
+    plugin(() => {}, { theme: { extend: dsThemeExtension } }),],
 }
 export default config

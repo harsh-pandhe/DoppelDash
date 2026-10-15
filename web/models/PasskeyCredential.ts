@@ -18,7 +18,7 @@ export interface IPasskeyCredential extends Document {
 
 const PasskeyCredentialSchema = new Schema<IPasskeyCredential>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:       { type: String, required: true, index: true },
     credentialId: { type: String, required: true, unique: true },
     publicKey:    { type: String, required: true },

@@ -16,7 +16,7 @@ export interface ICampaignLog extends Document {
 
 const CampaignLogSchema = new Schema<ICampaignLog>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     sentBy:         { type: String, required: true, index: true },
     sentByName:     { type: String, required: true },
     subject:        { type: String, required: true },

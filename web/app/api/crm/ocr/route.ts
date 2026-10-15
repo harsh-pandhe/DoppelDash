@@ -4,6 +4,10 @@ import Contact from '@/models/Contact'
 import { rateLimit } from '@/lib/ratelimit'
 import { geminiVision } from '@/lib/gemini'
 import { getUser } from '@/lib/auth'
+import { canUseFeature } from '@/lib/entitlements/entitlementService'
+import { checkOcrImage, MAX_OCR_IMAGE_BYTES } from '@/lib/ocr/image'
+import { extractJson, ollamaConfigured, OCR_DEADLINE_MS } from '@/lib/ocr/receiptOcr'
+import { sanitizeCard, EMPTY_CARD } from '@/lib/ocr/card'
 
 const OCR_PROMPT = `You are a business card OCR assistant. Look at this business card image carefully.
 Extract all contact information and return ONLY a valid JSON object — no explanation, no markdown, no code fences.
@@ -21,93 +25,95 @@ Required format:
   "linkedin": "linkedin profile URL if present"
 }`
 
-async function extractWithGemini(base64Image: string, mimeType: string) {
-  const text = await geminiVision(OCR_PROMPT, base64Image, mimeType)
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('No JSON in Gemini response')
-  return JSON.parse(jsonMatch[0]) as Record<string, string | null>
+async function extractWithGemini(base64Image: string, mimeType: string, timeoutMs: number) {
+  if (!process.env.GEMINI_API_KEY) throw new Error('gemini not configured')
+  const parsed = extractJson(await geminiVision(OCR_PROMPT, base64Image, mimeType, timeoutMs))
+  if (!parsed) throw new Error('No JSON in Gemini response')
+  return parsed
 }
 
-async function extractWithOllama(base64Image: string) {
-  const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434'
-  const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b'
-  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+async function extractWithOllama(base64Image: string, timeoutMs: number) {
+  const url = (process.env.OLLAMA_URL || '').trim().replace(/\/+$/, '')
+  if (!url) throw new Error('ollama not configured')
+  const res = await fetch(`${url}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL, stream: false,
+      model: process.env.OLLAMA_MODEL || 'gemma3:4b', stream: false,
       messages: [{ role: 'user', content: OCR_PROMPT, images: [base64Image] }],
     }),
-    signal: AbortSignal.timeout(120_000),
+    signal: AbortSignal.timeout(timeoutMs),
   })
   if (!res.ok) throw new Error(`Ollama ${res.status}`)
   const data = await res.json()
-  const text: string = data?.message?.content || ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('No JSON in response')
-  return JSON.parse(jsonMatch[0]) as Record<string, string | null>
+  const parsed = extractJson(typeof data?.message?.content === 'string' ? data.message.content : '')
+  if (!parsed) throw new Error('No JSON in response')
+  return parsed
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const orgId = user?.orgId || 'org_doppelmayr'
 
   if (!(await rateLimit(`ocr:${userId}`, 10, 60_000))) {
-    return NextResponse.json({ error: 'Too many requests — wait a minute' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many requests — wait a minute', code: 'rate_limited' }, { status: 429 })
   }
 
-  let body: { imageBase64?: string; mimeType?: string; imageUrl?: string }
+  let body: { imageBase64?: unknown; mimeType?: unknown; imageUrl?: unknown }
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid request body', code: 'invalid_body' }, { status: 400 })
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid request body', code: 'invalid_body' }, { status: 400 })
+
+  if (!(await canUseFeature(orgId, 'ocrBusinessCards'))) {
+    return NextResponse.json({ error: 'Business-card scanning is not available on your plan. Upgrade to Premium.', code: 'feature_unavailable' }, { status: 403 })
   }
 
-  // Accept either base64 (new flow) or imageUrl (legacy scan page)
-  let base64Image: string | null = body.imageBase64 || null
-  let mimeType = body.mimeType || 'image/jpeg'
-
-  // Legacy: if only imageUrl sent, read file from disk and convert to base64
-  if (!base64Image && body.imageUrl) {
+  // Accept either base64 (current flow) or imageUrl (legacy scan page: a file under /public)
+  let imageBase64: unknown = body.imageBase64
+  if (!imageBase64 && typeof body.imageUrl === 'string') {
     try {
       const path = await import('path')
       const publicDir = path.resolve(process.cwd(), 'public')
       const filePath = path.resolve(publicDir, body.imageUrl.replace(/^\/+/, ''))
-      if (!filePath.startsWith(publicDir)) {
-        return NextResponse.json({ error: 'Invalid image path' }, { status: 400 })
+      // path.relative (not startsWith): '/x/public-secrets' must not pass as being inside '/x/public'
+      const rel = path.relative(publicDir, filePath)
+      if (!rel || rel.startsWith('..') || path.isAbsolute(rel) || !/\.(png|jpe?g|webp)$/i.test(filePath)) {
+        return NextResponse.json({ error: 'Invalid image path', code: 'invalid_path' }, { status: 400 })
       }
-      const { readFile } = await import('fs/promises')
-      const fileBuffer = await readFile(filePath)
-      base64Image = fileBuffer.toString('base64')
-      if (body.imageUrl.endsWith('.png')) mimeType = 'image/png'
+      const { readFile, stat } = await import('fs/promises')
+      if ((await stat(filePath)).size > MAX_OCR_IMAGE_BYTES) return NextResponse.json({ error: 'Image is too large to scan.', code: 'image_too_large' }, { status: 413 })
+      imageBase64 = (await readFile(filePath)).toString('base64')
     } catch {
-      return NextResponse.json({ error: 'Image not found' }, { status: 400 })
+      return NextResponse.json({ error: 'Image not found', code: 'image_not_found' }, { status: 400 })
     }
   }
 
-  if (!base64Image) {
-    return NextResponse.json({ error: 'imageBase64 or imageUrl required' }, { status: 400 })
-  }
+  const img = checkOcrImage({ imageBase64, mimeType: body.mimeType })
+  if (!img.ok) return NextResponse.json({ error: img.error, code: img.code }, { status: img.status })
 
-  let parsed: Record<string, string | null>
-  let source: 'gemini' | 'ollama' | 'fallback' = 'gemini'
-
-  try {
-    parsed = await extractWithGemini(base64Image, mimeType)
-  } catch (geminiErr) {
-    console.error('[OCR] Gemini failed, trying Ollama:', geminiErr)
-    source = 'ollama'
+  // gemini → ollama (only if configured) → empty fallback, under one deadline; output is validated field by field.
+  const t0 = Date.now()
+  const left = () => Math.max(1000, OCR_DEADLINE_MS - (Date.now() - t0))
+  let parsed = EMPTY_CARD()
+  let source: 'gemini' | 'ollama' | 'fallback' = 'fallback'
+  for (const [name, run] of [
+    ['gemini', () => extractWithGemini(img.base64, img.mime, left())],
+    ['ollama', () => extractWithOllama(img.base64, left())],
+  ] as const) {
+    if (Date.now() - t0 >= OCR_DEADLINE_MS) break
+    if (name === 'ollama' && !ollamaConfigured()) continue
     try {
-      parsed = await extractWithOllama(base64Image)
-    } catch (ollamaErr) {
-      console.error('[OCR] Ollama also failed:', ollamaErr)
-      source = 'fallback'
-      parsed = { name: null, email: null, phone: null, company: null, designation: null, address: null, website: null, linkedin: null }
+      const candidate = sanitizeCard(await run())
+      if (Object.values(candidate).some(Boolean)) { parsed = candidate; source = name; break }
+    } catch (err) {
+      console.error(`[OCR] ${name} failed:`, (err as Error)?.name === 'TimeoutError' ? 'timeout' : (err as Error)?.message?.slice(0, 120))
     }
   }
 
-  // Deduplication check
+  // Deduplication check (parsed values are validated strings, never operators)
   await connectDB()
   let existing = null
   if (parsed.email) existing = await Contact.findOne({ orgId, createdBy: userId, email: parsed.email }).lean()

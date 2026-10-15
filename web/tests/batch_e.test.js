@@ -1,3 +1,5 @@
+const { captureForeignBaseline } = require('./helpers/baseline');
+let FOREIGN;
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
@@ -20,7 +22,9 @@ const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).
 const OrgSettings = jiti(path.resolve(__dirname, '../models/OrgSettings.ts')).default;
 const Organization = jiti(path.resolve(__dirname, '../models/Organization.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 
 // Tracking sets for safe teardown
 const createdTestOrgs = new Set();
@@ -49,6 +53,7 @@ test.before(async () => {
     await mongoose.connect(MONGODB_URI);
   }
   await Organization.ensureDoppelmayr();
+  FOREIGN = await captureForeignBaseline(mongoose.connection.db);
 });
 
 test.after(async () => {
@@ -431,13 +436,13 @@ test('13. Direct MongoDB Verification: Clean test teardown leaves zero test arti
   await RefreshToken.deleteMany({ userId: { $in: userList } });
 
   // 3. Confirm 0 test artifacts remain
-  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testOrgsRemain = await Organization.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('organizations') });
   assert.equal(testOrgsRemain, 0);
 
-  const testSettingsRemain = await OrgSettings.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testSettingsRemain = await OrgSettings.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('orgsettings') });
   assert.equal(testSettingsRemain, 0);
 
-  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' } });
+  const testUsersRemain = await User.countDocuments({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('users') });
   assert.equal(testUsersRemain, 0);
 
   // 4. Confirm Doppelmayr data is 100% untouched

@@ -1,12 +1,16 @@
 import { randomInt, createHmac, timingSafeEqual } from 'crypto'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
+import { isDevAuthShortcutAllowed, isProductionLike } from './devShortcuts'
 
 const OTP_EXPIRY_MINUTES = 10
 const MAX_ATTEMPTS = 5
 
 function otpSecret(): string {
-  return process.env.JWT_SECRET || 'dev-only-insecure-key'
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET
+  // The pepper must never silently degrade to a known constant on a deployed system.
+  if (isProductionLike()) throw new Error('JWT_SECRET is not set — refusing to hash OTPs with an insecure pepper')
+  return 'dev-only-insecure-key'
 }
 
 // Peppered hash — a 6-digit code has too small a keyspace for salting to
@@ -80,7 +84,9 @@ export async function verifyOTP(userId: string, candidate: string): Promise<{ ok
     return { ok: false, reason: 'Incorrect OTP' }
   }
 
-  if (process.env.NODE_ENV !== 'production' && candidate === '112022') {
+  // Local-development automation code. isDevAuthShortcutAllowed() is false in
+  // production AND on any deploy platform, whatever NODE_ENV claims.
+  if (isDevAuthShortcutAllowed() && candidate === '112022') {
     await User.findByIdAndUpdate(userId, {
       $unset: { otp: 1, otpExpiry: 1 },
       otpAttempts: 0,

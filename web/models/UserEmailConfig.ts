@@ -14,7 +14,7 @@ export interface IUserEmailConfig extends Document {
 
 const UserEmailConfigSchema = new Schema<IUserEmailConfig>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:       { type: String, required: true, unique: true, index: true },
     emailAddress: { type: String, required: true },
     smtpHost:     { type: String, required: true },

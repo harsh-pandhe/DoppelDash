@@ -65,7 +65,7 @@ const ROLE_COLOR: Record<string, string> = {
 export default function Sidebar() {
   const pathname = usePathname()
   const { user }  = useUser()
-  const role      = user?.role || 'employee'
+  const role      = user?.role ?? null   // server-provided only; no client default (null → no role-gated items shown)
   const [open, setOpen] = useState(false)
   // Insights + Admin collapsed by default for managers/employees, expanded for boss
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>(() => ({
@@ -87,11 +87,11 @@ export default function Sidebar() {
       <div className="px-5 pt-5 pb-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-white border border-white/25 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1">
-            <Image src="/icon-192.png" alt="DoppelDash" width={36} height={36} className="w-full h-full object-contain" />
+            <Image src="/icon-192.png" alt="Doppelmayr India" width={36} height={36} className="w-full h-full object-contain" />
           </div>
           <div>
-            <p className="font-extrabold text-sm leading-tight text-white tracking-tight">DoppelDash</p>
-            <p className="text-[10px] text-white/45 leading-tight font-medium">Doppelmayr India</p>
+            <p className="font-extrabold text-sm leading-tight text-white tracking-tight">Doppelmayr India</p>
+            <p className="text-[10px] text-white/45 leading-tight font-medium">Employee workspace</p>
           </div>
         </div>
         <button
@@ -108,7 +108,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-3 overflow-y-auto scrollbar-thin space-y-3">
         {SECTIONS.map(section => {
           const visible = section.items.filter(i => {
-            if (!i.roles.includes(role)) return false
+            if (!role || !i.roles.includes(role)) return false
             // 10B: mail items hidden for employees without granted mailAccess
             if ('requiresMailAccess' in i && i.requiresMailAccess && role === 'employee' && !user?.mailAccess) return false
             return true
@@ -178,8 +178,8 @@ export default function Sidebar() {
           Settings
         </Link>
         <div className="px-3 pt-2 flex items-center gap-2">
-          <div className={cn('px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest', ROLE_COLOR[role] || ROLE_COLOR.employee)}>
-            {role}
+          <div className={cn('px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest', ROLE_COLOR[role ?? 'employee'] || ROLE_COLOR.employee)}>
+            {role ?? ''}
           </div>
           <span className="text-[11px] text-white/40 truncate">
             {user?.firstName || user?.fullName || ''}

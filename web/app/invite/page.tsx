@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { PASSWORD_MAX, passwordRuleState } from '@/lib/auth/passwordRules'
 import Link from 'next/link'
 import {
   Building2,
@@ -39,8 +39,9 @@ interface InvitationDetails {
 }
 
 function InviteAcceptanceContent() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  // Token travels in the URL fragment; legacy ?token= is still read. Either way the address bar is scrubbed.
+  const [token, setToken] = useState<string | null>(null)
+  const [tokenRead, setTokenRead] = useState(false)
 
   const [verifying, setVerifying] = useState(true)
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null)
@@ -60,6 +61,20 @@ function InviteAcceptanceContent() {
 
   // Verify invitation token on mount
   useEffect(() => {
+    const read = () => {
+      const fromHash = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('token')
+      const fromQuery = new URLSearchParams(window.location.search).get('token')
+      const found = fromHash || fromQuery
+      if (found) { setToken(found); window.history.replaceState(null, '', window.location.pathname) }
+      setTokenRead(true)
+    }
+    read()
+    window.addEventListener('hashchange', read)
+    return () => window.removeEventListener('hashchange', read)
+  }, [])
+
+  useEffect(() => {
+    if (!tokenRead) return
     if (!token) {
       setVerifying(false)
       setInvitation({ valid: false, reason: 'missing_token' })
@@ -70,7 +85,7 @@ function InviteAcceptanceContent() {
     const verifyToken = async () => {
       try {
         setVerifying(true)
-        const res = await fetch(`/api/auth/invitations/${encodeURIComponent(token)}`)
+        const res = await fetch('/api/auth/invitations/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
         const data = await res.json()
 
         if (!isMounted) return
@@ -103,19 +118,14 @@ function InviteAcceptanceContent() {
     return () => {
       isMounted = false
     }
-  }, [token])
+  }, [token, tokenRead])
 
   // Password requirements calculation
-  const hasMinLength = password.length >= 8
-  const hasUppercase = /[A-Z]/.test(password)
-  const hasLowercase = /[a-z]/.test(password)
-  const hasNumber = /[0-9]/.test(password)
-  const passwordsMatch = password.length > 0 && password === confirmPassword
+  // Canonical contract: 8–128 characters, no composition rules (same as the server and Android).
+  const hasMinLength = passwordRuleState(password).length
+  const passwordsMatch = passwordRuleState(password, confirmPassword).match
   const isFormValid =
     hasMinLength &&
-    hasUppercase &&
-    hasLowercase &&
-    hasNumber &&
     passwordsMatch &&
     firstName.trim().length > 0 &&
     lastName.trim().length > 0
@@ -156,9 +166,11 @@ function InviteAcceptanceContent() {
       }
 
       setSuccess(true)
-      // Redirect to dashboard after brief success confirmation
+      setToken(null)
+      // Server decides whether this organisation may use the web client.
+      const dest = data.webAccess === false ? '/web-access-restricted' : '/dashboard'
       setTimeout(() => {
-        window.location.href = '/dashboard'
+        window.location.href = dest
       }, 700)
     } catch {
       setSubmitError('A network error occurred. Please check your internet connection and try again.')
@@ -415,19 +427,7 @@ function InviteAcceptanceContent() {
           <div className="grid grid-cols-2 gap-1.5 text-xs">
             <div className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-400' : 'text-slate-500'}`}>
               <Check className={`w-3.5 h-3.5 ${hasMinLength ? 'text-emerald-400' : 'text-slate-600'}`} />
-              <span>At least 8 chars</span>
-            </div>
-            <div className={`flex items-center gap-1.5 ${hasUppercase ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <Check className={`w-3.5 h-3.5 ${hasUppercase ? 'text-emerald-400' : 'text-slate-600'}`} />
-              <span>1 uppercase letter</span>
-            </div>
-            <div className={`flex items-center gap-1.5 ${hasLowercase ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <Check className={`w-3.5 h-3.5 ${hasLowercase ? 'text-emerald-400' : 'text-slate-600'}`} />
-              <span>1 lowercase letter</span>
-            </div>
-            <div className={`flex items-center gap-1.5 ${hasNumber ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <Check className={`w-3.5 h-3.5 ${hasNumber ? 'text-emerald-400' : 'text-slate-600'}`} />
-              <span>1 number</span>
+              <span>{`8–${PASSWORD_MAX} characters`}</span>
             </div>
           </div>
           {confirmPassword.length > 0 && (
@@ -474,8 +474,8 @@ export default function InvitePage() {
       {/* Header Bar */}
       <header className="relative z-10 w-full p-6 flex items-center justify-between max-w-5xl mx-auto">
         <div className="flex items-center gap-3">
-          <img src="/icon-192.png" alt="DoppelDash" className="h-9 w-9 rounded-xl shadow-md" />
-          <span className="font-bold text-white tracking-tight text-lg">DoppelDash</span>
+          <img src="/icon-192.png" alt="Doppelmayr India" className="h-9 w-9 rounded-xl shadow-md" />
+          <span className="font-bold text-white tracking-tight text-lg">Doppelmayr India</span>
         </div>
         <Link
           href="/sign-in"
@@ -503,7 +503,7 @@ export default function InvitePage() {
 
       {/* Footer */}
       <footer className="relative z-10 w-full p-6 text-center text-xs text-slate-500 max-w-5xl mx-auto">
-        © {new Date().getFullYear()} DoppelDash Enterprise · Secure Multi-Tenant Operations
+        © {new Date().getFullYear()} Doppelmayr India · Employee workspace
       </footer>
     </div>
   )

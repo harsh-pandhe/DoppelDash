@@ -45,7 +45,9 @@ const AuditLog = jiti(path.resolve(__dirname, '../models/AuditLog.ts')).default;
 const RevokedToken = jiti(path.resolve(__dirname, '../models/RevokedToken.ts')).default;
 const RefreshToken = jiti(path.resolve(__dirname, '../models/RefreshToken.ts')).default;
 const LeaveBalance = jiti(path.resolve(__dirname, '../models/LeaveBalance.ts')).default;
-const { signToken } = jiti(path.resolve(__dirname, '../lib/auth/jwt.ts'));
+// Public organisations are Android-class (webEnabled=false): fixtures authenticate with mobile access tokens,
+// exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
+const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return mongoose.connection;
@@ -387,7 +389,7 @@ test('5. Travel-to-Expense Conversion Lifecycle and Invariants', async () => {
   const approveTrRes = await fetch(`${BASE_URL}/api/travel/${travelA1Id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Cookie: cookieMgrA },
-    body: JSON.stringify({ status: 'approved' }),
+    body: JSON.stringify({ status: 'approved', revision: 0 }),   // a freshly created trip is at revision 0
   });
   assert.equal(approveTrRes.status, 200);
 

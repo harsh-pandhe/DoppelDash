@@ -14,7 +14,7 @@ export async function GET(_: NextRequest, { params }: { params: { userId: string
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const org = orgId || 'org_doppelmayr'
+  const org = orgId
   await connectDB()
 
   // Verify target user belongs to this organization
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const org = orgId || 'org_doppelmayr'
+  const org = orgId
   await connectDB()
 
   // Verify target user belongs to this organization before updating

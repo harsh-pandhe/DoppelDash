@@ -50,7 +50,15 @@ const {
   getDoppelmayrBaseline,
   safeTeardownTestOrg,
   auditDatabaseIntegrity,
+  fingerprintDocs,
+  assertSnapshotUnchanged,
+  isLocalThrowawayDb,
 } = require('./helpers/testSafety');
+
+// Deterministic, clearly test-only passkey credential. It exists only when the database holds NO passkey
+// at all (a freshly seeded throwaway DB), so the "existing passkeys are untouched" invariant can actually
+// detect a deletion/mutation instead of comparing 0 with 0. Never written to a non-throwaway database.
+const FIXTURE_PASSKEY_ID = '__batch_j1_test_fixture_passkey__';
 
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return mongoose.connection;
@@ -58,6 +66,9 @@ async function connectDB() {
 }
 
 let baseline = null;
+let passkeySnapshot = null;
+let holidaySnapshot = null;
+let createdFixturePasskey = false;
 let doppelmayrUsers = [];
 let testOrgIdA = null;
 let testAdminUserA = null;
@@ -66,9 +77,12 @@ let testAdminTokenA = null;
 let testContactAId = null;
 let ipSeq = 700;
 
+const { captureForeignBaseline } = require('./helpers/baseline');
+let FOREIGN;
 test.before(async () => {
   await connectDB();
   const db = mongoose.connection.db;
+  FOREIGN = await captureForeignBaseline(db);
 
   // Capture baseline of Doppelmayr records before any test execution
   baseline = await getDoppelmayrBaseline(db);
@@ -77,6 +91,21 @@ test.before(async () => {
   assert.equal(doppelmayrUsers.length, 9, 'Must have exactly 9 Doppelmayr users in baseline');
   assert.equal(baseline.leavebalances, 9, 'Must have exactly 9 Doppelmayr leave balances in baseline');
   assert.equal(baseline.employees, 9, 'Must have exactly 9 Doppelmayr employees in baseline');
+
+  // The passkey / holiday invariants compare against what THIS database held before the run,
+  // not against a magic number copied from one particular production snapshot.
+  if ((await db.collection('passkeycredentials').countDocuments()) === 0 && isLocalThrowawayDb(MONGODB_URI)) {
+    const owner = doppelmayrUsers[0];
+    await db.collection('passkeycredentials').insertOne({
+      orgId: 'org_doppelmayr', userId: String(owner._id), credentialId: FIXTURE_PASSKEY_ID,
+      publicKey: 'dGVzdC1maXh0dXJlLXB1YmxpYy1rZXk', counter: 7, transports: ['internal'],
+      deviceType: 'multiDevice', backedUp: false, nickname: 'batch_j1 test fixture',
+      createdAt: new Date('2026-01-01T00:00:00Z'), updatedAt: new Date('2026-01-01T00:00:00Z'),
+    });
+    createdFixturePasskey = true;
+  }
+  passkeySnapshot = fingerprintDocs(await db.collection('passkeycredentials').find({}).toArray());
+  holidaySnapshot = fingerprintDocs(await db.collection('publicholidays').find({}).toArray());
 });
 
 test.after(async () => {
@@ -87,6 +116,11 @@ test.after(async () => {
   if (testOrgIdA) {
     const userIds = [testAdminUserA?._id, testEmployeeUserA?._id].filter(Boolean);
     await safeTeardownTestOrg(db, testOrgIdA, userIds);
+  }
+
+  // Remove ONLY the fixture this run created (by its unique credentialId).
+  if (createdFixturePasskey) {
+    await db.collection('passkeycredentials').deleteOne({ credentialId: FIXTURE_PASSKEY_ID });
   }
 
   await mongoose.disconnect();
@@ -323,11 +357,21 @@ test('4. Doppelmayr counts remain unchanged after the complete test', async () =
     );
   }
 
-  // Also verify publicholidays and passkeycredentials
-  const holidays = await db.collection('publicholidays').countDocuments();
-  assert.equal(holidays, 11, 'Public holidays count must remain 11');
-  const passkeys = await db.collection('passkeycredentials').countDocuments();
-  assert.equal(passkeys, 1, 'Passkey credentials count must remain 1');
+  // Public holidays and passkey credentials: the run must leave exactly what it found —
+  // same documents, same content (detects deletion, addition AND mutation).
+  assertSnapshotUnchanged('publicholidays', holidaySnapshot, fingerprintDocs(await db.collection('publicholidays').find({}).toArray()));
+  assert.ok(passkeySnapshot.count >= 1, 'The passkey invariant needs at least one existing credential to protect (a throwaway DB gets a deterministic test-only fixture)');
+  assertSnapshotUnchanged('passkeycredentials', passkeySnapshot, fingerprintDocs(await db.collection('passkeycredentials').find({}).toArray()));
+});
+
+test('4b. the snapshot comparison itself detects deletion, addition and mutation (pure check)', () => {
+  const docs = [{ _id: 'a', credentialId: 'c1', counter: 1, transports: ['usb'] }, { _id: 'b', credentialId: 'c2', counter: 5 }];
+  const snap = fingerprintDocs(docs);
+  assertSnapshotUnchanged('same', snap, fingerprintDocs([...docs].reverse()));                       // order never matters
+  assert.throws(() => assertSnapshotUnchanged('del', snap, fingerprintDocs(docs.slice(1))), /count changed/);
+  assert.throws(() => assertSnapshotUnchanged('add', snap, fingerprintDocs([...docs, { _id: 'c' }])), /count changed/);
+  assert.throws(() => assertSnapshotUnchanged('mut', snap, fingerprintDocs([{ ...docs[0], counter: 2 }, docs[1]])), /content changed/);
+  assert.throws(() => assertSnapshotUnchanged('swap', snap, fingerprintDocs([{ ...docs[0], credentialId: 'zzz' }, docs[1]])), /content changed/);
 });
 
 test('5. Leave balances for Doppelmayr remain present and mapped to the correct users', async () => {
@@ -408,13 +452,14 @@ test('8. No foreign-org business records remain', async () => {
   const foreignOrgs = await db.collection('organizations').find({
     slug: { $ne: 'doppelmayr' },
     orgId: { $ne: 'org_doppelmayr' },
+    ...FOREIGN.created('organizations'),
   }).toArray();
   assert.equal(foreignOrgs.length, 0, 'No foreign organizations should exist');
 
-  const foreignUsers = await db.collection('users').find({ orgId: { $ne: 'org_doppelmayr' } }).toArray();
+  const foreignUsers = await db.collection('users').find({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('users') }).toArray();
   assert.equal(foreignUsers.length, 0, 'No foreign users should exist');
 
-  const foreignContacts = await db.collection('contacts').find({ orgId: { $ne: 'org_doppelmayr' } }).toArray();
+  const foreignContacts = await db.collection('contacts').find({ orgId: { $ne: 'org_doppelmayr' }, ...FOREIGN.created('contacts') }).toArray();
   assert.equal(foreignContacts.length, 0, 'No foreign contacts should exist');
 });
 

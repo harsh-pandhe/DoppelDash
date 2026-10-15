@@ -34,13 +34,26 @@ async function saveChallenge(userId: string, challenge: string) {
   })
 }
 
+/**
+ * Atomically consume the pending challenge. A single conditional findOneAndUpdate both checks (exists, unexpired) and
+ * unsets it, so of any number of concurrent callers at most one receives the challenge; everyone else gets null.
+ * Missing, expired, half-written or already-consumed challenges all fail closed.
+ */
 async function consumeChallenge(userId: string): Promise<string | null> {
-  const user = await User.findById(userId)
-  if (!user?.webauthnChallenge || !user.webauthnChallengeExpiry) return null
-  if (new Date() > user.webauthnChallengeExpiry) return null
-  const challenge = user.webauthnChallenge
-  await User.findByIdAndUpdate(userId, { $unset: { webauthnChallenge: 1, webauthnChallengeExpiry: 1 } })
-  return challenge
+  try {
+    const prior = await User.findOneAndUpdate(
+      {
+        _id: userId,
+        webauthnChallenge: { $type: 'string', $ne: '' },
+        webauthnChallengeExpiry: { $gt: new Date() },
+      },
+      { $unset: { webauthnChallenge: 1, webauthnChallengeExpiry: 1 } },
+      { new: false, projection: { webauthnChallenge: 1 } },
+    ).lean()
+    return prior?.webauthnChallenge || null
+  } catch {
+    return null
+  }
 }
 
 /** Registration options for an authenticated user adding a passkey. */
@@ -91,7 +104,8 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
   let targetOrgId = orgId
   if (!targetOrgId) {
     const userDoc = await User.findById(userId).select('orgId').lean()
-    targetOrgId = userDoc?.orgId || 'org_doppelmayr'
+    targetOrgId = userDoc?.orgId
+    if (!targetOrgId) return { ok: false as const, reason: 'Account is not assigned to an organization' }
   }
 
   const info = verification.registrationInfo
@@ -166,13 +180,17 @@ export async function passkeyLoginVerify(userId: string, response: Authenticatio
   }
   if (!verification.verified) return { ok: false as const, reason: 'Verification failed' }
 
+  const existingUser = await User.findById(userId)
+  if (!existingUser) return { ok: false as const, reason: 'User not found' }
+  if (!existingUser.isActive || existingUser.isBanned) return { ok: false as const, reason: 'Account suspended' }
+
   cred.counter = verification.authenticationInfo.newCounter
   cred.lastUsedAt = new Date()
   await cred.save()
 
-  const user = await User.findByIdAndUpdate(userId, {
-    lastLoginAt: new Date(), lastActiveAt: new Date(), $inc: { loginCount: 1 },
-  }, { new: true })
-  if (!user) return { ok: false as const, reason: 'User not found' }
-  return { ok: true as const, user }
+  existingUser.lastLoginAt = new Date()
+  existingUser.lastActiveAt = new Date()
+  existingUser.loginCount = (existingUser.loginCount || 0) + 1
+  await existingUser.save()
+  return { ok: true as const, user: existingUser }
 }

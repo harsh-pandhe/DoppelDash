@@ -29,6 +29,7 @@ test('1. Employee ID generated before validation (pre-validate hook)', async () 
   const emp = new Employee({
     clerkUserId: dummyClerkId,
     createdByUserId: dummyClerkId,
+    orgId: 'org_batch_a_model_test',
     firstName: 'Test',
     lastName: 'Validation',
     email: `${dummyClerkId}@example.com`,
@@ -53,6 +54,7 @@ test('2. Valid employee can be created and saved without explicit employeeId', a
   const emp = await Employee.create({
     clerkUserId: dummyClerkId,
     createdByUserId: dummyClerkId,
+    orgId: 'org_batch_a_model_test',
     firstName: 'Test',
     lastName: 'Create',
     email: `${dummyClerkId}@example.com`,

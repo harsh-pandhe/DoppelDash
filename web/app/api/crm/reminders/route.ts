@@ -5,9 +5,8 @@ import Contact from '@/models/Contact'
 import { getUser } from '@/lib/auth'
 
 export async function GET() {
-  const { userId, user } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
   const contacts = await Contact.find({
     orgId,
@@ -23,9 +22,8 @@ export async function GET() {
 
 // Dismiss a reminder so it stops resurfacing until the reminderDate is changed
 export async function PATCH(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const orgId = user?.orgId || 'org_doppelmayr'
   const { contactId } = await req.json().catch(() => ({})) as { contactId?: string }
   if (!contactId) return NextResponse.json({ error: 'contactId required' }, { status: 400 })
   if (!mongoose.isValidObjectId(contactId)) return NextResponse.json({ error: 'Not found' }, { status: 404 })

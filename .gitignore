@@ -104,8 +104,9 @@ data/
 # AWS credentials
 .aws/
 
-# File uploads (if local)
-uploads/
+# Locally stored user uploads (generated data). Anchored on purpose: a bare `uploads/` also hid the source modules
+# web/lib/uploads/ and web/app/api/uploads/ (private receipt storage), which are code and MUST be tracked.
+/web/public/uploads/
 # Local Netlify folder
 .netlify
 scratch/

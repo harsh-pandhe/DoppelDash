@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { assertDataAccessAllowed } from '@/lib/deployContext'
 
 const MONGODB_URI = process.env.MONGODB_URI!
 
@@ -13,6 +14,7 @@ let cached = global.mongoose
 if (!cached) cached = global.mongoose = { conn: null, promise: null }
 
 export async function connectDB() {
+  assertDataAccessAllowed()   // hosted deploys must declare DD_DEPLOY_CONTEXT=production|staging (previews fail closed)
   if (cached.conn) return cached.conn
   if (!cached.promise) {
     cached.promise = mongoose

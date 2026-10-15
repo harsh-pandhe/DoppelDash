@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const to         = searchParams.get('to')
   const limit      = Math.min(Number(searchParams.get('limit') || 50), 200)
   const skip       = Math.max(0, Number(searchParams.get('skip') || 0))
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
   const match: Record<string, unknown> = { orgId: effectiveOrgId }
   // UI filter 'travel' maps to the travel_request targetType
   if (targetType) match.targetType = targetType === 'travel' ? 'travel_request' : targetType
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   }
 
   const [logs, total] = await Promise.all([
-    AuditLog.find(match).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    AuditLog.find(match).select('-dedupeKey').sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
     AuditLog.countDocuments(match),
   ])
   return NextResponse.json({ logs, total, hasMore: skip + logs.length < total })

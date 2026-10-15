@@ -81,6 +81,9 @@ export default function PrivacyPolicyPage() {
             <p>
               All communication between the Android application and our backend endpoints is encrypted in transit using industry-standard TLS / HTTPS (TLS 1.3). Sensitive contact fields and tokens are protected using AES-256 field-level encryption at rest. Multi-tenant isolation ensures data belonging to your organization is inaccessible to other tenants.
             </p>
+            <p>
+              <strong>Sign-in help chat.</strong> The optional sign-in help chat can be used before you sign in. The messages you type there are sent to Google&apos;s Gemini API to generate a reply; Google processes them under its own terms, which we do not control. We do not store the conversation in our database and our server logs do not include message text. Please do not enter passwords, verification codes or other secrets in the chat.
+            </p>
           </section>
 
           {/* Section 4 */}

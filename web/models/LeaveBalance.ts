@@ -14,7 +14,7 @@ export interface ILeaveBalance extends Document {
 
 const LeaveBalanceSchema = new Schema<ILeaveBalance>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:    { type: String, required: true, index: true },
     year:      { type: Number, required: true },
     casual:    { type: Number, default: 12 },

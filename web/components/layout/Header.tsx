@@ -1,7 +1,7 @@
 'use client'
 import { useUser, clearUserCache } from '@/lib/useUser'
 import { useNotificationItems } from '@/lib/notificationsStore'
-import { Bell, X, CalendarClock, Receipt, Clock, Menu, Search, Users, FileText, Megaphone, LogOut, User as UserIcon, CheckCheck, Cake, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
+import { Bell, X, CalendarClock, Receipt, Clock, Menu, Search, Users, FileText, Megaphone, LogOut, Settings, User as UserIcon, CheckCheck, Cake, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
@@ -102,6 +102,7 @@ function GlobalSearch() {
             <Search className="w-4 h-4 text-surface-muted flex-shrink-0" />
             <input
               ref={inputRef}
+              aria-label="Search contacts, leaves, expenses and announcements"
               value={query}
               onChange={e => { setQuery(e.target.value); setActive(-1) }}
               onKeyDown={onKey}
@@ -219,8 +220,7 @@ function useNotifications() {
 }
 
 export default function Header({ title }: { title?: string }) {
-  const { user }   = useUser()
-  const role       = user?.role || 'employee'
+  const { role }   = useUser()   // null until the server answers; never defaulted client-side
   const isManager  = role === 'manager' || role === 'admin'
   const isBoss     = role === 'admin'
 
@@ -271,6 +271,7 @@ export default function Header({ title }: { title?: string }) {
             <button
               type="button"
               aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
+              aria-haspopup="dialog" aria-expanded={panelOpen}
               onClick={() => setPanelOpen(o => !o)}
               className={`relative p-2 rounded-xl transition-colors ${panelOpen ? 'bg-brand-50 text-brand-500' : 'hover:bg-slate-100 text-ink-muted'}`}
             >
@@ -399,9 +400,8 @@ export default function Header({ title }: { title?: string }) {
 }
 
 function UserMenu() {
-  const { user } = useUser()
+  const { user, role } = useUser()
   const router   = useRouter()
-  const role     = user?.role || 'employee'
   const [open,   setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -421,11 +421,11 @@ function UserMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button type="button" onClick={() => setOpen(o => !o)} aria-label="User menu"
+      <button type="button" onClick={() => setOpen(o => !o)} aria-label="User menu" aria-haspopup="menu" aria-expanded={open}
         className="flex items-center gap-2.5 hover:bg-surface px-2 py-1 rounded-xl transition-colors">
         <div className="hidden sm:block text-right">
           <p className="text-xs font-semibold text-ink leading-tight">{user?.fullName || user?.firstName}</p>
-          <p className="text-[10px] text-surface-muted capitalize">{role}</p>
+          <p className="text-[10px] text-surface-muted capitalize">{role ?? ''}</p>
         </div>
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white font-bold text-xs">
           {initials || <UserIcon className="w-4 h-4" />}
@@ -445,7 +445,7 @@ function UserMenu() {
             </Link>
             <Link href="/settings" onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-ink-muted hover:bg-surface transition-colors">
-              <UserIcon className="w-4 h-4 text-surface-muted" />Settings
+              <Settings className="w-4 h-4 text-surface-muted" />Settings
             </Link>
             <button type="button" onClick={logout}
               className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors w-full text-left">

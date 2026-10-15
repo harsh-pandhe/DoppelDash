@@ -1,72 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/ratelimit'
 import { getUser } from '@/lib/auth'
+import { checkOcrImage } from '@/lib/ocr/image'
+import { runReceiptOcr } from '@/lib/ocr/receiptOcr'
+import { canUseFeature, getOrganizationLimit } from '@/lib/entitlements/entitlementService'
+import { consumeMonthlyQuota, currentUsage, refundMonthlyQuota } from '@/lib/entitlements/usage'
 
-const OLLAMA_URL   = process.env.OLLAMA_URL   || 'http://localhost:11434'
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4:e4b'
+const QUOTA_KEY = 'receiptScans'
+const quotaView = (q: { used: number; limit: number; remaining: number; resetsAt: string }) => ({ used: q.used, limit: q.limit, remaining: q.remaining, resetsAt: q.resetsAt })
 
-const RECEIPT_PROMPT = `You are a receipt and invoice OCR assistant. Look at this bill/receipt/invoice image carefully.
-Extract the key expense information and return ONLY a valid JSON object — no explanation, no markdown.
-Use null for any field you cannot find.
-
-Required format:
-{
-  "title": "short expense title (e.g. 'Hotel Stay - Taj Mumbai', 'Air ticket Mumbai to Delhi', 'Client dinner at Trident')",
-  "vendor": "vendor or merchant name",
-  "amount": number or null (total amount as a number, no currency symbol, e.g. 4500 not '₹4,500'),
-  "date": "YYYY-MM-DD format if found, else null",
-  "description": "brief one-line description of what was purchased"
-}`
-
-async function extractWithGemma(base64Image: string): Promise<Record<string, string | number | null>> {
-  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model:  OLLAMA_MODEL,
-      stream: false,
-      messages: [{
-        role:    'user',
-        content: RECEIPT_PROMPT,
-        images:  [base64Image],
-      }],
-    }),
-    signal: AbortSignal.timeout(120_000),
-  })
-  if (!res.ok) throw new Error(`Ollama ${res.status}`)
-  const data  = await res.json()
-  const text: string = data?.message?.content || ''
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('No JSON in response')
-  return JSON.parse(match[0])
+/** Remaining receipt scans this month for the caller's organisation (read-only; consumes nothing). */
+export async function GET() {
+  const { userId, orgId } = await getUser()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const [enabled, limit] = await Promise.all([canUseFeature(orgId, 'ocrReceipts'), getOrganizationLimit(orgId, 'maxMonthlyReceiptScans')])
+  return NextResponse.json({ enabled, quota: quotaView(await currentUsage(orgId, QUOTA_KEY, limit)) })
 }
 
+/**
+ * Scan a receipt photo. Order matters: authenticate → rate limit → entitlement → VALIDATE the image (nothing is
+ * charged for bad input) → take one quota unit atomically → run OCR → give the unit back if nothing was read.
+ * Always returns a usable response: when OCR cannot read the image the client gets `source: 'fallback'` with empty
+ * fields and fills the form by hand — OCR trouble never blocks the expense flow.
+ */
 export async function POST(req: NextRequest) {
-  const { userId } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!(await rateLimit(`rms-ocr:${userId}`, 20, 60_000))) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    return NextResponse.json({ error: 'Too many requests', code: 'rate_limited' }, { status: 429 })
   }
 
-  let body: { imageBase64?: string; mimeType?: string }
+  let body: { imageBase64?: unknown; mimeType?: unknown }
   try { body = await req.json() }
-  catch { return NextResponse.json({ error: 'Invalid body' }, { status: 400 }) }
+  catch { return NextResponse.json({ error: 'Invalid body', code: 'invalid_body' }, { status: 400 }) }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Invalid body', code: 'invalid_body' }, { status: 400 })
 
-  if (!body.imageBase64) {
-    return NextResponse.json({ error: 'imageBase64 required' }, { status: 400 })
+  if (!(await canUseFeature(orgId, 'ocrReceipts'))) {
+    return NextResponse.json({ error: 'Receipt scanning is not available on your plan. Upgrade to Premium.', code: 'feature_unavailable' }, { status: 403 })
   }
 
-  let parsed: Record<string, string | number | null>
-  let source: 'gemma' | 'fallback' = 'gemma'
+  const img = checkOcrImage(body)
+  if (!img.ok) return NextResponse.json({ error: img.error, code: img.code }, { status: img.status })
 
-  try {
-    parsed = await extractWithGemma(body.imageBase64)
-  } catch (err) {
-    console.error('[RMS OCR] Gemma failed:', err)
-    source = 'fallback'
-    parsed = { title: null, vendor: null, amount: null, date: null, description: null }
+  const limit = await getOrganizationLimit(orgId, 'maxMonthlyReceiptScans')
+  const quota = await consumeMonthlyQuota(orgId, QUOTA_KEY, limit)
+  if (!quota.ok) {
+    return NextResponse.json({
+      error: `Monthly receipt scan limit reached (${limit}). Upgrade to Premium for more scans, or enter the details by hand.`,
+      code: 'quota_exceeded', quota: quotaView(quota),
+    }, { status: 403 })
   }
 
-  return NextResponse.json({ parsed, source })
+  const result = await runReceiptOcr(img.base64, img.mime)
+  let used = quota.used
+  if (result.provider === 'fallback') { await refundMonthlyQuota(orgId, QUOTA_KEY); used = Math.max(0, used - 1) }
+
+  return NextResponse.json({
+    parsed: result.parsed,
+    // `source` keeps the legacy two-value contract the Web form reads ('gemma' = AI-read, 'fallback' = nothing read);
+    // `provider` says which provider actually answered.
+    source: result.provider === 'fallback' ? 'fallback' : 'gemma',
+    provider: result.provider,
+    quota: quotaView({ used, limit, remaining: Math.max(0, limit - used), resetsAt: quota.resetsAt }),
+  })
 }

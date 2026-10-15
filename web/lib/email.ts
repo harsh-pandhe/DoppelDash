@@ -1,4 +1,5 @@
 import { getUserById } from '@/lib/auth/userService'
+import { getMailService, resolveMailBrand, PLATFORM_BRAND, type MailBrand } from '@/lib/mail'
 import { sendMail, getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics } from '@/lib/mailer'
 
 export { getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics }
@@ -78,6 +79,7 @@ export interface TransactionalEmailOpts {
   previewText?:string                 // hidden preview text shown in inbox
   recipientName?: string              // for personalization ("Hi {name},")
   footerHint?: string                 // small extra line at the very bottom
+  brand?:      MailBrand              // organisation brand (defaults to the platform brand)
 }
 
 function escapeHtml(s: string): string {
@@ -85,12 +87,13 @@ function escapeHtml(s: string): string {
 }
 
 export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmail {
-  const headerColor = TONE_HEADER[opts.tone]
+  const brand = opts.brand ?? PLATFORM_BRAND
+  const headerColor = opts.tone === 'info' ? brand.color : TONE_HEADER[opts.tone]
   const greeting = opts.recipientName ? `Hi ${opts.recipientName},` : 'Hi,'
 
   const bannerHtml = opts.banner
     ? `<tr><td style="padding:0 32px 16px 32px;">
-         <div style="display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:${TONE_BANNER_BG[opts.banner.tone || opts.tone]};color:${TONE_BANNER_FG[opts.banner.tone || opts.tone]};">${escapeHtml(opts.banner.label)}</div>
+         <div style="display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:${TONE_BANNER_BG[opts.banner.tone || opts.tone]};color:${(opts.banner.tone || opts.tone) === 'info' ? brand.darkColor : TONE_BANNER_FG[opts.banner.tone || opts.tone]};">${escapeHtml(opts.banner.label)}</div>
        </td></tr>`
     : ''
 
@@ -139,8 +142,8 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
           <td style="background:${headerColor};padding:22px 28px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">DoppelDash</td>
-                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Enterprise&nbsp;Platform</td>
+                <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(brand.name)}</td>
+                ${brand.tagline ? `<td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">${escapeHtml(brand.tagline).replace(/ /g, '&nbsp;')}</td>` : ''}
               </tr>
             </table>
           </td>
@@ -161,13 +164,13 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
           <td style="background:${SURFACE};border-top:1px solid ${BORDER};padding:16px 32px;">
             <p style="margin:0;font-size:11px;line-height:1.55;color:${SUBTLE};">
               ${opts.footerHint ? `${escapeHtml(opts.footerHint)}<br/>` : ''}
-              This is an automated notification from <strong style="color:${GRAPHITE};font-weight:600;">DoppelDash</strong>.
+              This is an automated notification from <strong style="color:${GRAPHITE};font-weight:600;">${escapeHtml(brand.name)}</strong>.
               Please do not reply to this email.
             </p>
           </td>
         </tr>
       </table>
-      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} DoppelDash. All rights reserved.</p>
+      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} ${escapeHtml(brand.name)}. All rights reserved.</p>
     </td></tr>
   </table>
 </body>
@@ -182,12 +185,17 @@ export function buildTransactionalEmail(opts: TransactionalEmailOpts): BuiltEmai
     opts.banner ? '\n[' + opts.banner.label + ']' : '',
     ...opts.rows.map(r => `${r.label}: ${r.value}`),
     opts.note ? `\n${opts.note.label}: ${opts.note.value}` : '',
-    opts.cta ? `\nOpen in DoppelDash: ${opts.cta.href}` : '',
+    opts.cta ? `\nOpen in ${brand.name}: ${opts.cta.href}` : '',
     '',
-    '— DoppelDash',
+    `— ${brand.name}`,
   ].filter(Boolean).join('\n')
 
   return { html, text, subject: opts.subject }
+}
+
+/** Product notifications: org-aware provider resolution (org provider when entitled + configured, else platform). */
+async function notify(orgId: string | undefined, to: string | string[], built: { subject: string; html: string; text: string }): Promise<void> {
+  await getMailService().sendNotification({ to, orgId, subject: built.subject, html: built.html, text: built.text })
 }
 
 function appUrl(): string {
@@ -210,10 +218,12 @@ function leaveLabel(type: string): string {
 /* ─── Leave emails ───────────────────────────────────────────────────────── */
 
 export async function emailLeaveSubmitted(opts: {
-  managerEmail: string; employeeName: string; leaveType: string; days: number; reason: string
+  managerEmail: string; employeeName: string; leaveType: string; days: number; reason: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const label = leaveLabel(opts.leaveType)
   const built = buildTransactionalEmail({
+    brand,
     tone:        'info',
     eyebrow:     'New leave request',
     heading:     `${opts.employeeName} requested ${label.toLowerCase()}`,
@@ -224,20 +234,22 @@ export async function emailLeaveSubmitted(opts: {
       { label: 'Duration', value: `${opts.days} day${opts.days !== 1 ? 's' : ''}` },
       { label: 'Reason', value: opts.reason || '(not provided)' },
     ],
-    cta:         { label: 'Review in DoppelDash', href: `${appUrl()}/lms` },
+    cta:         { label: `Review in ${brand.name}`, href: `${appUrl()}/lms` },
     subject:     `Leave request from ${opts.employeeName} · ${opts.days}d ${label.toLowerCase()}`,
     previewText: `${opts.employeeName} requested ${opts.days} day(s) of ${label.toLowerCase()}.`,
     footerHint:  'You are receiving this because you manage leave approvals.',
   })
-  await sendMail({ to: opts.managerEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.managerEmail, built)
 }
 
 export async function emailLeaveStatusChanged(opts: {
-  employeeEmail: string; status: 'approved' | 'rejected'; leaveType: string; days: number; note?: string
+  employeeEmail: string; status: 'approved' | 'rejected'; leaveType: string; days: number; note?: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const approved = opts.status === 'approved'
   const label = leaveLabel(opts.leaveType)
   const built = buildTransactionalEmail({
+    brand,
     tone:        approved ? 'success' : 'danger',
     eyebrow:     'Leave decision',
     heading:     approved ? `Your ${label.toLowerCase()} was approved` : `Your ${label.toLowerCase()} was rejected`,
@@ -250,22 +262,24 @@ export async function emailLeaveStatusChanged(opts: {
       { label: 'Duration', value: `${opts.days} day${opts.days !== 1 ? 's' : ''}` },
     ],
     note:        opts.note ? { label: 'Manager note', value: opts.note } : undefined,
-    cta:         { label: 'View in DoppelDash', href: `${appUrl()}/lms` },
+    cta:         { label: `View in ${brand.name}`, href: `${appUrl()}/lms` },
     subject:     approved ? `Approved · ${label} (${opts.days}d)` : `Rejected · ${label} (${opts.days}d)`,
     previewText: approved
       ? `Your ${opts.days}-day ${label.toLowerCase()} request was approved.`
       : `Your ${opts.days}-day ${label.toLowerCase()} request was rejected.`,
   })
-  await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.employeeEmail, built)
 }
 
 export async function emailOnboardingNudge(opts: {
-  employeeEmail: string; employeeName: string; daysSinceJoining: number; step: number
+  employeeEmail: string; employeeName: string; daysSinceJoining: number; step: number; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const built = buildTransactionalEmail({
+    brand,
     tone:        'warning',
     eyebrow:     'Complete your profile',
-    heading:     `Finish setting up your DoppelDash profile`,
+    heading:     `Finish setting up your ${brand.name} profile`,
     intro:       `It's been ${opts.daysSinceJoining} day${opts.daysSinceJoining !== 1 ? 's' : ''} since you joined. A few profile details are still missing — completing them unlocks leave, travel, and reimbursement features.`,
     banner:      { label: `Step ${opts.step} of 4`, tone: 'warning' },
     rows: [
@@ -273,12 +287,12 @@ export async function emailOnboardingNudge(opts: {
       { label: 'Time since joining', value: `${opts.daysSinceJoining} days` },
     ],
     cta:         { label: 'Complete onboarding', href: `${appUrl()}/onboarding` },
-    subject:     `Reminder: finish your DoppelDash profile`,
+    subject:     `Reminder: finish your ${brand.name} profile`,
     previewText: `Your profile is ${Math.round((opts.step / 4) * 100)}% complete — finish the rest.`,
     recipientName: opts.employeeName,
     footerHint:  'You receive this because your profile setup is still pending.',
   })
-  await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.employeeEmail, built)
 }
 
 /* ─── Expense emails ─────────────────────────────────────────────────────── */
@@ -288,9 +302,11 @@ function inr(n: number): string {
 }
 
 export async function emailExpenseSubmitted(opts: {
-  managerEmail: string; employeeName: string; title: string; amount: number
+  managerEmail: string; employeeName: string; title: string; amount: number; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const built = buildTransactionalEmail({
+    brand,
     tone:        'info',
     eyebrow:     'New reimbursement',
     heading:     `${opts.employeeName} submitted an expense claim`,
@@ -300,18 +316,20 @@ export async function emailExpenseSubmitted(opts: {
       { label: 'Title',     value: opts.title },
       { label: 'Amount',    value: inr(opts.amount), emphasis: true },
     ],
-    cta:         { label: 'Review in DoppelDash', href: `${appUrl()}/rms` },
+    cta:         { label: `Review in ${brand.name}`, href: `${appUrl()}/rms` },
     subject:     `Reimbursement from ${opts.employeeName} · ${inr(opts.amount)}`,
     previewText: `${opts.employeeName} submitted ${opts.title} for ${inr(opts.amount)}.`,
     footerHint:  'You are receiving this because you manage expense approvals.',
   })
-  await sendMail({ to: opts.managerEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.managerEmail, built)
 }
 
 export async function emailExpensePendingPayout(opts: {
-  bossEmail: string; employeeName: string; title: string; amount: number
+  bossEmail: string; employeeName: string; title: string; amount: number; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const built = buildTransactionalEmail({
+    brand,
     tone:        'warning',
     eyebrow:     'Awaiting payout',
     heading:     `Reimbursement awaiting your payout approval`,
@@ -327,14 +345,16 @@ export async function emailExpensePendingPayout(opts: {
     previewText: `${opts.title} for ${opts.employeeName} · ${inr(opts.amount)} ready for payout.`,
     footerHint:  'You are receiving this because you handle expense payouts.',
   })
-  await sendMail({ to: opts.bossEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.bossEmail, built)
 }
 
 export async function emailExpenseStatusChanged(opts: {
-  employeeEmail: string; status: 'paid' | 'rejected'; title: string; amount: number; note?: string
+  employeeEmail: string; status: 'paid' | 'rejected'; title: string; amount: number; note?: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const paid = opts.status === 'paid'
   const built = buildTransactionalEmail({
+    brand,
     tone:        paid ? 'success' : 'danger',
     eyebrow:     paid ? 'Reimbursement paid' : 'Reimbursement rejected',
     heading:     paid
@@ -349,7 +369,7 @@ export async function emailExpenseStatusChanged(opts: {
       { label: 'Amount', value: inr(opts.amount), emphasis: true },
     ],
     note:        opts.note ? { label: paid ? 'Note from finance' : 'Reason for rejection', value: opts.note } : undefined,
-    cta:         { label: 'View in DoppelDash', href: `${appUrl()}/rms` },
+    cta:         { label: `View in ${brand.name}`, href: `${appUrl()}/rms` },
     subject:     paid
       ? `Reimbursed · ${inr(opts.amount)} — ${opts.title}`
       : `Rejected · ${opts.title}`,
@@ -357,7 +377,7 @@ export async function emailExpenseStatusChanged(opts: {
       ? `${opts.title} reimbursed — ${inr(opts.amount)}.`
       : `${opts.title} was rejected.`,
   })
-  await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.employeeEmail, built)
 }
 
 /* ─── Travel emails ──────────────────────────────────────────────────────── */
@@ -373,8 +393,9 @@ export async function emailTravelSubmitted(opts: {
   managerEmail: string; employeeName: string
   purpose: string; destination: string
   departureDate: Date | string; returnDate: Date | string
-  estimatedTotal: number; advanceRequested: number
+  estimatedTotal: number; advanceRequested: number; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const rows: DetailRow[] = [
     { label: 'Employee',    value: opts.employeeName },
     { label: 'Purpose',     value: opts.purpose },
@@ -386,25 +407,27 @@ export async function emailTravelSubmitted(opts: {
     rows.push({ label: 'Advance requested', value: inr(opts.advanceRequested) })
   }
   const built = buildTransactionalEmail({
+    brand,
     tone:        'info',
     eyebrow:     'New travel request',
     heading:     `${opts.employeeName} requested travel approval`,
     intro:       `A new travel request is waiting for your review before the trip begins.`,
     rows,
-    cta:         { label: 'Review in DoppelDash', href: `${appUrl()}/travel` },
+    cta:         { label: `Review in ${brand.name}`, href: `${appUrl()}/travel` },
     subject:     `Travel request from ${opts.employeeName} · ${opts.destination}`,
     previewText: `${opts.purpose} — ${opts.destination}, ${inr(opts.estimatedTotal)}.`,
     footerHint:  'You are receiving this because you manage travel approvals.',
   })
-  await sendMail({ to: opts.managerEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.managerEmail, built)
 }
 
 export async function emailTravelForwardedToBoss(opts: {
   bossEmail: string; employeeName: string
   purpose: string; destination: string
   departureDate: Date | string; returnDate: Date | string
-  estimatedTotal: number; advanceRequested: number
+  estimatedTotal: number; advanceRequested: number; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const rows: DetailRow[] = [
     { label: 'Employee',    value: opts.employeeName },
     { label: 'Purpose',     value: opts.purpose },
@@ -416,28 +439,31 @@ export async function emailTravelForwardedToBoss(opts: {
     rows.push({ label: 'Advance requested', value: inr(opts.advanceRequested) })
   }
   const built = buildTransactionalEmail({
+    brand,
     tone:        'warning',
     eyebrow:     'Awaiting final approval',
     heading:     `Travel request needs your sign-off`,
     intro:       `A manager has reviewed this request and forwarded it for your final approval.`,
     banner:      { label: 'Pending boss approval', tone: 'warning' },
     rows,
-    cta:         { label: 'Approve in DoppelDash', href: `${appUrl()}/travel` },
+    cta:         { label: `Approve in ${brand.name}`, href: `${appUrl()}/travel` },
     subject:     `Travel approval pending · ${opts.employeeName} → ${opts.destination}`,
     previewText: `${opts.purpose} · ${opts.destination} · ${inr(opts.estimatedTotal)}`,
     footerHint:  'You are receiving this because you give final approval for travel.',
   })
-  await sendMail({ to: opts.bossEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.bossEmail, built)
 }
 
 export async function emailTravelDecision(opts: {
   employeeEmail: string; status: 'approved' | 'rejected'
   purpose: string; destination: string
   departureDate: Date | string; returnDate: Date | string
-  estimatedTotal: number; note?: string
+  estimatedTotal: number; note?: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   const approved = opts.status === 'approved'
   const built = buildTransactionalEmail({
+    brand,
     tone:        approved ? 'success' : 'danger',
     eyebrow:     'Travel decision',
     heading:     approved
@@ -454,7 +480,7 @@ export async function emailTravelDecision(opts: {
       { label: 'Estimated total', value: inr(opts.estimatedTotal), emphasis: true },
     ],
     note:        opts.note ? { label: approved ? 'Note from approver' : 'Reason for rejection', value: opts.note } : undefined,
-    cta:         { label: 'View in DoppelDash', href: `${appUrl()}/travel` },
+    cta:         { label: `View in ${brand.name}`, href: `${appUrl()}/travel` },
     subject:     approved
       ? `Approved · Travel to ${opts.destination}`
       : `Rejected · Travel to ${opts.destination}`,
@@ -462,14 +488,16 @@ export async function emailTravelDecision(opts: {
       ? `Your travel to ${opts.destination} is approved.`
       : `Your travel to ${opts.destination} was rejected.`,
   })
-  await sendMail({ to: opts.employeeEmail, subject: built.subject, html: built.html, text: built.text })
+  await notify(opts.orgId, opts.employeeEmail, built)
 }
 
 /* ─── Birthday emails ────────────────────────────────────────────────────── */
 
-export async function sendBirthdayEmail(opts: { contactName: string; emails: string[] }) {
+export async function sendBirthdayEmail(opts: { contactName: string; emails: string[]; orgId?: string }) {
+  const brand = await resolveMailBrand(opts.orgId)
   if (!opts.emails.length) return
   const built = buildTransactionalEmail({
+    brand,
     tone:        'info',
     eyebrow:     'Birthday reminder',
     heading:     `${opts.contactName} has a birthday today`,
@@ -483,7 +511,7 @@ export async function sendBirthdayEmail(opts: { contactName: string; emails: str
     previewText: `${opts.contactName} is celebrating today — consider reaching out.`,
   })
   await Promise.all(opts.emails.map(to =>
-    sendMail({ to, subject: built.subject, html: built.html, text: built.text })
+    notify(opts.orgId, to, built)
   ))
 }
 
@@ -494,13 +522,14 @@ export async function sendBirthdayEmail(opts: { contactName: string; emails: str
 const URGENT_RED = '#c83838'
 
 export function buildAnnouncementEmail(opts: {
-  title: string; body: string; priority?: string; senderName?: string
+  title: string; body: string; priority?: string; senderName?: string; brand?: MailBrand
 }): { html: string; text: string; subject: string } {
+  const brand = opts.brand ?? PLATFORM_BRAND
   const isUrgent = opts.priority === 'urgent'
   const isImportant = opts.priority === 'important'
   const sender = opts.senderName || 'Management'
   const url = appUrl()
-  const headerColor = isUrgent ? URGENT_RED : BRAND_BLUE
+  const headerColor = isUrgent ? URGENT_RED : brand.color
   const subject = isUrgent ? `Urgent: ${opts.title}` : opts.title
 
   const priorityBadge = isUrgent
@@ -518,7 +547,7 @@ export function buildAnnouncementEmail(opts: {
 </head>
 <body style="margin:0;padding:0;background:${SURFACE};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif;color:${GRAPHITE};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-    ${escapeHtml(opts.title)} — from ${escapeHtml(sender)} via DoppelDash
+    ${escapeHtml(opts.title)} — from ${escapeHtml(sender)} via ${escapeHtml(brand.name)}
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${SURFACE};padding:32px 16px;">
     <tr><td align="center">
@@ -527,8 +556,8 @@ export function buildAnnouncementEmail(opts: {
           <td style="background:${headerColor};padding:22px 28px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">DoppelDash</td>
-                <td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">Enterprise&nbsp;Platform</td>
+                <td style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:-0.01em;">${escapeHtml(brand.name)}</td>
+                ${brand.tagline ? `<td align="right" style="color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">${escapeHtml(brand.tagline).replace(/ /g, '&nbsp;')}</td>` : ''}
               </tr>
             </table>
             ${priorityBadge}
@@ -543,19 +572,19 @@ export function buildAnnouncementEmail(opts: {
         </tr>
         <tr>
           <td style="padding:24px 32px 28px 32px;">
-            <a href="${url}/announcements" style="display:inline-block;background:${BRAND_BLUE};color:#ffffff;font-size:13px;font-weight:600;text-decoration:none;padding:11px 22px;border-radius:8px;">Open in DoppelDash</a>
+            <a href="${url}/announcements" style="display:inline-block;background:${brand.color};color:#ffffff;font-size:13px;font-weight:600;text-decoration:none;padding:11px 22px;border-radius:8px;">Open in ${escapeHtml(brand.name)}</a>
           </td>
         </tr>
         <tr>
           <td style="background:${SURFACE};border-top:1px solid ${BORDER};padding:16px 32px;">
             <p style="margin:0;font-size:11px;line-height:1.55;color:${SUBTLE};">
-              Sent by <strong style="color:${GRAPHITE};font-weight:600;">${escapeHtml(sender)}</strong> via DoppelDash.
+              Sent by <strong style="color:${GRAPHITE};font-weight:600;">${escapeHtml(sender)}</strong> via ${escapeHtml(brand.name)}.
               Please do not reply to this email.
             </p>
           </td>
         </tr>
       </table>
-      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} DoppelDash. All rights reserved.</p>
+      <p style="margin:16px 0 0 0;font-size:11px;color:#9ca3af;">© ${new Date().getFullYear()} ${escapeHtml(brand.name)}. All rights reserved.</p>
     </td></tr>
   </table>
 </body>
@@ -567,31 +596,34 @@ export function buildAnnouncementEmail(opts: {
     '',
     plainBody,
     '',
-    `Open in DoppelDash: ${url}/announcements`,
+    `Open in ${brand.name}: ${url}/announcements`,
     '',
-    `— ${sender}, via DoppelDash`,
+    `— ${sender}, via ${brand.name}`,
   ].join('\n')
 
   return { html, text, subject }
 }
 
 export async function emailUrgentAnnouncement(opts: {
-  emails: string[]; title: string; body: string; senderName?: string
+  emails: string[]; title: string; body: string; senderName?: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   if (!opts.emails.length) return
   const { html, text, subject } = buildAnnouncementEmail({
     title:      opts.title,
     body:       opts.body,
     priority:   'urgent',
     senderName: opts.senderName,
+    brand,
   })
-  await Promise.all(opts.emails.map(to => sendMail({ to, subject, html, text })))
+  await Promise.all(opts.emails.map(to => notify(opts.orgId, to, { subject, html, text })))
 }
 
 export async function emailAnnouncement(opts: {
-  emails: string[]; title: string; body: string; priority?: string; senderName?: string
+  emails: string[]; title: string; body: string; priority?: string; senderName?: string; orgId?: string
 }) {
+  const brand = await resolveMailBrand(opts.orgId)
   if (!opts.emails.length) return
-  const { html, text, subject } = buildAnnouncementEmail(opts)
-  await Promise.all(opts.emails.map(to => sendMail({ to, subject, html, text })))
+  const { html, text, subject } = buildAnnouncementEmail({ ...opts, brand })
+  await Promise.all(opts.emails.map(to => notify(opts.orgId, to, { subject, html, text })))
 }

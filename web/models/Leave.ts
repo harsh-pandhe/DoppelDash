@@ -24,7 +24,7 @@ export interface ILeave extends Document {
 
 const LeaveSchema = new Schema<ILeave>(
   {
-    orgId: { type: String, required: true, default: 'org_doppelmayr', index: true },
+    orgId: { type: String, required: true, index: true },
     userId:      { type: String, required: true, index: true },
     userName:    { type: String, required: true },
     type:        { type: String, enum: ['casual','sick','earned','lwp','privilege','restricted'], required: true },

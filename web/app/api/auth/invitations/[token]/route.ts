@@ -1,23 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/db'
-import { verifyInvitationToken } from '@/lib/invitations/invitationService'
+import { NextResponse } from 'next/server'
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-) {
-  const { token } = await params
-  if (!token) {
-    return NextResponse.json({ error: 'Token is required' }, { status: 400 })
-  }
+/**
+ * REMOVED: `GET /api/auth/invitations/<token>`.
+ *
+ * An invitation token in a URL path is written to access logs, proxies and Referer
+ * headers. Previews now use `POST /api/auth/invitations/verify` with the token in
+ * the body. This stub exists only so a client built against the old contract gets
+ * an explicit answer; it never reads, validates or echoes the path segment.
+ */
+const GONE = () =>
+  NextResponse.json(
+    { error: 'This endpoint was removed. Update the app — invitation previews use POST /api/auth/invitations/verify.', code: 'endpoint_removed' },
+    { status: 405, headers: { Allow: 'POST', 'Cache-Control': 'no-store' } },
+  )
 
-  await connectDB()
-  const result = await verifyInvitationToken(token)
-
-  if (!result.valid) {
-    const status = result.reason === 'invalid_token' ? 404 : 410
-    return NextResponse.json(result, { status })
-  }
-
-  return NextResponse.json(result)
-}
+export const GET = GONE
+export const HEAD = GONE

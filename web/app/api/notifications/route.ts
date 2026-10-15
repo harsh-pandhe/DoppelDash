@@ -28,7 +28,7 @@ export async function GET() {
   const role  = user?.role || 'employee'
   const isMgr = role === 'manager' || role === 'admin'
   const isBoss = role === 'admin'
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   await connectDB()
   const items: NotifItem[] = []
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
   const role = user?.role || 'employee'
   if (role !== 'manager' && role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const isBoss = role === 'admin'
-  const effectiveOrgId = orgId || 'org_doppelmayr'
+  const effectiveOrgId = orgId
 
   const body = await req.json().catch(() => ({}))
   const rawIds: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
     })
     if (isBoss) {
       getUserEmail(e.userId).then(email => {
-        if (email) emailExpenseStatusChanged({ employeeEmail: email, status: 'paid', title: e.title, amount: e.amount })
+        if (email) emailExpenseStatusChanged({ orgId, employeeEmail: email, status: 'paid', title: e.title, amount: e.amount })
       })
     }
   }
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
         const bosses = users.filter(u => u.role === 'admin')
         for (const e of approvedExpenses) {
           for (const b of bosses) {
-            if (b.email) emailExpensePendingPayout({ bossEmail: b.email, employeeName: e.userName, title: e.title, amount: e.amount })
+            if (b.email) emailExpensePendingPayout({ orgId, bossEmail: b.email, employeeName: e.userName, title: e.title, amount: e.amount })
           }
         }
       } catch { /* best-effort */ }

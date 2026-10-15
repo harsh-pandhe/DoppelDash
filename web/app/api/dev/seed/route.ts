@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
+import Organization from '@/models/Organization'
 import Employee from '@/models/Employee'
 import LeaveBalance from '@/models/LeaveBalance'
 import Leave from '@/models/Leave'
@@ -22,7 +23,7 @@ import { encrypt, encryptBankDetails } from '@/lib/encrypt'
  * with leave balances, leaves, expenses, travel, CRM contacts, announcements, holidays.
  *
  * Run:
- *   POST /api/dev/seed?secret=<DEV_SEED_SECRET>     (header `x-seed-secret` also accepted)
+ *   POST /api/dev/seed        header  x-seed-secret: <DEV_SEED_SECRET>   (never in the URL)
  *
  * Default password for every seeded account: `Pass1234!`
  * Admin email: harshpandhehome@gmail.com (testable inbox for OTP)
@@ -67,6 +68,10 @@ const fakeReceipt = (vendor: string, amount: number, dateStr: string) => {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
 
+/** The seed provisions the Doppelmayr demo organisation explicitly — it is a data script, not a runtime default. */
+const SEED_ORG_ID = 'org_doppelmayr'
+const withOrg = <T extends object>(rows: T[]) => rows.map(r => ({ orgId: SEED_ORG_ID, ...r }))
+
 export async function POST(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
   // This endpoint wipes EVERY collection. In production it stays fully disabled
@@ -78,7 +83,7 @@ export async function POST(req: NextRequest) {
   if (!required) {
     return NextResponse.json({ error: 'DEV_SEED_SECRET must be configured to run seed' }, { status: 403 })
   }
-  const provided = req.nextUrl.searchParams.get('secret') || req.headers.get('x-seed-secret')
+  const provided = req.headers.get('x-seed-secret')   // header only: a query string would be written to access logs
   if (provided !== required) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   await connectDB()
@@ -105,7 +110,7 @@ export async function POST(req: NextRequest) {
   const hash = await User.hashPassword(DEFAULT_PASSWORD)
 
   // 1 admin — uses the testable gmail inbox so OTP login works as admin
-  const boss = await User.create({
+  const boss = await User.create({ orgId: SEED_ORG_ID,
     email:              'harshpandhehome@gmail.com',
     passwordHash:       hash,
     role:               'admin',
@@ -118,14 +123,14 @@ export async function POST(req: NextRequest) {
   })
 
   // 2 managers
-  const managerA = await User.create({
+  const managerA = await User.create({ orgId: SEED_ORG_ID,
     email: 'harshpandhepcs@gmail.com', passwordHash: hash, role: 'manager',
     firstName: 'Priya', lastName: 'Iyer',
     createdByUserId: boss._id.toString(),
     mustChangePassword: false, isActive: true,
     lastLoginAt: D(-1), loginCount: 27,
   })
-  const managerB = await User.create({
+  const managerB = await User.create({ orgId: SEED_ORG_ID,
     email: 'rohan.kapoor@doppelmayr.com', passwordHash: hash, role: 'manager',
     firstName: 'Rohan', lastName: 'Kapoor',
     createdByUserId: boss._id.toString(),
@@ -143,7 +148,7 @@ export async function POST(req: NextRequest) {
     { f: 'Anjali',  l: 'Bose',     email: 'anjali.bose@doppelmayr.com',    dept: 'Sales',        desig: 'Sales Executive',   mgr: managerA, dob: dob(1997, 12, 14),join: dob(2024, 3, 1),  city: 'Kolkata',    state: 'West Bengal' },
   ]
   const employees = await Promise.all(empSeeds.map(async (e, i) => {
-    return User.create({
+    return User.create({ orgId: SEED_ORG_ID,
       email: e.email, passwordHash: hash, role: 'employee',
       firstName: e.f, lastName: e.l,
       createdByUserId: e.mgr._id.toString(),
@@ -163,7 +168,7 @@ export async function POST(req: NextRequest) {
   ]
 
   // Boss
-  await Employee.create({
+  await Employee.create({ orgId: SEED_ORG_ID,
     clerkUserId: boss._id.toString(), employeeId: 'EMP-001',
     createdByUserId: boss._id.toString(),
     firstName: 'Harsh', lastName: 'Pandhe', email: boss.email,
@@ -181,7 +186,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Managers
-  await Employee.create({
+  await Employee.create({ orgId: SEED_ORG_ID,
     clerkUserId: managerA._id.toString(), employeeId: 'EMP-002',
     createdByUserId: boss._id.toString(),
     firstName: 'Priya', lastName: 'Iyer', email: managerA.email,
@@ -196,7 +201,7 @@ export async function POST(req: NextRequest) {
     medicalDetails: { bloodGroup: 'A+', allergies: ['Peanuts'], medications: [], conditions: [] },
     lastLoginAt: D(-1), loginCount: 27,
   })
-  await Employee.create({
+  await Employee.create({ orgId: SEED_ORG_ID,
     clerkUserId: managerB._id.toString(), employeeId: 'EMP-003',
     createdByUserId: boss._id.toString(),
     firstName: 'Rohan', lastName: 'Kapoor', email: managerB.email,
@@ -216,7 +221,7 @@ export async function POST(req: NextRequest) {
   await Promise.all(empSeeds.map(async (e, i) => {
     const u = employees[i]
     const prvIndex = i % PRIV_LEVELS.length
-    return Employee.create({
+    return Employee.create({ orgId: SEED_ORG_ID,
       clerkUserId: u._id.toString(), employeeId: `EMP-${String(i + 4).padStart(3, '0')}`,
       createdByUserId: e.mgr._id.toString(),
       firstName: e.f, lastName: e.l, email: e.email,
@@ -244,7 +249,7 @@ export async function POST(req: NextRequest) {
 
   /* ─── 4) Leave balances ───────────────────────────────────────────── */
   const allUsers = [boss, managerA, managerB, ...employees]
-  await Promise.all(allUsers.map(u => LeaveBalance.create({
+  await Promise.all(allUsers.map(u => LeaveBalance.create({ orgId: SEED_ORG_ID,
     userId: u._id.toString(), year: yr,
     casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0,
   })))
@@ -270,7 +275,7 @@ export async function POST(req: NextRequest) {
     // Rohan (manager) — pending privilege
     { u: managerB,     type: 'privilege', from: 21, to: 22, reason: 'Conference attendance.',          status: 'pending'  },
   ]
-  await Promise.all(leaveSeeds.map(l => Leave.create({
+  await Promise.all(leaveSeeds.map(l => Leave.create({ orgId: SEED_ORG_ID,
     userId: l.u._id.toString(), userName: `${l.u.firstName} ${l.u.lastName}`,
     type: l.type, startDate: D(l.from), endDate: D(l.to),
     days: Math.max(1, l.to - l.from + 1),
@@ -307,7 +312,7 @@ export async function POST(req: NextRequest) {
         category: 'misc', receiptUrl: fakeReceipt(vendor + ' (2)', e.amount - Math.round(e.amount * 0.6), dateStr),
         status: e.status === 'paid' ? 'approved' : 'pending' },
     ] : []
-    return Expense.create({
+    return Expense.create({ orgId: SEED_ORG_ID,
       userId: e.u._id.toString(), userName: `${e.u.firstName} ${e.u.lastName}`,
       title: e.title, reason: e.reason, amount: e.amount,
       travelFrom: e.from || undefined, travelTo: e.to || undefined,
@@ -349,7 +354,7 @@ export async function POST(req: NextRequest) {
       mgrNote: 'Defer — kick-off rescheduled to Q3.',
     },
   ]
-  await Promise.all(travelSeeds.map(t => TravelRequest.create({
+  await Promise.all(travelSeeds.map(t => TravelRequest.create({ orgId: SEED_ORG_ID,
     userId: t.u._id.toString(), userName: `${t.u.firstName} ${t.u.lastName}`,
     purpose: t.purpose, destination: t.destination,
     departureDate: D(t.depart), returnDate: D(t.ret),
@@ -423,12 +428,12 @@ export async function POST(req: NextRequest) {
       religion: encrypt('Hindu'),
     }},
   ]
-  await Promise.all(contactSeeds.map(c => Contact.create({
+  await Promise.all(contactSeeds.map(c => Contact.create({ orgId: SEED_ORG_ID,
     createdBy: c.owner._id.toString(), ...c.data,
   })))
 
   /* ─── 9) Announcements ────────────────────────────────────────────── */
-  await Announcement.insertMany([
+  await Announcement.insertMany(withOrg([
     {
       authorId: boss._id.toString(), authorName: 'Harsh Pandhe',
       title: 'Tirupati Ropeway Project Awarded',
@@ -457,10 +462,10 @@ export async function POST(req: NextRequest) {
       pinned: false, priority: 'normal',
       createdAt: D(-8),
     },
-  ])
+  ]))
 
   /* ─── 10) Public holidays (current year) ──────────────────────────── */
-  await PublicHoliday.insertMany([
+  await PublicHoliday.insertMany(withOrg([
     { name: 'Republic Day',       date: new Date(yr, 0, 26), type: 'national',   year: yr },
     { name: 'Holi',               date: new Date(yr, 2, 14), type: 'national',   year: yr },
     { name: 'Good Friday',        date: new Date(yr, 3, 18), type: 'national',   year: yr },
@@ -472,22 +477,24 @@ export async function POST(req: NextRequest) {
     { name: 'Dussehra',           date: new Date(yr, 9, 21), type: 'national',   year: yr },
     { name: 'Diwali',             date: new Date(yr, 10, 9), type: 'national',   year: yr },
     { name: 'Christmas',          date: new Date(yr, 11, 25),type: 'national',   year: yr },
-  ])
+  ]))
 
   /* ─── 11) Org settings ────────────────────────────────────────────── */
   await OrgSettings.create({
-    orgId:   'org_doppelmayr',
+    orgId:   SEED_ORG_ID,
     name:    'Doppelmayr India Pvt Ltd',
     companyName: 'Doppelmayr India Pvt Ltd',
+    brandName:  'Doppelmayr India',   // outbound-mail brand (organisation configuration, not code)
     address: 'Navi Mumbai, Maharashtra, India',
     website: 'https://www.doppelmayr.com',
     phone:   '+91 22 0000 0000',
     email:   'info@doppelmayr.com',
+    brandColor: '#0057A8',   // outbound-mail brand colour (organisation configuration, not code)
     updatedBy: boss._id.toString(),
   })
 
   /* ─── 12) Seed audit log entries ─────────────────────────────────── */
-  await AuditLog.insertMany([
+  await AuditLog.insertMany(withOrg([
     { action: 'user.role_changed', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
       targetId: managerA._id.toString(), targetType: 'user',
       metadata: { newRole: 'manager', employeeName: 'Priya Iyer' }, createdAt: D(-60) },
@@ -503,7 +510,9 @@ export async function POST(req: NextRequest) {
     { action: 'user.reporting_manager_changed', performedBy: boss._id.toString(), performedByName: 'Harsh Pandhe',
       targetId: employees[0]._id.toString(), targetType: 'user',
       metadata: { reportingManagerId: managerA._id.toString(), employeeName: 'Aarav Sharma' }, createdAt: D(-60) },
-  ])
+  ]))
+
+  await Organization.ensureDoppelmayr()
 
   return NextResponse.json({
     ok: true,

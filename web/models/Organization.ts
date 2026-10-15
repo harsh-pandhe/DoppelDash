@@ -21,6 +21,8 @@ export interface IOrganization extends Document {
   name: string
   slug: string
   ownerId?: string
+  /** True for a freshly self-registered org whose admin has not finished first-run setup. Drives onboarding in /api/auth/me. */
+  setupRequired?: boolean
 
   // Entitlements & Subscription Architecture (Batch L)
   plan: PlanType
@@ -59,6 +61,7 @@ const OrganizationSchema = new Schema<IOrganization>(
     name:    { type: String, required: true, trim: true },
     slug:    { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
     ownerId: { type: String, index: true },
+    setupRequired: { type: Boolean, default: false },
 
     // Plan & Entitlements
     plan:              { type: String, enum: ['free', 'premium'], default: 'free', index: true },

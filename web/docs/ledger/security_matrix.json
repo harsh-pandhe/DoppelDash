@@ -1,0 +1,3240 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-15T09:33:51.133Z",
+    "generator": "web/scripts/inventory/generate-security-matrix.js",
+    "counts": {
+      "totalRouteFiles": 91,
+      "totalHandlers": 150,
+      "publicHandlers": 18,
+      "sessionHandlers": 117,
+      "serviceHandlers": 15,
+      "handlersWithTests": 105,
+      "handlersWithGaps": 45,
+      "p0Blockers": 1,
+      "p1HighRiskGaps": 7
+    }
+  },
+  "handlers": [
+    {
+      "url": "/api/admin/audit",
+      "method": "GET",
+      "file": "app/api/admin/audit/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/balances/[userId]",
+      "method": "GET",
+      "file": "app/api/admin/balances/[userId]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/admin/balances/[userId]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/balances/[userId]",
+      "method": "PATCH",
+      "file": "app/api/admin/balances/[userId]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/admin/balances/[userId]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/invitations",
+      "method": "GET",
+      "file": "app/api/admin/invitations/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/invitations",
+      "method": "POST",
+      "file": "app/api/admin/invitations/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/invitations/[id]",
+      "method": "DELETE",
+      "file": "app/api/admin/invitations/[id]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/admin/invitations/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/invitations/[id]",
+      "method": "GET",
+      "file": "app/api/admin/invitations/[id]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/admin/invitations/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/invitations/[id]/resend",
+      "method": "POST",
+      "file": "app/api/admin/invitations/[id]/resend/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "`invite:user:${userId}`, INVITE_LIMITS.perInviterPerHour, INVITE_LIMITS.hourMs",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/admin/invitations/[id]/resend"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/settings",
+      "method": "GET",
+      "file": "app/api/admin/settings/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_e.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/settings",
+      "method": "PATCH",
+      "file": "app/api/admin/settings/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_e.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/settings",
+      "method": "POST",
+      "file": "app/api/admin/settings/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_e.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/settings",
+      "method": "PUT",
+      "file": "app/api/admin/settings/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_e.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "GET",
+      "file": "app/api/admin/users/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j1.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/users",
+      "method": "POST",
+      "file": "app/api/admin/users/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j1.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/admin/users/[userId]",
+      "method": "DELETE",
+      "file": "app/api/admin/users/[userId]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/admin/users/[userId]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/users/[userId]",
+      "method": "GET",
+      "file": "app/api/admin/users/[userId]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/admin/users/[userId]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/admin/users/[userId]",
+      "method": "PATCH",
+      "file": "app/api/admin/users/[userId]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/admin/users/[userId]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/analytics",
+      "method": "GET",
+      "file": "app/api/analytics/route.ts",
+      "group": "14. Reports & Analytics Core",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/analytics_share_security.test.js",
+        "tests/auth_foundation.test.js",
+        "tests/batch_b.test.js",
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/drill",
+      "method": "GET",
+      "file": "app/api/analytics/drill/route.ts",
+      "group": "14. Reports & Analytics Core",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/share",
+      "method": "GET",
+      "file": "app/api/analytics/share/route.ts",
+      "group": "2. Shared Analytics & Public Token Links",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`share-list:${userId}`, 60, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/share",
+      "method": "POST",
+      "file": "app/api/analytics/share/route.ts",
+      "group": "2. Shared Analytics & Public Token Links",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`share-list:${userId}`, 60, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/share/[token]",
+      "method": "DELETE",
+      "file": "app/api/analytics/share/[token]/route.ts",
+      "group": "2. Shared Analytics & Public Token Links",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`share-revoke:${userId}`, 30, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/shared/[token]",
+      "method": "GET",
+      "file": "app/api/analytics/shared/[token]/route.ts",
+      "group": "2. Shared Analytics & Public Token Links",
+      "authType": "public",
+      "tenantSource": "lookup_token (SharedDashboard.orgId)",
+      "ownerSource": "lookup_token (share.ownerId)",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`shared-analytics:${ip}`, 60, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/analytics_share_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/analytics/software",
+      "method": "GET",
+      "file": "app/api/analytics/software/route.ts",
+      "group": "14. Reports & Analytics Core",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_b.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/announcements",
+      "method": "GET",
+      "file": "app/api/announcements/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/announcements",
+      "method": "POST",
+      "file": "app/api/announcements/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/announcements/[id]",
+      "method": "DELETE",
+      "file": "app/api/announcements/[id]/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/announcements/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/announcements/[id]",
+      "method": "PATCH",
+      "file": "app/api/announcements/[id]/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/announcements/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/announcements/broadcast",
+      "method": "POST",
+      "file": "app/api/announcements/broadcast/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/change-password",
+      "method": "POST",
+      "file": "app/api/auth/change-password/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (unscoped / user-only)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`change-pwd:${userId}`, 5, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_j.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/invitations/[token]",
+      "method": "GET",
+      "file": "app/api/auth/invitations/[token]/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/auth/invitations/[token]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/auth/invitations/[token]",
+      "method": "HEAD",
+      "file": "app/api/auth/invitations/[token]/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising HEAD /api/auth/invitations/[token]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/auth/invitations/accept",
+      "method": "POST",
+      "file": "app/api/auth/invitations/accept/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "webEnabled",
+      "rateLimit": "`invite-accept:${ip}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/invitations/verify",
+      "method": "POST",
+      "file": "app/api/auth/invitations/verify/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`invite-verify-ip:${ip}`, 30, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/invitation_token_hygiene.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/login",
+      "method": "POST",
+      "file": "app/api/auth/login/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`login:${ip}`, LOGIN_LIMITS.ipPerMinute, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_auth_pages.test.js",
+        "tests/z_final_log_secret_scan.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/logout",
+      "method": "POST",
+      "file": "app/api/auth/logout/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_j.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/passkey_totp_security.test.js",
+        "tests/web_auth_pages.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/me",
+      "method": "GET",
+      "file": "app/api/auth/me/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/auth_me_contract.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/invitation_token_hygiene.test.js",
+        "tests/passkey_totp_security.test.js",
+        "tests/receipt_client_limits.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/staging_harness.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js",
+        "tests/z_final_log_secret_scan.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/outlook",
+      "method": "GET",
+      "file": "app/api/auth/outlook/route.ts",
+      "group": "3. Outlook Webhooks & OAuth / Token Handling",
+      "authType": "session",
+      "tenantSource": "session_jwt (unscoped / user-only)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/auth/outlook",
+        "OAuth start: redirects to Microsoft login with state=userId",
+        "Webhook handshake: echoes validationToken query param with text/plain",
+        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/auth/outlook/callback",
+      "method": "GET",
+      "file": "app/api/auth/outlook/callback/route.ts",
+      "group": "3. Outlook Webhooks & OAuth / Token Handling",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/auth/outlook/callback",
+        "OAuth start: redirects to Microsoft login with state=userId",
+        "Webhook handshake: echoes validationToken query param with text/plain",
+        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/auth/passkey/credentials",
+      "method": "DELETE",
+      "file": "app/api/auth/passkey/credentials/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`pk-creds-list:${userId}`, 60, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/passkey/credentials",
+      "method": "GET",
+      "file": "app/api/auth/passkey/credentials/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`pk-creds-list:${userId}`, 60, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/passkey/login",
+      "method": "POST",
+      "file": "app/api/auth/passkey/login/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "`pk-login:${ip}`, 10, 60_000",
+      "providers": [
+        "WebAuthn"
+      ],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/passkey/login",
+      "method": "PUT",
+      "file": "app/api/auth/passkey/login/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "`pk-login:${ip}`, 10, 60_000",
+      "providers": [
+        "WebAuthn"
+      ],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/passkey/register",
+      "method": "POST",
+      "file": "app/api/auth/passkey/register/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`pk-reg-opt:${userId}`, 15, 60_000",
+      "providers": [
+        "WebAuthn"
+      ],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/passkey/register",
+      "method": "PUT",
+      "file": "app/api/auth/passkey/register/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`pk-reg-opt:${userId}`, 15, 60_000",
+      "providers": [
+        "WebAuthn"
+      ],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/password-reset/check",
+      "method": "POST",
+      "file": "app/api/auth/password-reset/check/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "lookup_token (User by email/token)",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`pwd-reset-check-ip:${ip}`, 30, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_h.test.js",
+        "tests/password_reset_token_hygiene.test.js",
+        "tests/web_auth_pages.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/password-reset/confirm",
+      "method": "POST",
+      "file": "app/api/auth/password-reset/confirm/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "lookup_token (User by email/token)",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`pwd-reset-confirm-ip:${ip}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/password_reset_token_hygiene.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/password-reset/request",
+      "method": "POST",
+      "file": "app/api/auth/password-reset/request/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "lookup_token (User by email/token)",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`pwd-reset-req-ip:${ip}`, 5, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_k.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/password_reset_token_hygiene.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/refresh",
+      "method": "POST",
+      "file": "app/api/auth/refresh/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`refresh:${ip}`, REFRESH_LIMITS.perIpPerMinute, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_j.test.js",
+        "tests/z_final_log_secret_scan.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/register",
+      "method": "POST",
+      "file": "app/api/auth/register/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "`register:${ip}`, 5, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_me_contract.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_e.test.js",
+        "tests/batch_f.test.js",
+        "tests/batch_g.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/batch_j1.test.js",
+        "tests/batch_k.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/reviewer_auth_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/send-otp",
+      "method": "POST",
+      "file": "app/api/auth/send-otp/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "`send-otp:${ip}:${userId}`, 3, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/setup",
+      "method": "POST",
+      "file": "app/api/auth/setup/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_k.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/totp/setup",
+      "method": "DELETE",
+      "file": "app/api/auth/totp/setup/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/totp/setup",
+      "method": "POST",
+      "file": "app/api/auth/totp/setup/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/totp/setup",
+      "method": "PUT",
+      "file": "app/api/auth/totp/setup/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`totp-setup:${userId}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/auth/tour-seen",
+      "method": "POST",
+      "file": "app/api/auth/tour-seen/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "session",
+      "tenantSource": "session_jwt (unscoped / user-only)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/auth/tour-seen"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/auth/verify-otp",
+      "method": "POST",
+      "file": "app/api/auth/verify-otp/route.ts",
+      "group": "1. Public Auth, Reset, Passkey, TOTP & Invitations",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "`otp:${userId}`, 10, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_h1.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/passkey_totp_concurrency.test.js",
+        "tests/passkey_totp_security.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/z_final_log_secret_scan.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/billing/entitlements",
+      "method": "GET",
+      "file": "app/api/billing/entitlements/route.ts",
+      "group": "6. Billing, RTDN, Entitlements & Account Deletion",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/secret_exposure.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/billing/play/rtdn",
+      "method": "POST",
+      "file": "app/api/billing/play/rtdn/route.ts",
+      "group": "6. Billing, RTDN, Entitlements & Account Deletion",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "Google Play"
+      ],
+      "existingTests": [
+        "tests/batch_m.test.js",
+        "tests/billing_rtdn.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "P0"
+    },
+    {
+      "url": "/api/billing/play/verify",
+      "method": "POST",
+      "file": "app/api/billing/play/verify/route.ts",
+      "group": "6. Billing, RTDN, Entitlements & Account Deletion",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "webEnabled + plan:premium",
+      "rateLimit": "`play-verify:${userId}`, 20, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_m.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm",
+      "method": "GET",
+      "file": "app/api/crm/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/batch_j1.test.js",
+        "tests/batch_k.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/crm_vertical.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm",
+      "method": "POST",
+      "file": "app/api/crm/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/batch_j1.test.js",
+        "tests/batch_k.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/crm_vertical.test.js",
+        "tests/mail_architecture.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/[id]",
+      "method": "DELETE",
+      "file": "app/api/crm/[id]/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/[id]",
+      "method": "GET",
+      "file": "app/api/crm/[id]/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/[id]",
+      "method": "PATCH",
+      "file": "app/api/crm/[id]/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/[id]/share",
+      "method": "DELETE",
+      "file": "app/api/crm/[id]/share/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/crm/[id]/share"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/crm/[id]/share",
+      "method": "GET",
+      "file": "app/api/crm/[id]/share/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/crm/[id]/share"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/crm/[id]/share",
+      "method": "POST",
+      "file": "app/api/crm/[id]/share/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/crm/[id]/share"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/crm/campaign",
+      "method": "GET",
+      "file": "app/api/crm/campaign/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/mail_architecture.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/campaign",
+      "method": "POST",
+      "file": "app/api/crm/campaign/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/mail_architecture.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/generate",
+      "method": "POST",
+      "file": "app/api/crm/generate/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "`generate:${userId}`, 20, 60 * 60_000",
+      "providers": [
+        "Gemini"
+      ],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/ocr",
+      "method": "POST",
+      "file": "app/api/crm/ocr/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "`ocr:${userId}`, 10, 60_000",
+      "providers": [
+        "Gemini"
+      ],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/batch_k.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/reminders",
+      "method": "GET",
+      "file": "app/api/crm/reminders/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/crm_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/reminders",
+      "method": "PATCH",
+      "file": "app/api/crm/reminders/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/crm_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/scanned-cards",
+      "method": "GET",
+      "file": "app/api/crm/scanned-cards/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/scanned-cards",
+      "method": "POST",
+      "file": "app/api/crm/scanned-cards/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/crm/scanned-cards/[id]",
+      "method": "DELETE",
+      "file": "app/api/crm/scanned-cards/[id]/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/crm/scanned-cards/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/crm/scanned-cards/[id]",
+      "method": "PATCH",
+      "file": "app/api/crm/scanned-cards/[id]/route.ts",
+      "group": "7. CRM Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/crm/scanned-cards/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/cron/announcements",
+      "method": "GET",
+      "file": "app/api/cron/announcements/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_k.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/birthday",
+      "method": "GET",
+      "file": "app/api/cron/birthday/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_k.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/onboarding",
+      "method": "GET",
+      "file": "app/api/cron/onboarding/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_c.test.js",
+        "tests/batch_k.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/receipts-cleanup",
+      "method": "DELETE",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_cleanup_production.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/receipts-cleanup",
+      "method": "GET",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_cleanup_production.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/receipts-cleanup",
+      "method": "PATCH",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_cleanup_production.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/receipts-cleanup",
+      "method": "POST",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_cleanup_production.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/cron/receipts-cleanup",
+      "method": "PUT",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_cleanup_production.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/dev/migrate",
+      "method": "POST",
+      "file": "app/api/dev/migrate/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [
+        "tests/batch_k.test.js",
+        "tests/doppelmayr_brand_provisioning.test.js",
+        "tests/reviewer_auth_security.test.js",
+        "tests/web_access_boundary.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/dev/reset-to-admin",
+      "method": "POST",
+      "file": "app/api/dev/reset-to-admin/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_global",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [
+        "tests/batch_k.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/dev/seed",
+      "method": "POST",
+      "file": "app/api/dev/seed/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Cloudinary",
+        "Microsoft Graph"
+      ],
+      "existingTests": [
+        "tests/batch_k.test.js",
+        "tests/doppelmayr_brand_provisioning.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/z_final_log_secret_scan.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/employees/[id]",
+      "method": "GET",
+      "file": "app/api/employees/[id]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/employees/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/employees/[id]",
+      "method": "PATCH",
+      "file": "app/api/employees/[id]/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/employees/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/employees/directory",
+      "method": "GET",
+      "file": "app/api/employees/directory/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/employees/me",
+      "method": "GET",
+      "file": "app/api/employees/me/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/employees/me",
+      "method": "PATCH",
+      "file": "app/api/employees/me/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_d.test.js",
+        "tests/batch_h.test.js",
+        "tests/batch_j.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/holidays",
+      "method": "DELETE",
+      "file": "app/api/holidays/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/holidays"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/holidays",
+      "method": "GET",
+      "file": "app/api/holidays/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/holidays"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/holidays",
+      "method": "POST",
+      "file": "app/api/holidays/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/holidays"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/inbox",
+      "method": "GET",
+      "file": "app/api/inbox/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "IMAP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/inbox"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/inbox/[id]",
+      "method": "GET",
+      "file": "app/api/inbox/[id]/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/inbox/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/inbox/[id]",
+      "method": "PATCH",
+      "file": "app/api/inbox/[id]/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/inbox/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/lms",
+      "method": "GET",
+      "file": "app/api/lms/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms",
+      "method": "POST",
+      "file": "app/api/lms/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/[id]",
+      "method": "DELETE",
+      "file": "app/api/lms/[id]/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/[id]",
+      "method": "GET",
+      "file": "app/api/lms/[id]/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/[id]",
+      "method": "PATCH",
+      "file": "app/api/lms/[id]/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/balance",
+      "method": "GET",
+      "file": "app/api/lms/balance/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_j.test.js",
+        "tests/entitlement_matrix_mobile_web.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/lms/calendar",
+      "method": "GET",
+      "file": "app/api/lms/calendar/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/lms/calendar"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/lms/workload",
+      "method": "GET",
+      "file": "app/api/lms/workload/route.ts",
+      "group": "12. Leave, Holidays & LMS",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/lms/workload"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/mail/drafts",
+      "method": "GET",
+      "file": "app/api/mail/drafts/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/mail/drafts"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/mail/drafts",
+      "method": "POST",
+      "file": "app/api/mail/drafts/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/mail/drafts"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/mail/drafts/[id]",
+      "method": "DELETE",
+      "file": "app/api/mail/drafts/[id]/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/mail/drafts/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/mail/drafts/[id]",
+      "method": "GET",
+      "file": "app/api/mail/drafts/[id]/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/mail/drafts/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/mail/drafts/[id]",
+      "method": "PATCH",
+      "file": "app/api/mail/drafts/[id]/route.ts",
+      "group": "10. Mail & Inbox",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising PATCH /api/mail/drafts/[id]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/notifications",
+      "method": "GET",
+      "file": "app/api/notifications/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_i.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/notifications",
+      "method": "POST",
+      "file": "app/api/notifications/route.ts",
+      "group": "13. Announcements & Notifications",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_i.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/mail-config",
+      "method": "DELETE",
+      "file": "app/api/org/mail-config/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/mail_architecture.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/mail-config",
+      "method": "GET",
+      "file": "app/api/org/mail-config/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/mail_architecture.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/mail-config",
+      "method": "PUT",
+      "file": "app/api/org/mail-config/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [
+        "tests/mail_architecture.test.js",
+        "tests/secret_exposure.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/settings",
+      "method": "GET",
+      "file": "app/api/org/settings/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_me_contract.test.js",
+        "tests/batch_e.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/batch_m.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/settings",
+      "method": "PATCH",
+      "file": "app/api/org/settings/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_me_contract.test.js",
+        "tests/batch_e.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/batch_m.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/settings",
+      "method": "POST",
+      "file": "app/api/org/settings/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_me_contract.test.js",
+        "tests/batch_e.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/batch_m.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/org/settings",
+      "method": "PUT",
+      "file": "app/api/org/settings/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_me_contract.test.js",
+        "tests/batch_e.test.js",
+        "tests/batch_l.test.js",
+        "tests/batch_l1.test.js",
+        "tests/batch_l2.test.js",
+        "tests/batch_m.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/reports",
+      "method": "GET",
+      "file": "app/api/reports/route.ts",
+      "group": "14. Reports & Analytics Core",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/reports"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/rms",
+      "method": "GET",
+      "file": "app/api/rms/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/expense_idempotency_receipts.test.js",
+        "tests/expense_line_review_bounds.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/receipt_type_contract.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/upload_production_server.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms",
+      "method": "POST",
+      "file": "app/api/rms/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/expense_idempotency_receipts.test.js",
+        "tests/expense_line_review_bounds.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/receipt_type_contract.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/upload_production_server.test.js",
+        "tests/web_access_boundary.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/[id]",
+      "method": "DELETE",
+      "file": "app/api/rms/[id]/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/[id]",
+      "method": "GET",
+      "file": "app/api/rms/[id]/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/[id]",
+      "method": "PATCH",
+      "file": "app/api/rms/[id]/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/[id]/receipt/[file]",
+      "method": "GET",
+      "file": "app/api/rms/[id]/receipt/[file]/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`rms-receipt:${userId}`, 300, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/ocr",
+      "method": "GET",
+      "file": "app/api/rms/ocr/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "`rms-ocr:${userId}`, 20, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/rms/ocr",
+      "method": "POST",
+      "file": "app/api/rms/ocr/route.ts",
+      "group": "9. Expenses & RMS Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "`rms-ocr:${userId}`, 20, 60_000",
+      "providers": [],
+      "existingTests": [
+        "tests/receipt_ocr_vertical.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/search",
+      "method": "GET",
+      "file": "app/api/search/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_b.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/support/chat",
+      "method": "POST",
+      "file": "app/api/support/chat/route.ts",
+      "group": "5. Support Chat, Cron & Destructive Dev Endpoints",
+      "authType": "public",
+      "tenantSource": "none",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Gemini"
+      ],
+      "existingTests": [
+        "tests/support_chat_security.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/sync/email",
+      "method": "GET",
+      "file": "app/api/sync/email/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph",
+        "IMAP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/sync/email"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/sync/email",
+      "method": "POST",
+      "file": "app/api/sync/email/route.ts",
+      "group": "15. General Settings & Sync",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph",
+        "IMAP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/sync/email"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/travel",
+      "method": "GET",
+      "file": "app/api/travel/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel",
+      "method": "POST",
+      "file": "app/api/travel/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/auth_foundation.test.js",
+        "tests/batch_c.test.js",
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js",
+        "tests/web_android_shared_data.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel/[id]",
+      "method": "DELETE",
+      "file": "app/api/travel/[id]/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel/[id]",
+      "method": "GET",
+      "file": "app/api/travel/[id]/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel/[id]",
+      "method": "PATCH",
+      "file": "app/api/travel/[id]/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "admin",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_i.test.js",
+        "tests/batch_j.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel/[id]/expense",
+      "method": "POST",
+      "file": "app/api/travel/[id]/expense/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/batch_j.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/travel/[id]/itinerary/[file]",
+      "method": "GET",
+      "file": "app/api/travel/[id]/itinerary/[file]/route.ts",
+      "group": "8. Travel Vertical",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "`travel-doc:${userId}`, 300, 60_000",
+      "providers": [],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/travel/[id]/itinerary/[file]"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/uploads/sign",
+      "method": "POST",
+      "file": "app/api/uploads/sign/route.ts",
+      "group": "4. Upload Signing, Receipts & Private Streaming",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "`upload-sign:${userId}`, 60, 60_000",
+      "providers": [
+        "Cloudinary"
+      ],
+      "existingTests": [
+        "tests/expense_idempotency_receipts.test.js",
+        "tests/expenses_vertical.test.js",
+        "tests/receipt_cleanup.test.js",
+        "tests/receipt_client_limits.test.js",
+        "tests/receipt_ocr_vertical.test.js",
+        "tests/receipt_type_contract.test.js",
+        "tests/travel_api.test.js",
+        "tests/travel_attachments.test.js",
+        "tests/travel_conversion.test.js",
+        "tests/travel_patch.test.js",
+        "tests/travel_vertical.test.js",
+        "tests/upload_production_server.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/user/account",
+      "method": "DELETE",
+      "file": "app/api/user/account/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "plan:premium",
+      "rateLimit": "none",
+      "providers": [],
+      "existingTests": [
+        "tests/account_deletion.test.js",
+        "tests/account_deletion_integrity.test.js"
+      ],
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
+    },
+    {
+      "url": "/api/user/email-config",
+      "method": "DELETE",
+      "file": "app/api/user/email-config/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising DELETE /api/user/email-config"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/user/email-config",
+      "method": "GET",
+      "file": "app/api/user/email-config/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/user/email-config"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/user/email-config",
+      "method": "POST",
+      "file": "app/api/user/email-config/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/user/email-config"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/user/email-config/test",
+      "method": "POST",
+      "file": "app/api/user/email-config/test/route.ts",
+      "group": "11. Admin, Users & Profiles",
+      "authType": "session",
+      "tenantSource": "session_jwt (user.orgId)",
+      "ownerSource": "session_jwt (user.userId / id)",
+      "requiredRole": "any_authenticated",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "SMTP"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/user/email-config/test"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P2"
+    },
+    {
+      "url": "/api/webhooks/outlook",
+      "method": "GET",
+      "file": "app/api/webhooks/outlook/route.ts",
+      "group": "3. Outlook Webhooks & OAuth / Token Handling",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising GET /api/webhooks/outlook",
+        "OAuth start: redirects to Microsoft login with state=userId",
+        "Webhook handshake: echoes validationToken query param with text/plain",
+        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    },
+    {
+      "url": "/api/webhooks/outlook",
+      "method": "POST",
+      "file": "app/api/webhooks/outlook/route.ts",
+      "group": "3. Outlook Webhooks & OAuth / Token Handling",
+      "authType": "service",
+      "tenantSource": "service_context",
+      "ownerSource": "none",
+      "requiredRole": "none",
+      "entitlement": "none",
+      "rateLimit": "none",
+      "providers": [
+        "Microsoft Graph"
+      ],
+      "existingTests": [],
+      "missingTests": [
+        "Add integration test exercising POST /api/webhooks/outlook",
+        "OAuth start: redirects to Microsoft login with state=userId",
+        "Webhook handshake: echoes validationToken query param with text/plain",
+        "Webhook notifications: rejects mismatched clientState, processes valid secret"
+      ],
+      "status": "GAPS_FOUND",
+      "severity": "P1"
+    }
+  ]
+}

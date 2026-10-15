@@ -16,6 +16,7 @@ export interface PendingItem {
   badge?:   string       // amount, days, etc.
   meta:     string       // submitted ago + extra
   href:     string       // detail link
+  revision?: number      // optimistic-concurrency token of the underlying record (travel): sent back with the decision
 }
 
 interface Props {
@@ -60,8 +61,8 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
         else                          body = { status: 'rejected' }
       } else if (item.kind === 'travel') {
         endpoint = `/api/travel/${item.id}`
-        if (action === 'approve') body = { status: isAdmin ? 'approved' : 'pending_admin' }
-        else                       body = { status: 'rejected' }
+        if (action === 'approve') body = { status: isAdmin ? 'approved' : 'pending_admin', revision: item.revision ?? 0 }
+        else                       body = { status: 'rejected', revision: item.revision ?? 0 }
       }
       const res = await fetch(endpoint, {
         method: 'PATCH',
@@ -71,8 +72,10 @@ export default function ApprovalsQueue({ items, isAdmin }: Props) {
       if (!res.ok) {
         // Surface the server's reason — a self-approval block or a stale state
         // transition is actionable, "try opening the item" is not.
-        const reason = await res.json().then(d => d?.error).catch(() => null)
-        toast(reason || 'Failed — try opening the item', 'error')
+        const d = await res.json().catch(() => null)
+        // A changed record is not an error to retry blindly: nothing was applied, the user must look at the current version.
+        if (res.status === 409 && d?.code === 'revision_conflict') { toast('This request was changed by someone else — open it to see the latest version.', 'info'); router.refresh(); return }
+        toast(d?.error || 'Failed — try opening the item', 'error')
         return
       }
       setHidden(p => new Set(p).add(item.id))

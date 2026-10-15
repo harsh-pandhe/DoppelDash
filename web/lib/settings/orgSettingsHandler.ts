@@ -11,18 +11,17 @@ import { ORG_SETTINGS_FIELDS } from '@/lib/apiFields'
  * Resolves tenant identity strictly from authenticated user context.
  */
 export async function handleGetOrgSettings() {
-  const { userId, user } = await getUser()
+  const { userId, orgId } = await getUser()
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
 
   const settings = await OrgSettings.findOne({ orgId }).lean()
   if (!settings) {
     const org = await Organization.findOne({ orgId }).lean()
-    const fallbackName = org?.name || (orgId === 'org_doppelmayr' ? 'Doppelmayr India Pvt Ltd' : 'My Organization')
+    const fallbackName = org?.name || 'My Organization'
     return NextResponse.json({
       orgId,
       name: fallbackName,
@@ -56,7 +55,7 @@ export async function handleGetOrgSettings() {
  * Ignores any client-supplied orgId/tenantId/organizationId.
  */
 export async function handleMutateOrgSettings(req: NextRequest) {
-  const { userId, user } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -66,7 +65,6 @@ export async function handleMutateOrgSettings(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const orgId = user?.orgId || 'org_doppelmayr'
   await connectDB()
 
   let body: Record<string, unknown> = {}
@@ -96,6 +94,12 @@ export async function handleMutateOrgSettings(req: NextRequest) {
     { $set: payload },
     { upsert: true, returnDocument: 'after' }
   ).lean()
+
+  // First-run setup finished (admin-only route, tenant from the session): clear the
+  // server-side flag that /api/auth/me reports as onboarding.orgSetupRequired.
+  if (body.completeSetup === true) {
+    await Organization.updateOne({ orgId }, { $set: { setupRequired: false } })
+  }
 
   // Keep Organization model name synchronized if updated
   if (payload.name) {

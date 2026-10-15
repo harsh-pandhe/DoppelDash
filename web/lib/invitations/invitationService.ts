@@ -4,8 +4,9 @@ import Employee from '@/models/Employee'
 import LeaveBalance from '@/models/LeaveBalance'
 import Organization from '@/models/Organization'
 import { writeAudit } from '@/lib/audit'
-import { sendMail } from '@/lib/mailer'
+import { getMailService } from '@/lib/mail'
 import { signToken } from '@/lib/auth/jwt'
+import { signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth/mobileTokens'
 
 export class HttpError extends Error {
   statusCode: number
@@ -42,43 +43,27 @@ export interface InvitationResult {
 }
 
 /**
- * Send invitation email via transactional mailer.
- * Safely handles environments where SMTP is unconfigured.
+ * Send the invitation e-mail through the mail provider (lib/mail).
+ * Templates escape every interpolated value (organisation name, inviter name…),
+ * and provider failures are reduced to `false` — never thrown, never leaked.
  */
 export async function sendInvitationEmail(opts: {
   to: string
+  orgId: string
   inviteUrl: string
   organizationName: string
   role: string
   inviterName: string
 }): Promise<boolean> {
-  const subject = `You've been invited to join ${opts.organizationName} on DoppelDash`
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
-      <h2 style="color: #0057A8; margin-top: 0;">Welcome to ${opts.organizationName}</h2>
-      <p style="font-size: 15px; line-height: 1.5;">
-        ${opts.inviterName} has invited you to join <strong>${opts.organizationName}</strong> as a <strong>${opts.role}</strong> on DoppelDash.
-      </p>
-      <div style="margin: 32px 0;">
-        <a href="${opts.inviteUrl}" style="background-color: #0057A8; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
-          Accept Invitation & Set Password →
-        </a>
-      </div>
-      <p style="font-size: 13px; color: #6b7280; line-height: 1.4;">
-        This invitation will expire in 7 days. If you were not expecting this invitation, you can safely ignore this email.
-      </p>
-      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-      <p style="font-size: 11px; color: #9ca3af;">
-        DoppelDash Enterprise Multi-Tenant Platform
-      </p>
-    </div>
-  `
-
-  return sendMail({
+  const result = await getMailService().sendInvitation({
     to: opts.to,
-    subject,
-    html,
+    orgId: opts.orgId,
+    organizationName: opts.organizationName,
+    role: opts.role,
+    inviterName: opts.inviterName,
+    inviteUrl: opts.inviteUrl,
   })
+  return result.delivered
 }
 
 /**
@@ -152,7 +137,9 @@ export async function createInvitation(input: CreateInvitationInput): Promise<In
 
   // 7. Format invitation link
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const inviteUrl = `${appUrl}/invite?token=${rawToken}`
+  // Token in the URL FRAGMENT: browsers never send it to the server, so it cannot reach access logs,
+  // proxies or Referer headers. The invite page reads it client-side and POSTs it in a request body.
+  const inviteUrl = `${appUrl}/invite#token=${rawToken}`
 
   // 8. Resolve organization name for email
   const org = await Organization.findOne({ orgId: input.orgId }).lean()
@@ -163,6 +150,7 @@ export async function createInvitation(input: CreateInvitationInput): Promise<In
   try {
     delivered = await sendInvitationEmail({
       to: email,
+      orgId: input.orgId,
       inviteUrl,
       organizationName: orgName,
       role: input.role,
@@ -372,27 +360,31 @@ export async function acceptInvitation(params: {
       },
     })
 
-    // 8. Sign JWT session token
-    const token = await signToken(user.toPublic())
+    // 8. Issue a REAL authenticated session: web cookie JWT, short-lived mobile
+    //    access token, and an opaque rotating refresh token in its own device family.
+    await User.findByIdAndUpdate(createdUserId, {
+      lastLoginAt: now, lastActiveAt: now, $inc: { loginCount: 1 },
+    })
+    const pub = user.toPublic()
+    const sessionToken = await signToken(pub)
+    const accessToken = await signMobileAccessToken(pub)
+    const refreshToken = await issueMobileRefreshToken(createdUserId, { sessionVersion: pub.sessionVersion })
 
     return {
       success: true,
-      user: {
-        id: createdUserId,
-        email: user.email,
-        role: user.role,
-        orgId: user.orgId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      },
+      user: pub,
       employee: {
         employeeId: employee.employeeId,
         department: employee.department,
         designation: employee.designation,
         orgId: employee.orgId,
       },
-      accessToken: token,
-      refreshToken: token,
+      /** httpOnly web cookie value. */
+      sessionToken,
+      /** Mobile Bearer access token (15 min). */
+      accessToken,
+      /** Opaque, rotating, single-use refresh token — never a JWT. */
+      refreshToken,
     }
   } catch (err) {
     // COMPENSATING ROLLBACK: clean up any partially created records
@@ -487,7 +479,9 @@ export async function resendInvitation(opts: {
   })
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const inviteUrl = `${appUrl}/invite?token=${rawToken}`
+  // Token in the URL FRAGMENT: browsers never send it to the server, so it cannot reach access logs,
+  // proxies or Referer headers. The invite page reads it client-side and POSTs it in a request body.
+  const inviteUrl = `${appUrl}/invite#token=${rawToken}`
 
   const org = await Organization.findOne({ orgId: opts.orgId }).lean()
   const orgName = org?.name || 'Your Organization'
@@ -496,6 +490,7 @@ export async function resendInvitation(opts: {
   try {
     delivered = await sendInvitationEmail({
       to: invitation.email,
+      orgId: opts.orgId,
       inviteUrl,
       organizationName: orgName,
       role: invitation.role,
