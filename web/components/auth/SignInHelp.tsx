@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Send } from 'lucide-react'
 import { Button, Dialog, Icon } from '@/components/ds'
 import { SUPPORT_CONFIG } from '@/lib/config/support'
+import { SUPPORT_CHAT_NOTICE, SUPPORT_INPUT_MAX, toRequestMessages } from '@/lib/support/chatClient'
 
 type Msg = { role: 'user' | 'model'; text: string }
 
@@ -21,7 +22,7 @@ export default function SignInHelp({ open, onOpenChange }: { open: boolean; onOp
     const next: Msg[] = [...history, { role: 'user', text: query }]
     setHistory(next); setQuery(''); setBusy(true)
     try {
-      const res = await fetch('/api/support/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: next }) })
+      const res = await fetch('/api/support/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: toRequestMessages(next) }) })
       const data = await res.json()
       setHistory([...next, { role: 'model', text: data.text || data.error || 'I couldn’t get a response. Please try again.' }])
     } catch {
@@ -39,9 +40,10 @@ export default function SignInHelp({ open, onOpenChange }: { open: boolean; onOp
         <div ref={end} />
       </div>
       <form onSubmit={send} className="mt-3 flex items-center gap-2">
-        <input aria-label="Your message" value={query} onChange={e => setQuery(e.target.value)} placeholder="Describe the problem" className="min-h-11 flex-1 rounded-ds-input border border-ds-outline-variant bg-ds-card px-3 text-ds-body-medium text-ds-on-surface" />
+        <input aria-label="Your message" maxLength={SUPPORT_INPUT_MAX} value={query} onChange={e => setQuery(e.target.value)} placeholder="Describe the problem" className="min-h-11 flex-1 rounded-ds-input border border-ds-outline-variant bg-ds-card px-3 text-ds-body-medium text-ds-on-surface" />
         <Button type="submit" disabled={busy || !query.trim()} aria-label="Send message"><Icon icon={Send} size="sm" /></Button>
       </form>
+      <p className="mt-2 text-ds-body-small text-ds-on-surface-variant">{SUPPORT_CHAT_NOTICE}</p>
     </Dialog>
   )
 }

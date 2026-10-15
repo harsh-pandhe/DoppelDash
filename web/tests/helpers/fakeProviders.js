@@ -84,8 +84,8 @@ function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Headers', '*'); res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end() }
   ;(async () => {
-    if (p === '/__state') return json(res, 200, { mode: state.mode, calls: state.calls, uploads: state.uploads, destroyed: state.destroyed, files: [...state.files.keys()], downloads: state.downloads, adminCalls: state.adminCalls })
-    if (p === '/__reset') { state.mode = { gemini: 'ok', ollama: 'ok' }; state.delayMs = { gemini: 0, ollama: 0 }; state.calls = { gemini: 0, ollama: 0 }; state.files.clear(); state.uploads = []; state.destroyed = []; state.receipt = GOOD; state.storage = { admin: 'ok', download: 'ok', destroy: 'ok' }; state.downloads = 0; state.adminCalls = 0; state.geminiKey = null; return json(res, 200, { ok: true }) }
+    if (p === '/__state') return json(res, 200, { lastGeminiRequest: state.lastGeminiRequest || null, mode: state.mode, calls: state.calls, uploads: state.uploads, destroyed: state.destroyed, files: [...state.files.keys()], downloads: state.downloads, adminCalls: state.adminCalls })
+    if (p === '/__reset') { state.mode = { gemini: 'ok', ollama: 'ok' }; state.delayMs = { gemini: 0, ollama: 0 }; state.calls = { gemini: 0, ollama: 0 }; state.files.clear(); state.uploads = []; state.destroyed = []; state.receipt = GOOD; state.storage = { admin: 'ok', download: 'ok', destroy: 'ok' }; state.downloads = 0; state.adminCalls = 0; state.geminiKey = null; state.lastGeminiRequest = null; return json(res, 200, { ok: true }) }
     if (p === '/__inject' && req.method === 'POST') {
       // Put an asset straight into storage (as a provider that does NOT enforce size would): { path, bytes, ext, type }
       const b = JSON.parse((await readBody(req)).toString() || '{}')
@@ -126,10 +126,19 @@ function handler(req, res) {
       state.calls.gemini++
       const body = JSON.parse((await readBody(req)).toString() || '{}')
       state.lastGeminiPart = Object.keys(body?.contents?.[0]?.parts?.[1]?.inlineData || {})
-      if (url.searchParams.get('key') !== (state.geminiKey || ENV.GEMINI_API_KEY)) return json(res, 403, { error: { message: 'API key not valid' } })
+      // what the support chat actually sent (never contains the key value): used by the outbound-payload assertions
+      state.lastGeminiRequest = { urlHasKey: url.searchParams.has('key'), headerKey: Boolean(req.headers['x-goog-api-key']), body }
+      // real Gemini accepts the key in the x-goog-api-key header as well as ?key=
+      const sentKey = url.searchParams.get('key') || req.headers['x-goog-api-key']
+      if (sentKey !== (state.geminiKey || ENV.GEMINI_API_KEY)) return json(res, 403, { error: { message: 'API key not valid' } })
       if (state.delayMs.gemini) await sleep(state.delayMs.gemini)
       if (state.mode.gemini === 'error500') return json(res, 500, { error: { message: 'boom secret-detail' } })
       if (state.mode.gemini === 'timeout') return // never answers
+      if (state.mode.gemini === 'chat') return json(res, 200, { candidates: [{ content: { parts: [{ text: 'Use the Forgot password link on the sign-in page.' }] } }] })
+      if (state.mode.gemini === 'chat-long') return json(res, 200, { candidates: [{ content: { parts: [{ text: 'x'.repeat(9000) }] } }] })
+      if (state.mode.gemini === 'chat-malformed') return json(res, 200, { candidates: [{ content: { parts: [{ text: { not: 'a string' } }] } }] })
+      if (state.mode.gemini === 'chat-empty') return json(res, 200, {})
+      if (state.mode.gemini === 'chat-notjson') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end('<<not json>>') }
       return json(res, 200, { candidates: [{ content: { parts: [{ text: modelAnswer('gemini') }] } }] })
     }
     // ── Ollama ──

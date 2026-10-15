@@ -1,6 +1,6 @@
 # DoppelDash API Route & Tenant Security Matrix (G2 Baseline)
 
-*Generated on 2026-10-14 by `web/scripts/inventory/generate-security-matrix.js`.*
+*Generated on 2026-10-15 by `web/scripts/inventory/generate-security-matrix.js`.*
 
 ## Executive Summary
 
@@ -9,10 +9,10 @@
 - **Public Handlers**: 18 (authentication, invitations, shared dashboard, support chat, public assets)
 - **Session-Authenticated Handlers**: 117
 - **Service-Authenticated Handlers**: 15 (cron jobs, RTDN webhook, Outlook notifications, dev seed)
-- **Handlers with Test Coverage**: 104
-- **Handlers with Coverage Gaps**: 46
+- **Handlers with Test Coverage**: 105
+- **Handlers with Coverage Gaps**: 45
 - **P0 Launch Blockers**: 1 (RTDN Pub/Sub OIDC, Account Deletion Integrity)
-- **P1 High-Risk Gaps**: 8 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
+- **P1 High-Risk Gaps**: 7 (Passkey, TOTP, Shared Analytics, Outlook Webhook, Support Chat)
 
 ## High-Risk Group Analysis (Batch 1)
 
@@ -185,7 +185,7 @@
 | **POST** | `/api/dev/migrate` | service | service_context | none | none | `tests/batch_k.test.js` +3 | `VERIFIED_FAKE` |
 | **POST** | `/api/dev/reset-to-admin` | service | service_global | none | none | `tests/batch_k.test.js` | `VERIFIED_FAKE` |
 | **POST** | `/api/dev/seed` | service | service_context | none | none | `tests/batch_k.test.js` +3 | `VERIFIED_FAKE` |
-| **POST** | `/api/support/chat` | public | none | none | none | **NONE** | `GAPS_FOUND` |
+| **POST** | `/api/support/chat` | public | none | none | none | `tests/support_chat_security.test.js` | `VERIFIED_FAKE` |
 
 ### 6. Billing, RTDN, Entitlements & Account Deletion (3 handlers)
 
@@ -377,7 +377,7 @@
 | **GET** | `/api/rms/ocr` | `app/api/rms/ocr/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **POST** | `/api/rms/ocr` | `app/api/rms/ocr/route.ts` | session | any_authenticated | `VERIFIED_FAKE` |
 | **GET** | `/api/search` | `app/api/search/route.ts` | session | admin | `VERIFIED_FAKE` |
-| **POST** | `/api/support/chat` | `app/api/support/chat/route.ts` | public | none | `GAPS_FOUND` |
+| **POST** | `/api/support/chat` | `app/api/support/chat/route.ts` | public | none | `VERIFIED_FAKE` |
 | **GET** | `/api/sync/email` | `app/api/sync/email/route.ts` | session | any_authenticated | `GAPS_FOUND` |
 | **POST** | `/api/sync/email` | `app/api/sync/email/route.ts` | session | any_authenticated | `GAPS_FOUND` |
 | **GET** | `/api/travel` | `app/api/travel/route.ts` | session | admin | `VERIFIED_FAKE` |

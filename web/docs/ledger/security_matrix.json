@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-14T23:50:58.619Z",
+    "generatedAt": "2026-10-15T00:24:41.936Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 91,
@@ -8,10 +8,10 @@
       "publicHandlers": 18,
       "sessionHandlers": 117,
       "serviceHandlers": 15,
-      "handlersWithTests": 104,
-      "handlersWithGaps": 46,
+      "handlersWithTests": 105,
+      "handlersWithGaps": 45,
       "p0Blockers": 1,
-      "p1HighRiskGaps": 8
+      "p1HighRiskGaps": 7
     }
   },
   "handlers": [
@@ -2839,18 +2839,16 @@
       "ownerSource": "none",
       "requiredRole": "none",
       "entitlement": "none",
-      "rateLimit": "`support:${ip}`, 8, 60_000",
+      "rateLimit": "none",
       "providers": [
         "Gemini"
       ],
-      "existingTests": [],
-      "missingTests": [
-        "Add integration test exercising POST /api/support/chat",
-        "Abuse test: rate limit trigger (8 req/min per IP, 2000/day global)",
-        "Data minimization test: IT prompt guard rejects off-topic queries"
+      "existingTests": [
+        "tests/support_chat_security.test.js"
       ],
-      "status": "GAPS_FOUND",
-      "severity": "P1"
+      "missingTests": [],
+      "status": "VERIFIED_FAKE",
+      "severity": "INFO"
     },
     {
       "url": "/api/sync/email",

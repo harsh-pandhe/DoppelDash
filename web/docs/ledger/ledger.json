@@ -2145,8 +2145,7 @@
     "POST"
    ],
    "guards": [
-    "role-check",
-    "rate-limit"
+    "role-check"
    ],
    "unauthenticatedByCode": true,
    "webCallers": [
@@ -2154,7 +2153,9 @@
     "components/auth/SignInHelp.tsx"
    ],
    "androidCallers": [],
-   "tests": []
+   "tests": [
+    "tests/support_chat_security.test.js"
+   ]
   },
   {
    "url": "/api/sync/email",

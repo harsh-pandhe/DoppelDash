@@ -139,7 +139,7 @@ Counts: **44** Web pages · **91** API route files / **150** methods · **33** A
 | `/api/rms/[id]/receipt/[file]` | GET | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 8 |
 | `/api/rms/ocr` | GET, POST | session, rate-limit, tenant-scoped |  | 1 | 1 | 1 |
 | `/api/search` | GET | session, role-check, tenant-scoped |  | 1 | 1 | 3 |
-| `/api/support/chat` | POST | role-check, rate-limit | **yes** | 2 | **none** | **none** |
+| `/api/support/chat` | POST | role-check | **yes** | 2 | **none** | 1 |
 | `/api/sync/email` | GET, POST | session, tenant-scoped |  | — | 1 | **none** |
 | `/api/travel` | GET, POST | session, role-check, tenant-scoped |  | 5 | 1 | 8 |
 | `/api/travel/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 3 | 1 | 8 |

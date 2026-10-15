@@ -68,3 +68,36 @@ export async function rateLimitMarked(key: string): Promise<boolean> {
   const doc = await RateLimit.findOne({ key }).lean()
   return Boolean(doc && doc.resetAt > new Date())
 }
+
+/**
+ * Atomic fixed-window consume: ONE conditional pipeline update that (a) starts a fresh window when the stored one has
+ * expired and (b) otherwise increments — so concurrent callers can neither exceed `limit` nor double-reset an expired
+ * window. `allowed` is true for exactly the first `limit` calls in a window.
+ *
+ * Unlike [rateLimit], storage errors are NOT swallowed into an answer: they propagate, and callers that guard a paid
+ * or abusable resource must treat a throw as "deny" (fail closed). A first-insert race (E11000) is retried once.
+ */
+export async function rateLimitConsume(key: string, limit: number, windowMs: number): Promise<{ allowed: boolean; count: number }> {
+  await connectDB()
+  const run = async () => {
+    const now = new Date()
+    const expired = { $lte: [{ $ifNull: ['$resetAt', new Date(0)] }, now] }
+    const doc = await RateLimit.collection.findOneAndUpdate(
+      { key },
+      [{ $set: {
+        count: { $cond: [expired, 1, { $add: [{ $ifNull: ['$count', 0] }, 1] }] },
+        resetAt: { $cond: [expired, new Date(now.getTime() + windowMs), '$resetAt'] },
+      } }],
+      { upsert: true, returnDocument: 'after' },
+    )
+    const count = Number((doc as { count?: unknown } | null)?.count)
+    if (!Number.isFinite(count)) throw new Error('rate-limit store returned no counter')
+    return { allowed: count <= limit, count }
+  }
+  try {
+    return await run()
+  } catch (e) {
+    if ((e as { code?: number })?.code === 11000) return run()
+    throw e
+  }
+}

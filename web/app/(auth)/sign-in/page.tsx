@@ -1,4 +1,5 @@
 'use client'
+import { SUPPORT_CHAT_NOTICE, SUPPORT_INPUT_MAX, toRequestMessages } from '@/lib/support/chatClient'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -211,7 +212,7 @@ export default function SignInPage() {
     setSupportQuery('')
     setIsTyping(true)
     try {
-      const res  = await fetch('/api/support/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages: next }) })
+      const res  = await fetch('/api/support/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages: toRequestMessages(next) }) })
       const data = await res.json()
       setChatHistory([...next, { role: 'model', text: data.text || data.error || "Couldn't get a response." }])
     } catch {
@@ -576,13 +577,14 @@ export default function SignInPage() {
 
             <div className="p-4 border-t border-white/10 bg-white/5">
               <form onSubmit={sendSupport} className="flex gap-2">
-                <input type="text" value={supportQuery} onChange={e => setSupportQuery(e.target.value)} placeholder="Ask about login, OTP, VPN…"
+                <input type="text" value={supportQuery} onChange={e => setSupportQuery(e.target.value)} maxLength={SUPPORT_INPUT_MAX} placeholder="Ask about login, OTP, VPN…"
                   className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30" />
                 <button type="submit" disabled={isTyping || !supportQuery.trim()} aria-label="Send"
                   className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
                   <Send className="w-4 h-4 ml-0.5" />
                 </button>
               </form>
+              <p className="mt-2 text-[10px] leading-snug text-slate-400">{SUPPORT_CHAT_NOTICE}</p>
             </div>
           </div>
         </div>
