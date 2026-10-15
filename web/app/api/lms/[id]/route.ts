@@ -9,7 +9,7 @@ import { getUser } from '@/lib/auth'
 import { pick } from '@/lib/pick'
 import { selfApprovalCheck, SELF_APPROVAL_ERROR } from '@/lib/permissions'
 import { LEAVE_REVIEW_FIELDS } from '@/lib/apiFields'
-import { disposeLeaveDocs, presentLeave } from '@/lib/leave/attachments'
+import { disposeLeaveDocs, presentLeave, reserveLeaveDocs, restoreLeaveDocs } from '@/lib/leave/attachments'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
@@ -130,8 +130,21 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  await leave.deleteOne()
-  void disposeLeaveDocs(orgId, params.id, leave.medicalDocs)   // private documents are no longer referenced (best effort, tenant-safe)
+  // Reserve the private documents FIRST (no submission can claim them from here on), then delete the leave, then destroy the files.
+  let reserved: string[]
+  try { reserved = await reserveLeaveDocs(orgId, params.id, leave.medicalDocs) }
+  catch { return NextResponse.json({ error: 'Could not remove the leave right now. Please try again.' }, { status: 503 }) }
+  let removed = 0
+  try { removed = (await Leave.deleteOne({ _id: params.id, orgId })).deletedCount || 0 }
+  catch {
+    await restoreLeaveDocs(orgId, params.id, reserved).catch(() => undefined)
+    return NextResponse.json({ error: 'Could not remove the leave right now. Please try again.' }, { status: 503 })
+  }
+  if (!removed) {   // someone else removed it first; that request disposes of the (jointly reserved) files
+    if (await Leave.exists({ _id: params.id, orgId }).catch(() => true)) await restoreLeaveDocs(orgId, params.id, reserved).catch(() => undefined)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  const documentsDeleted = await disposeLeaveDocs(orgId, params.id, leave.medicalDocs)
   writeAudit({
     action:          isOwner ? 'leave.withdrawn' : 'leave.deleted',
     performedBy:     userId,
@@ -141,5 +154,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     metadata:        { type: leave.type, days: leave.days, status: leave.status, employeeName: leave.userName },
     orgId,
   })
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, documentsDeleted })   // false = a file is queued for retry by the cleanup, not yet physically gone
 }

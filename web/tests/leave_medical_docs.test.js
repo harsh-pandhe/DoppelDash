@@ -310,6 +310,96 @@ test('C4. when the provider cannot delete, the manifest row stays so the cleanup
   assert.ok([400, 500].includes(bad.status)); await unclaimed(e)
 })
 
+/* ═════════ C5–C10. leave deletion versus new submissions (Phase 1J.1) ═════════ */
+const att = () => kit.load('lib/leave/attachments.ts')
+const del = (id, k = 'Aemployee') => kit.api(`/api/lms/${id}`, { method: 'DELETE', ...who(k) })
+
+test('C5. once deletion has RESERVED a file it cannot be reattached — not even when the leave record is already gone (stale-claim recovery must not override the reservation)', async () => {
+  const d = await doc(); const l = await created([d])
+  const reserved = await att().reserveLeaveDocs(A.orgId, l._id, [d.ref]); assert.deepEqual(reserved, [d.pid])
+  let r = await row(d.pid); assert.equal(r.state, 'deleting'); assert.equal(r.claimedBy, l._id, 'ownership is still recorded, only the state changed')
+  assert.equal((await post('Aemployee', leaveBody({ medicalDocs: [d.url] }))).status, 409, 'leave still exists → in use')
+  await db.collection('leaves').deleteOne({ _id: oid(l._id) })                       // the window in which the old code let the stale-claim recovery clear it
+  const res = await post('Aemployee', leaveBody({ medicalDocs: [d.url] }))
+  assert.equal(res.status, 409, res.text); assert.equal(await leaves({ medicalDocs: d.ref }), 0)
+  r = await row(d.pid); assert.equal(r.state, 'deleting'); assert.equal(r.claimedBy, l._id, 'the reservation was not cleared')
+  assert.equal(await stored(d.pid), true)
+  assert.equal(await att().disposeLeaveDocs(A.orgId, l._id, [d.ref]), true); assert.equal(await stored(d.pid), false); assert.equal(await row(d.pid), null)
+  assert.notEqual((await post('Aemployee', leaveBody({ medicalDocs: [d.url] }))).status, 201, 'a destroyed file can never be attached')
+})
+
+test('C6. a submission racing with the deletion of the leave that holds the file is NEVER a success that references a deleted asset (12 rounds)', async () => {
+  for (let i = 0; i < 12; i++) {
+    const d = await doc(); const l = await created([d])
+    const [dres, pres] = await Promise.all([del(l._id), post('Aemployee', leaveBody({ medicalDocs: [d.url] }))])
+    assert.equal(dres.status, 200, dres.text)
+    const holders = await leaves({ medicalDocs: d.ref })
+    if (pres.status === 201) {
+      assert.equal(holders, 1); assert.equal(await stored(d.pid), true, 'a successful new leave owns an intact file'); assert.equal((await row(d.pid)).claimedBy, pres.json._id)
+    } else {
+      assert.ok([400, 409].includes(pres.status), `round ${i}: ${pres.status} ${pres.text}`); assert.equal(holders, 0)
+    }
+    assert.equal(holders > 0, await stored(d.pid), `round ${i}: a leave references the file exactly when it still exists`)
+  }
+})
+
+test('C7. provider failure after the leave is deleted: the row stays `deleting` (retryable, unclaimable, no claim recorded); the cleanup finishes it later; the response does not claim physical deletion', async () => {
+  const cleanup = kit.load('lib/uploads/receiptCleanup.ts')
+  const d = await doc(); const l = await created([d])
+  await fake.control.mode({ storage: { destroy: 'error500' } })
+  const res = await del(l._id); assert.equal(res.status, 200); assert.equal(res.json.documentsDeleted, false, 'queued for retry is not “deleted”')
+  let r = await row(d.pid); assert.equal(r.state, 'deleting'); assert.ok(!r.claimedBy); assert.ok(r.leaseUntil > new Date()); assert.ok(r.failures >= 1)
+  assert.equal(await stored(d.pid), true)
+  const again = await post('Aemployee', leaveBody({ medicalDocs: [d.url] })); assert.notEqual(again.status, 201, 'the race stays closed while the retry is pending')
+  assert.equal(await leaves({ medicalDocs: d.ref }), 0)
+  await fake.control.mode({ storage: { destroy: 'ok' } })   // (not reset(): that would wipe the stored file)
+  const early = await cleanup.runReceiptCleanup({ apply: true }); assert.equal(await stored(d.pid), true, `lease not yet expired → not reclaimed ${JSON.stringify(early)}`)
+  await db.collection('receiptuploads').updateOne({ publicId: d.pid }, { $set: { leaseUntil: new Date(Date.now() - 1000), issuedAt: new Date(Date.now() - 30 * H) } })
+  await cleanup.runReceiptCleanup({ apply: true })
+  assert.equal(await stored(d.pid), false); assert.equal(await row(d.pid), null)
+})
+
+test('C8. a leave whose deletion did not happen gets its file back: reserve → restore returns it to attached + claimed; a crashed reservation heals through the cleanup; nobody else could claim it meanwhile', async () => {
+  const cleanup = kit.load('lib/uploads/receiptCleanup.ts')
+  const d = await doc(); const l = await created([d])
+  const reserved = await att().reserveLeaveDocs(A.orgId, l._id, [d.ref])
+  assert.equal((await post(peer.token, leaveBody({ medicalDocs: [d.url] }))).status, 400, 'not even the same-tenant colleague')
+  await att().restoreLeaveDocs(A.orgId, l._id, reserved)
+  let r = await row(d.pid); assert.equal(r.state, 'attached'); assert.equal(r.claimedBy, l._id); assert.ok(!r.leaseUntil)
+  assert.equal((await dl(tok.Aemployee, l._id, 0)).status, 200, 'the document is still readable')
+  assert.equal((await post('Aemployee', leaveBody({ medicalDocs: [d.url] }))).status, 409, 'exclusive ownership intact')
+  // restore never touches a row some other operation holds
+  await att().restoreLeaveDocs(A.orgId, '0'.repeat(24), reserved); assert.equal((await row(d.pid)).claimedBy, l._id)
+  // crash between reservation and deletion: the cleanup reclaims the expired lease, sees the reference and releases the file
+  await att().reserveLeaveDocs(A.orgId, l._id, [d.ref])
+  await db.collection('receiptuploads').updateOne({ publicId: d.pid }, { $set: { leaseUntil: new Date(Date.now() - 1000), issuedAt: new Date(Date.now() - 30 * H) } })
+  const rep = await cleanup.runReceiptCleanup({ apply: true }); assert.ok(rep.skippedReferenced >= 1, JSON.stringify(rep))
+  assert.equal(await stored(d.pid), true); r = await row(d.pid); assert.equal(r.state, 'attached')
+  assert.equal((await dl(tok.Aemployee, l._id, 0)).status, 200)
+})
+
+test('C9. a file that a surviving record still references is never destroyed by deleting the leave that also held it', async () => {
+  const d = await doc(); const l = await created([d])
+  await db.collection('leaves').insertOne({ orgId: A.orgId, userId: A.employee.id, userName: 'x', type: 'sick', startDate: new Date(), endDate: new Date(), days: 3, reason: 'other ' + key(), status: 'pending', medicalDocs: [d.ref], createdAt: new Date(), updatedAt: new Date() })
+  const res = await del(l._id); assert.equal(res.status, 200); assert.equal(res.json.documentsDeleted, true)
+  assert.equal(await stored(d.pid), true, 'surviving reference → file kept'); const r = await row(d.pid); assert.ok(r); assert.equal(r.state, 'attached'); assert.ok(!r.claimedBy)
+  // same for an expense and a trip that reference it
+  const e = await doc(); const l2 = await created([e])
+  await db.collection('expenses').insertOne({ orgId: A.orgId, userId: A.employee.id, receipts: [e.ref], createdAt: new Date() })
+  assert.equal((await del(l2._id)).status, 200); assert.equal(await stored(e.pid), true)
+})
+
+test('C10. duplicate and concurrent deletions of the same leave are safe; another tenant cannot delete it or touch its files', async () => {
+  const d = await doc(); const l = await created([d])
+  const bDoc = await doc({ token: tok.Bemployee }); await created([bDoc], {}, tok.Bemployee)
+  assert.equal((await del(l._id, 'Bmanager')).status, 404, 'other tenant')
+  const rs = await Promise.all([del(l._id), del(l._id), del(l._id, 'Amanager')])
+  assert.equal(rs.filter(r => r.status === 200).length, 1, rs.map(r => r.status).join(','))
+  assert.ok(rs.every(r => [200, 404].includes(r.status)))
+  assert.equal(await stored(d.pid), false); assert.equal(await row(d.pid), null)
+  assert.equal(await stored(bDoc.pid), true); assert.ok(await row(bDoc.pid))
+})
+
 /* ═════════ G. account deletion ═════════ */
 test('G1. disbanding an organisation purges its leave medical documents from storage and the manifest (retryable), and never touches another tenant', async () => {
   const { purgeOrgBlobs } = kit.load('lib/account/deletion.ts')

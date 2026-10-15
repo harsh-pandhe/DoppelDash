@@ -23,7 +23,7 @@ import Leave from '@/models/Leave'
 import TravelRequest from '@/models/TravelRequest'
 import Expense from '@/models/Expense'
 import { destroyAttachments, destroyReceiptAsset, isReceiptRef, parseReceiptRef, receiptRefFromUploadUrl, verifyStoredReceipt } from '@/lib/uploads/attachmentStorage'
-import { declaredFormatsFor, markReceiptRejected, MIN_AGE_MS } from '@/lib/uploads/receiptCleanup'
+import { declaredFormatsFor, isReferenced, LEASE_MS, markReceiptRejected, MIN_AGE_MS, RETRY_MS } from '@/lib/uploads/receiptCleanup'
 import { getOrganizationLimit } from '@/lib/entitlements/entitlementService'
 
 export const LEAVE_MEDICAL_PURPOSE = 'leave_medical' as const
@@ -62,12 +62,13 @@ export async function resolveMedicalDocs(values: string[], ctx: { orgId: string;
     const ref = first.refs[i]; const parsed = parseReceiptRef(ref, ctx.orgId)
     if (!parsed) return invalid(i)
     const row = await ReceiptUpload.findOne({ orgId: ctx.orgId, publicId: parsed.publicId }).lean()
-    if (!row || row.purpose !== LEAVE_MEDICAL_PURPOSE || row.userId !== ctx.userId || !['issued', 'attached'].includes(row.state)) return invalid(i)
     const inUse = { status: 409, body: { error: 'That document is already attached to another record.', fields: [`medicalDocs[${i}]`], code: 'attachment_in_use' } }
+    if (row && row.purpose === LEAVE_MEDICAL_PURPOSE && row.userId === ctx.userId && row.state === 'deleting' && row.claimedBy && row.claimedBy !== ctx.claimant) return inUse   // reserved by an in-flight leave deletion
+    if (!row || row.purpose !== LEAVE_MEDICAL_PURPOSE || row.userId !== ctx.userId || !['issued', 'attached'].includes(row.state)) return invalid(i)
     if (row.claimedBy && row.claimedBy !== ctx.claimant) {
       const holder = mongoose.isValidObjectId(row.claimedBy) ? await Leave.exists({ _id: row.claimedBy, orgId: ctx.orgId }) : null
       if (holder) return inUse
-      await ReceiptUpload.updateOne({ orgId: ctx.orgId, publicId: parsed.publicId, claimedBy: row.claimedBy }, { $unset: { claimedBy: 1 } })   // stale claim (leave never written)
+      await ReceiptUpload.updateOne({ orgId: ctx.orgId, publicId: parsed.publicId, claimedBy: row.claimedBy, state: { $in: ['issued', 'attached'] } }, { $unset: { claimedBy: 1 } })   // stale claim (leave never written); never overrides a deletion reservation (state 'deleting')
     }
     const used = (await Leave.exists({ orgId: ctx.orgId, medicalDocs: ref, _id: { $ne: ctx.claimant } }))
       || (await TravelRequest.exists({ orgId: ctx.orgId, itineraryDocs: ref })) || (await Expense.exists({ orgId: ctx.orgId, $or: [{ receipts: ref }, { 'lineItems.receiptUrl': ref }] }))
@@ -112,22 +113,63 @@ export async function releaseUnreferencedClaims(orgId: string, claimant: string,
 }
 
 /**
- * A leave was deleted (withdrawn / removed by a reviewer): its private documents are no longer referenced. Best effort and tenant-safe:
- * the provider asset is destroyed through the exact-namespace helper and its manifest row removed only once the provider confirmed
- * (deleted / not found); a failure leaves the row for the abandoned-upload cleanup, which re-checks references itself. Never throws.
+ * Leave deletion lifecycle (race-free ordering):
+ *   1. reserveLeaveDocs   — BEFORE the leave is deleted: attached+claimed-by-this-leave → `deleting` (the existing cleanup claim state, with a lease).
+ *                           From this instant no submission can claim or resolve the file (claim needs issued|attached; resolve answers 409) and the
+ *                           stale-claim recovery ignores it. Ownership (`claimedBy`) is still recorded so the reservation can be undone.
+ *   2. delete the leave   — if that fails (or removes nothing) → restoreLeaveDocs puts the files back to `attached`, still claimed by the leave.
+ *   3. disposeLeaveDocs   — leave gone: if ANY surviving record still references a file it is restored (never deleted); otherwise the provider asset
+ *                           is destroyed and the manifest row removed only after the provider confirmed. A provider failure keeps the row in `deleting`
+ *                           with a retry lease, so the abandoned-upload cleanup retries it (it re-checks references itself) and attach stays refused.
+ * A crash between 1 and 2 is self-healing: the cleanup reclaims the expired lease, sees the leave still references the file, and releases it.
  */
-export async function disposeLeaveDocs(orgId: string, leaveId: string, stored: string[] | undefined): Promise<void> {
+const privatePublicIds = (orgId: string, stored: string[] | undefined) =>
+  (stored || []).map(r => (isReceiptRef(r) ? parseReceiptRef(r, orgId)?.publicId : undefined)).filter(Boolean) as string[]
+
+/** Returns the publicIds this call reserved. Throws on a database error: the caller must then NOT delete the leave. */
+export async function reserveLeaveDocs(orgId: string, leaveId: string, stored: string[] | undefined): Promise<string[]> {
+  const reserved: string[] = []
   try {
-    for (const ref of stored || []) {
-      const parsed = isReceiptRef(ref) ? parseReceiptRef(ref, orgId) : null
-      if (!parsed) continue                                                   // legacy/public values are never touched
-      await ReceiptUpload.updateOne({ orgId, publicId: parsed.publicId, claimedBy: leaveId }, { $unset: { claimedBy: 1 } })
-      const stillUsed = await Leave.exists({ orgId, medicalDocs: ref, _id: { $ne: leaveId } })
-      if (stillUsed) continue
-      const res = await destroyReceiptAsset(parsed.publicId, orgId)
-      if (res === 'deleted' || res === 'not_found') await ReceiptUpload.deleteOne({ orgId, publicId: parsed.publicId, purpose: LEAVE_MEDICAL_PURPOSE })
+    for (const publicId of privatePublicIds(orgId, stored)) {
+      const got = await ReceiptUpload.findOneAndUpdate(
+        { orgId, publicId, purpose: LEAVE_MEDICAL_PURPOSE, claimedBy: leaveId, state: { $in: ['issued', 'attached'] } },
+        { $set: { state: 'deleting', leaseUntil: new Date(Date.now() + LEASE_MS) } },
+      ).lean()
+      if (got) reserved.push(publicId)
     }
-  } catch (err) { console.error('[leave-docs] dispose failed', (err as Error)?.name) }
+    return reserved
+  } catch (err) { await restoreLeaveDocs(orgId, leaveId, reserved); throw err }
+}
+
+/** The leave still exists: put reserved files back as attached + claimed by it. Only rows still reserved by this leave are touched. */
+export async function restoreLeaveDocs(orgId: string, leaveId: string, publicIds: string[]): Promise<void> {
+  if (!publicIds.length) return
+  await ReceiptUpload.updateMany({ orgId, publicId: { $in: publicIds }, purpose: LEAVE_MEDICAL_PURPOSE, claimedBy: leaveId, state: 'deleting' },
+    { $set: { state: 'attached', nextCheckAt: new Date(Date.now() + MIN_AGE_MS) }, $unset: { leaseUntil: 1 } })
+}
+
+/**
+ * The leave is gone (called by the request whose delete actually removed it, which may differ from the one that reserved: concurrent deletes).
+ * Handles every private file of the leave whose row is reserved (`deleting`, claimed by this leave). Returns true only when each is physically
+ * gone or still legitimately referenced; never throws.
+ */
+export async function disposeLeaveDocs(orgId: string, leaveId: string, stored: string[] | undefined): Promise<boolean> {
+  let clean = true
+  for (const publicId of privatePublicIds(orgId, stored)) {
+    try {
+      if (!(await ReceiptUpload.exists({ orgId, publicId, purpose: LEAVE_MEDICAL_PURPOSE, state: 'deleting', claimedBy: leaveId }))) continue   // not reserved by this leave's deletion
+      if (await isReferenced(orgId, publicId)) {   // a surviving authoritative record still uses it: keep the file
+        await ReceiptUpload.updateOne({ orgId, publicId, claimedBy: leaveId, state: 'deleting' }, { $set: { state: 'attached', nextCheckAt: new Date(Date.now() + MIN_AGE_MS) }, $unset: { leaseUntil: 1, claimedBy: 1 } })
+        continue
+      }
+      await ReceiptUpload.updateOne({ orgId, publicId, claimedBy: leaveId, state: 'deleting' }, { $unset: { claimedBy: 1 } })   // still `deleting`: nothing can claim it
+      const res = await destroyReceiptAsset(publicId, orgId)
+      if (res === 'deleted' || res === 'not_found') { await ReceiptUpload.deleteOne({ orgId, publicId, purpose: LEAVE_MEDICAL_PURPOSE, state: 'deleting' }); continue }
+      clean = false
+      await ReceiptUpload.updateOne({ orgId, publicId, state: 'deleting' }, { $set: { leaseUntil: new Date(Date.now() + RETRY_MS) }, $inc: { failures: 1 } })
+    } catch (err) { clean = false; console.error('[leave-docs] dispose failed', (err as Error)?.name) }
+  }
+  return clean
 }
 
 const extOf = (ref: string) => ref.slice(ref.lastIndexOf('.') + 1).toLowerCase()
