@@ -7,7 +7,7 @@ Unauthenticated **by design**: people need help before they can sign in. Abuse i
 | Per-client limit | `lib/support/clientIdentity.ts`, `lib/ratelimit.ts#rateLimitConsume` | 8 / minute per trusted client IP; atomic single-document pipeline update (no check-then-write race); expired windows reset in the same update |
 | Client identity | `TRUSTED_CLIENT_IP_HEADER` | **Only the header named here is consulted** and only a single valid IP is accepted. Unset or invalid → all callers share one conservative bucket (30 / minute). Raw IPs are never stored (truncated SHA-256 in the key) |
 | Input | `lib/support/chatInput.ts` | streaming 64 KiB limit (works without / with a dishonest `Content-Length`), ≤ 12 messages, roles `user`/`model` only, user ≤ 800 chars, model ≤ 2000, last turn from the user, no control chars; only `role`+`text` are forwarded |
-| Global spend ceiling | route | 2000 provider calls / 24 h; charged **only** for requests that will call the provider; ceiling reached → bounded fallback text |
+| Global spend ceiling | route | 2000 provider calls / 24 h; charged **only** for valid requests that will attempt a provider call (not for rejected requests, and not when `GEMINI_API_KEY` is absent); ceiling reached → bounded fallback text |
 | Failure mode | route | any rate-limit storage error → `503` and **no** provider call |
 | Data | route | nothing from the conversation is stored or logged; logs carry `{category, providerStatus, cid}` only; the API key travels in `x-goog-api-key`; replies are capped at 2000 chars |
 | Notice | `lib/support/chatClient.ts` | shown at both chat entry points; states the messages go to Google's Gemini and warns against secrets. No retention claim is made |

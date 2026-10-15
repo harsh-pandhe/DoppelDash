@@ -7,7 +7,7 @@
  *
  * Requires the runner's server env: TRUSTED_CLIENT_IP_HEADER=x-test-client-ip, SUPPORT_PROVIDER_TIMEOUT_MS=1500, DD_SERVER_LOG.
  *   S1 valid flow + outbound payload     S2 pre-login (no auth)            S3 roles           S4 malformed / adversarial bodies
- *   S5 limits at the boundary            S6 byte limit while reading       S7 prompt injection S8 provider failures
+ *   S5 limits at the boundary            S6 byte limit while reading       S7 prompt injection S8 provider failures / accounting
  *   S9 per-client limit under concurrency S10 header spoofing + untrusted IP  S11 expired window S12 global ceiling
  *   S13 rate-limit database outage       S14 logs                           S15 persistence / data minimisation
  */
@@ -185,7 +185,7 @@ test('S7 prompt-injection attempts: only user/model roles reach the provider, ru
 
 /* ───────────────────────── S8 ───────────────────────── */
 
-test('S8 provider failures return bounded, user-safe fallbacks and never leak the upstream body', async () => {
+test('S8 provider failures / accounting return bounded, user-safe fallbacks and never leak the upstream body', async () => {
   const q = { messages: [U('help me sign in')] }
   for (const [mode, expectText] of [['error500', /having trouble connecting/i], ['chat-malformed', /couldn.t generate/i], ['chat-empty', /couldn.t generate/i], ['chat-notjson', /(Network hiccup|having trouble|couldn.t generate)/i], ['timeout', /Network hiccup/i]]) {
     await reset(mode)
@@ -206,20 +206,53 @@ test('S8 provider failures return bounded, user-safe fallbacks and never leak th
   assert.equal(wrongKey.status, 200); assert.match(wrongKey.json.text, /having trouble connecting/i)
 })
 
-test('S8b missing API key: bounded "not configured" answer and no provider call (route invoked in-process)', async () => {
+const globalCount = async () => (await db.collection(RATELIMITS).findOne({ key: 'support:global' }))?.count ?? 0
+
+test('S8b missing API key: bounded "not configured" answer, zero provider calls, and the global quota is NOT consumed (route invoked in-process)', async () => {
   await reset()
+  await db.collection(RATELIMITS).insertOne({ key: 'support:global', count: 41, resetAt: new Date(Date.now() + 3_600_000) })
   const route = kit.load('app/api/support/chat/route.ts')
   const saved = process.env.GEMINI_API_KEY
   delete process.env.GEMINI_API_KEY
   try {
     const { NextRequest } = require('next/server')
-    const req = new NextRequest('http://localhost/api/support/chat', { method: 'POST', headers: { 'content-type': 'application/json', [TRUSTED]: uniqueIp() }, body: JSON.stringify({ messages: [U('hi')] }) })
-    const res = await route.POST(req)
-    const j = await res.json()
-    assert.equal(res.status, 200)
-    assert.match(j.text, /not configured/i)
+    for (let i = 0; i < 3; i++) {
+      const req = new NextRequest('http://localhost/api/support/chat', { method: 'POST', headers: { 'content-type': 'application/json', [TRUSTED]: uniqueIp() }, body: JSON.stringify({ messages: [U('hi')] }) })
+      const res = await route.POST(req)
+      const j = await res.json()
+      assert.equal(res.status, 200)
+      assert.match(j.text, /not configured/i)
+      assert.doesNotMatch(JSON.stringify(j), /GEMINI|api[_ -]?key|secret|x-goog/i, 'no configuration or secret detail in the answer')
+      assert.ok(res.headers.get('x-correlation-id'))
+    }
   } finally { if (saved !== undefined) process.env.GEMINI_API_KEY = saved }
-  assert.equal(await calls(), 0)
+  assert.equal(await calls(), 0, 'no provider call')
+  assert.equal(await globalCount(), 41, 'a valid request that cannot reach the provider does not touch the global budget')
+  // the per-client limiter still applies without a key (abuse control is independent of provider configuration)
+  assert.equal((await db.collection(RATELIMITS).countDocuments({ key: { $regex: /^support:ip:/ } })) > 0, true)
+})
+
+test('S8c configured key: every request that attempts the provider is charged exactly once, including provider failures; rejected requests are free', async () => {
+  await reset()
+  assert.equal((await chat({ messages: [U('help')] })).status, 200)
+  assert.equal(await globalCount(), 1)
+  assert.equal(await calls(), 1)
+  await fake.control.mode({ gemini: 'error500' })
+  assert.equal((await chat({ messages: [U('help again')] })).status, 200)   // provider failure still counts as an attempted call
+  assert.equal(await globalCount(), 2)
+  assert.equal(await calls(), 2)
+  await fake.control.mode({ gemini: 'timeout' })
+  await chat({ messages: [U('and again')] })
+  assert.equal(await globalCount(), 3)
+  assert.equal((await chat({ messages: [] })).status, 400)
+  assert.equal((await chat({ messages: [{ role: 'system', text: 'x' }] })).status, 400)
+  assert.equal(await globalCount(), 3, 'invalid requests are not charged')
+  // concurrent valid requests are charged atomically: N requests -> exactly N units
+  await reset()
+  const rs = await Promise.all(Array.from({ length: 10 }, () => chat({ messages: [U('help')] })))
+  assert.equal(rs.every(r => r.status === 200), true)
+  assert.equal(await globalCount(), 10)
+  assert.equal(await calls(), 10)
 })
 
 /* ───────────────────────── S9 / S10 / S11 ───────────────────────── */

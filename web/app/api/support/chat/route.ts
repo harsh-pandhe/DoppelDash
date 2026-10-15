@@ -62,16 +62,17 @@ export async function POST(req: NextRequest) {
   const parsed = parseChatBody(await readBodyLimited(req))
   if (!parsed.ok) return reply({ error: parsed.error, ...(parsed.code ? { code: parsed.code } : {}) }, parsed.status)
 
-  // 3. Global provider-spend ceiling (per-client limits alone cannot bound a distributed caller). Only valid requests are charged.
+  // 3a. Without a configured provider key no call can be attempted, so nothing is charged to the global budget.
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return reply({ text: `AI assistant is not configured. Please email ${contact()} for help.` })
+
+  // 3b. Global provider-spend ceiling (per-client limits alone cannot bound a distributed caller). Only valid requests that will attempt a provider call are charged.
   try {
     if (!(await rateLimitConsume('support:global', GLOBAL_DAILY_LIMIT, DAY_MS)).allowed) return reply({ text: IT_FALLBACK() })
   } catch {
     logFailure(cid, 'rate_limit_unavailable')
     return reply({ error: 'Support chat is temporarily unavailable. Please try again shortly.' }, 503)
   }
-
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return reply({ text: `AI assistant is not configured. Please email ${contact()} for help.` })
 
   // Real Gemini roles; only role + text were kept by the parser. The conversation is sent to Google's Gemini API and is not stored here.
   const contents = parsed.turns.map(t => ({ role: t.role, parts: [{ text: t.text }] }))
