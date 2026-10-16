@@ -11,8 +11,8 @@ const kit = require('./helpers/authTestKit')
 const gte = (v, min) => { const a = v.split('.').map(Number), b = min.split('.').map(Number); for (let i = 0; i < 3; i++) { if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0) } return true }
 const installed = n => JSON.parse(fs.readFileSync(path.resolve(__dirname, '../node_modules', n, 'package.json'), 'utf8')).version
 
-test('V1. installed versions are at or above the patched floor: next >= 15.5.24 (RCE/DoS advisories), nodemailer >= 10.1.1 (incl. the nested copies), mailparser >= 3.9.39, imapflow >= 1.7.8', () => {
-  assert.ok(gte(installed('next'), '15.5.24'), 'next ' + installed('next'))
+test('V1. installed versions are at or above the patched floor: next >= 16.4.2 (RCE/DoS + bundled PostCSS advisories), nodemailer >= 10.1.1 (incl. the nested copies), mailparser >= 3.9.39, imapflow >= 1.7.8', () => {
+  assert.ok(gte(installed('next'), '16.4.2'), 'next ' + installed('next'))
   assert.ok(gte(installed('nodemailer'), '10.1.1'), 'nodemailer ' + installed('nodemailer'))
   assert.ok(gte(installed('mailparser'), '3.9.39')); assert.ok(gte(installed('imapflow'), '1.7.8'))
   const lock = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package-lock.json'), 'utf8'))
@@ -34,4 +34,23 @@ test('V3. the private-file proxies keep their OWN locked-down CSP (Next 15 appli
   // the end-to-end assertions (CSP `default-src 'none'; sandbox` on a served medical document / receipt) live in leave_medical_docs D2 and receipt_ocr_vertical P1 — both failed
   // after the Next 15 upgrade until the header rules were split, and pass now.
   const src = fs.readFileSync(path.resolve(__dirname, '../lib/uploads/privateFile.ts'), 'utf8'); assert.match(src, /default-src 'none'; sandbox/)
+})
+
+test('V4. xlsx (SheetJS, no patched release on npm: prototype pollution on parse, ReDoS) is WRITE-ONLY: it is imported in exactly one file, only utils+writeFile are used, and nothing in the app parses a spreadsheet (so neither advisory is reachable). Fails if someone adds a read path.', () => {
+  const root = path.resolve(__dirname, '..'); const hits = []
+  const walk = d => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { if (['node_modules', '.next', '.next-ci-test', 'tests', 'docs'].includes(e.name) || e.name.startsWith('.')) continue; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (/\.(ts|tsx|js|jsx|mjs)$/.test(e.name)) { const t = fs.readFileSync(p, 'utf8'); if (/['"]xlsx['"]/.test(t)) hits.push([path.relative(root, p), t]) } } }
+  walk(root)
+  assert.deepEqual(hits.map(h => h[0]), ['lib/export.ts'], 'xlsx must stay confined to lib/export.ts')
+  const src = hits[0][1]
+  assert.match(src, /const \{ utils, writeFile \} = await import\('xlsx'\)/)
+  assert.doesNotMatch(src, /XLSX\.read|\bread(File)?\s*\(|readFileSync|\.read\(/, 'no spreadsheet parsing in export code')
+  // no server code (API routes / libs) accepts or names spreadsheet MIME types that could be fed to a parser
+  const scan = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? scan(path.join(d, e.name)) : /\.(ts|js)$/.test(e.name) ? [[path.join(d, e.name), fs.readFileSync(path.join(d, e.name), 'utf8').toLowerCase()]] : [])
+  const bad = [...scan(path.join(root, 'app/api')), ...scan(path.join(root, 'lib'))].filter(([, t]) => /ms-excel|spreadsheetml|vnd\.oasis\.opendocument\.spreadsheet/.test(t)).map(([f]) => path.relative(root, f))
+  assert.deepEqual(bad, [])
+})
+
+test('V5. @simplewebauthn/server >= 14.0.3 (low advisory fixed in 14.x) and the browser package matches the major', () => {
+  assert.ok(gte(installed('@simplewebauthn/server'), '14.0.3'), installed('@simplewebauthn/server'))
+  assert.equal(installed('@simplewebauthn/browser').split('.')[0], installed('@simplewebauthn/server').split('.')[0])
 })

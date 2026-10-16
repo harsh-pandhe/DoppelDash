@@ -1,5 +1,5 @@
 /**
- * WebAuthn (passkeys) helpers — SimpleWebAuthn v10.
+ * WebAuthn (passkeys) helpers — SimpleWebAuthn v14.
  * rpID/origin derive from NEXT_PUBLIC_APP_URL (falls back to localhost dev).
  */
 import {
@@ -8,12 +8,12 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server'
-import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers'
 import type {
   RegistrationResponseJSON,
   AuthenticationResponseJSON,
-  AuthenticatorTransportFuture,
-} from '@simplewebauthn/types'
+  AuthenticatorTransport,
+} from '@simplewebauthn/server'
+import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import PasskeyCredential from '@/models/PasskeyCredential'
@@ -70,7 +70,7 @@ export async function passkeyRegistrationOptions(userId: string, email: string, 
     attestationType: 'none',
     excludeCredentials: existing.map(c => ({
       id: c.credentialId,
-      transports: c.transports as AuthenticatorTransportFuture[],
+      transports: c.transports as AuthenticatorTransport[],
     })),
     authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
   })
@@ -113,9 +113,9 @@ export async function passkeyRegistrationVerify(userId: string, response: Regist
     await PasskeyCredential.create({
       userId,
       orgId: targetOrgId,
-      credentialId: info.credentialID,
-      publicKey: isoBase64URL.fromBuffer(info.credentialPublicKey),
-      counter: info.counter,
+      credentialId: info.credential.id,
+      publicKey: isoBase64URL.fromBuffer(info.credential.publicKey),
+      counter: info.credential.counter,
       transports: response.response.transports || [],
       deviceType: info.credentialDeviceType,
       backedUp: info.credentialBackedUp,
@@ -142,7 +142,7 @@ export async function passkeyLoginOptions(email: string) {
     rpID,
     allowCredentials: creds.map(c => ({
       id: c.credentialId,
-      transports: c.transports as AuthenticatorTransportFuture[],
+      transports: c.transports as AuthenticatorTransport[],
     })),
     userVerification: 'preferred',
   })
@@ -168,11 +168,11 @@ export async function passkeyLoginVerify(userId: string, response: Authenticatio
       expectedOrigin: origin,
       expectedRPID: rpID,
       requireUserVerification: false,
-      authenticator: {
-        credentialID: cred.credentialId,
-        credentialPublicKey: isoBase64URL.toBuffer(cred.publicKey),
+      credential: {
+        id: cred.credentialId,
+        publicKey: isoBase64URL.toBuffer(cred.publicKey),
         counter: cred.counter,
-        transports: cred.transports as AuthenticatorTransportFuture[],
+        transports: cred.transports as AuthenticatorTransport[],
       },
     })
   } catch (e) {

@@ -1,7 +1,7 @@
 # CI — what runs and what the owner must configure
 
 * **Web (`.github/workflows/web-ci.yml`)**: install, `tsc`, lint, production build, then `scripts/ci/run-backend-tests.js` (disposable loopback MongoDB, local fake providers, secret-log scan last). Enforces `scripts/ci/baseline.json` (50 files / 681 tests; skips only if listed in `allowedSkips`).
-* **Flutter (`DoppelDash-mobile`, `flutter-ci`)**: `flutter analyze` + `tool/ci/check_tests.sh` (442 pass / 13 skipped, the live-backend integration tests).
+* **Flutter (`DoppelDash-mobile`, `flutter-ci`)**: `flutter analyze` + `tool/ci/check_tests.sh` (594 pass / 20 skipped (verified 2026-10-16, run 38759263323); the skips are the live-backend integration tests that need `DD_E2E_URL`).
 
 ## Cross-repository design-token check (ds_tokens T8) — owner action required
 Test T8 compares `web/design/tokens.json` with the Android copy in the private repo `harsh-pandhe/DoppelDash-mobile`. GitHub's built-in `GITHUB_TOKEN` cannot read another private repository, so a credential is needed. Smallest option: a **read-only deploy key** on the Flutter repository (access to that one repo only, no write, no API scopes).

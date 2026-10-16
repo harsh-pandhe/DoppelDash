@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { passkeyLoginOptions, passkeyLoginVerify, signToken, isWebAccessAllowed, setWebSessionCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
-import type { AuthenticationResponseJSON } from '@simplewebauthn/types'
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
 
 /** Get authentication options for a passkey sign-in (public, by email). */
 async function POST_handler(req: NextRequest) {

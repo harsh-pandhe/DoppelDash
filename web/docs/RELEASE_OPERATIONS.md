@@ -2,7 +2,10 @@
 
 Evidence classes used below: **FAKE/DISPOSABLE-VERIFIED** (automated tests on throwaway databases with fake providers) · **DOCUMENTED** (procedure written, not exercised) · **BLOCKED** (needs owner access). Nothing here is production evidence.
 
-## 1. GitHub branch protection (measured 2026-10-16)
+## 1. GitHub branch protection (measured 2026-10-16; re-measured 2026-10-16 Phase 7)
+**Phase 7 re-measurement (read-only `gh api`, nothing changed):** `harsh-pandhe/DoppelDash` is now **public** with admin permission for the operator: branches `main`, `phase-1j-work`, `integration/phase0-recovery` all `protected:false`, rulesets API works and returns 0 rulesets. `harsh-pandhe/DoppelDash-mobile` is **private** on a plan without rulesets/branch protection (API 403 "Upgrade to GitHub Pro or make this repository public"), so protection there needs a plan upgrade or making it public. `web-ci` push triggers cover only `integration/**` and `main`; `phase-1j-work` runs only by `workflow_dispatch`.
+**Recommended ruleset (owner applies):** target `main` and the release branch; require a PR with >=1 approval (dismiss stale), require status check `web` (and `flutter` in the mobile repo) up to date, block force pushes and deletions, require linear history, restrict who can push/merge and who can approve deployments (Netlify production context limited to `main`, deploy-preview contexts get no production env). Add `phase-1j-work` to the `web-ci` push trigger or require PRs so the check is automatic.
+(Earlier measurement follows.)
 | Repo | `main` | `integration/phase0-recovery` | `phase-1j-work` | Rulesets API |
 |---|---|---|---|---|
 | `harsh-pandhe/DoppelDash` | `protected: false` | `protected: false` | `protected: false` | HTTP 403 "Upgrade to GitHub Pro or make this repository public" (private repo on a plan without rulesets) |

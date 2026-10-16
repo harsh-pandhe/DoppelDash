@@ -58,7 +58,7 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Lint
-        run: npx next lint
+        run: npm run lint
       - name: Production build
         # throw-away values only: the build must not need real secrets
         env:

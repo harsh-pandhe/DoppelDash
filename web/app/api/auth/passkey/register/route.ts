@@ -3,7 +3,7 @@ import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser, passkeyRegistrationOptions, passkeyRegistrationVerify } from '@/lib/auth'
 import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
-import type { RegistrationResponseJSON } from '@simplewebauthn/types'
+import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 
 /** Get WebAuthn registration options (signed-in user adding a passkey). */
 async function POST_handler() {
