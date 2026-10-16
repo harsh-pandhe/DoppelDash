@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -14,7 +15,7 @@ import { revokeAllMobileRefreshTokens } from '@/lib/auth/mobileTokens'
  * POST /api/auth/password-reset/confirm   { token, newPassword }
  * Atomically consumes the token and updates the user's password.
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
   if (!(await rateLimit(`pwd-reset-confirm-ip:${ip}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many reset attempts — please wait 1 minute' }, { status: 429 })
@@ -96,3 +97,5 @@ export async function POST(req: NextRequest) {
     { status: 200 }
   )
 }
+
+export const POST = dbGuard(POST_handler)

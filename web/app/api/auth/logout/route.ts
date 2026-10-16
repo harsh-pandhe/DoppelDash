@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import crypto from 'crypto'
 import { COOKIE_NAME, COOKIE_OPTS, revokeMobileRefreshToken, verifyToken } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import RevokedToken from '@/models/RevokedToken'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   // 1. Identify active session token from cookie or Authorization header
   const cookieToken = req.cookies.get(COOKIE_NAME)?.value
   const headerToken = req.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1]
@@ -49,3 +50,5 @@ export async function POST(req: NextRequest) {
   res.cookies.set(COOKIE_NAME, '', { ...COOKIE_OPTS, maxAge: 0, path: '/' })
   return res
 }
+
+export const POST = dbGuard(POST_handler)

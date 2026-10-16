@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import bcrypt from 'bcryptjs'
 import { NextRequest, NextResponse } from 'next/server'
@@ -19,7 +20,7 @@ function clientIp(req: NextRequest): string {
 
 const accountKey = (email: string) => crypto.createHash('sha256').update(email).digest('hex').slice(0, 32)
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = clientIp(req)
   if (!(await rateLimit(`login:${ip}`, LOGIN_LIMITS.ipPerMinute, 60_000))) {
     return NextResponse.json({ error: 'Too many login attempts — wait 1 minute' }, { status: 429 })
@@ -103,3 +104,5 @@ export async function POST(req: NextRequest) {
     firstName:  user.firstName,
   })
 }
+
+export const POST = dbGuard(POST_handler)

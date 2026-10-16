@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import TravelRequest from '@/models/TravelRequest'
@@ -14,7 +15,8 @@ import {
   emailTravelDecision,
 } from '@/lib/email'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   if (!mongoose.isValidObjectId(params.id)) return apiError(404, 'Not found', 'not_found')
@@ -39,7 +41,8 @@ const conflict = (current?: number) => NextResponse.json({ error: 'This request 
  *  - itineraryDocs: the trip's OWNER only, and only while the trip is still pending_manager (the same window in which the owner may cancel it).
  *  - every successful write is a conditional update matched on the revision the caller read and bumps it; a stale caller gets 409 and changes nothing.
  */
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   if (!mongoose.isValidObjectId(params.id)) return apiError(404, 'Not found', 'not_found')
@@ -208,7 +211,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(presentTravel(updated.toObject() as never))
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   if (!mongoose.isValidObjectId(params.id)) return apiError(404, 'Not found', 'not_found')
@@ -231,3 +235,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   })
   return NextResponse.json({ success: true, _id: String(cancelled._id), status: 'cancelled', revision: typeof cancelled.revision === 'number' ? cancelled.revision : 0 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)
+export const DELETE = dbGuard(DELETE_handler)

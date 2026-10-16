@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { applySubscriptionToOrg } from '@/lib/billing/subscriptionState'
 import { connectDB } from '@/lib/db'
@@ -16,7 +17,7 @@ import { rateLimit } from '@/lib/ratelimit'
  * Associates the verified subscription with the authenticated tenant.
  * Updates the organization's subscription status and recomputes authoritative entitlements.
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user } = await getUser()
   if (!userId || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -119,3 +120,5 @@ export async function POST(req: NextRequest) {
     entitlements,
   })
 }
+
+export const POST = dbGuard(POST_handler)

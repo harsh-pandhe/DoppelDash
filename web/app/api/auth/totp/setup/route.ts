@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser, beginTotpSetup, confirmTotpSetup, disableTotp } from '@/lib/auth'
 import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
 
 /** Begin TOTP setup — returns otpauth URL for the QR code. */
-export async function POST() {
+async function POST_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -17,7 +18,7 @@ export async function POST() {
 }
 
 /** Confirm setup with a code from the authenticator app. */
-export async function PUT(req: NextRequest) {
+async function PUT_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest) {
 }
 
 /** Disable TOTP for the signed-in user. */
-export async function DELETE() {
+async function DELETE_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -79,3 +80,7 @@ export async function DELETE() {
   })
   return NextResponse.json({ ok: true })
 }
+
+export const POST = dbGuard(POST_handler)
+export const PUT = dbGuard(PUT_handler)
+export const DELETE = dbGuard(DELETE_handler)

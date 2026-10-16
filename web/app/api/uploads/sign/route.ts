@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 import { getOrganizationLimit } from '@/lib/entitlements/entitlementService'
@@ -12,7 +13,7 @@ import { ALLOWED_MIME, UPLOAD_KINDS, issueUploadTicket, storageConfig, type Uplo
  *
  * Body: { kind: 'receipt' | 'card' | 'document' | 'image', mimeType: string, sizeBytes: number }
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!(await rateLimit(`upload-sign:${userId}`, 60, 60_000))) {
@@ -61,3 +62,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(ticket, { headers: { 'Cache-Control': 'no-store' } })
 }
+
+export const POST = dbGuard(POST_handler)

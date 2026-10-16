@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import AuditLog from '@/models/AuditLog'
 import { getUser } from '@/lib/auth'
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if ((user?.role) !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -40,3 +41,5 @@ export async function GET(req: NextRequest) {
   ])
   return NextResponse.json({ logs, total, hasMore: skip + logs.length < total })
 }
+
+export const GET = dbGuard(GET_handler)

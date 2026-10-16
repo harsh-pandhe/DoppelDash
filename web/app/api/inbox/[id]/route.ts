@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import InboxMessage from '@/models/InboxMessage'
 import { getUser } from '@/lib/auth'
@@ -10,7 +11,7 @@ function canAccessMail(user: { role?: string; mailAccess?: boolean } | null): bo
 }
 
 // GET — full message (with body). Marks readByApp = true.
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function GET_handler(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canAccessMail(user)) return NextResponse.json({ error: 'Mail access not granted' }, { status: 403 })
@@ -29,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 // PATCH — toggle read state ({ readByApp: boolean }).
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function PATCH_handler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canAccessMail(user)) return NextResponse.json({ error: 'Mail access not granted' }, { status: 403 })
@@ -47,3 +48,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   return NextResponse.json({ ok: true, readByApp: updated.readByApp })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)

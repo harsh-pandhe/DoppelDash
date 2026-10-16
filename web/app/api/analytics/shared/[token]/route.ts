@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import SharedDashboard from '@/models/SharedDashboard'
 import { computeAnalytics } from '@/lib/analytics/compute'
@@ -11,7 +12,8 @@ const TOKEN_REGEX = /^[a-f0-9]{32}$/i
  * aggregation scoped to the OWNER's identity + role at share time. Read-only.
  * Never imports an auth helper that throws on missing session.
  */
-export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+async function GET_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = await paramsPromise
   const token = params?.token
   if (!token || typeof token !== 'string' || !TOKEN_REGEX.test(token)) {
     return NextResponse.json({ error: 'This shared dashboard does not exist.' }, { status: 404 })
@@ -84,3 +86,5 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     },
   })
 }
+
+export const GET = dbGuard(GET_handler)

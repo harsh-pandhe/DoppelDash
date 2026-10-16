@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -8,7 +9,7 @@ import { resolveMailBrand } from '@/lib/mail'
 import { getUser, listUsers } from '@/lib/auth'
 import { getMailService } from '@/lib/mail'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -58,3 +59,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ sent: emails.length, channel })
 }
+
+export const POST = dbGuard(POST_handler)

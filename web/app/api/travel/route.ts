@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import TravelRequest from '@/models/TravelRequest'
 import { getUser } from '@/lib/auth'
@@ -20,7 +21,7 @@ import { readJson, apiError } from '@/lib/travel/http'
  *   • `status` = all | pending_manager | pending_admin | approved | rejected | cancelled ; `sort` = newest.
  * No total count is returned (no client needs one; an exact count would scan the tenant's rows).
  */
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   const role = user?.role || 'employee'
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(items, page.hasMore ? { headers: { 'X-Has-More': 'true', 'X-Next-Cursor': page.nextCursor || '' } } : undefined)
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   const userName = user?.fullName || user?.firstName || 'Employee'
@@ -139,3 +140,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(presentTravel(tr.toObject()), { status: 201 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

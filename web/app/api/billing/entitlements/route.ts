@@ -6,13 +6,14 @@
  */
 
 import { NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import {
   getOrganizationEntitlements,
   getOrganizationUsage,
 } from '@/lib/entitlements/entitlementService'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -49,3 +50,5 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to retrieve entitlements' }, { status: 500 })
   }
 }
+
+export const GET = dbGuard(GET_handler)

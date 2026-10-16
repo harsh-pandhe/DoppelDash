@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { writeAudit } from '@/lib/audit'
 import { getUser, updateUser } from '@/lib/auth'
@@ -11,7 +12,8 @@ import type { UserRole } from '@/models/User'
 
 const VALID_ROLES: UserRole[] = ['admin', 'manager', 'employee']
 
-export async function GET(_req: NextRequest, { params }: { params: { userId: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ userId: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -24,7 +26,10 @@ export async function GET(_req: NextRequest, { params }: { params: { userId: str
   const target = await User.findOne({ _id: params.userId, orgId: effectiveOrgId }).lean()
   if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const emp = await Employee.findOne({ clerkUserId: params.userId, orgId: effectiveOrgId }).lean()
+  const empFull = await Employee.findOne({ clerkUserId: params.userId, orgId: effectiveOrgId }).lean()
+  // The encrypted bank blob is never useful to a reviewer and never leaves the server except to its owner (decrypted, via /api/employees/me).
+  const { bankDetails: _bank, ...emp } = (empFull || {}) as Record<string, unknown>
+  void _bank
 
   return NextResponse.json({
     user: {
@@ -41,11 +46,12 @@ export async function GET(_req: NextRequest, { params }: { params: { userId: str
       mailAccess: target.mailAccess ?? false,
       createdAt: target.createdAt,
     },
-    employee: emp,
+    employee: empFull ? emp : null,
   })
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ userId: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -164,7 +170,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
   return NextResponse.json({ success: true })
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { userId: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ userId: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -202,3 +209,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { userId: 
 
   return NextResponse.json({ success: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)
+export const DELETE = dbGuard(DELETE_handler)

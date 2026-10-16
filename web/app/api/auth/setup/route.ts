@@ -5,11 +5,12 @@
  * Disabled after first boss account exists.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Organization from '@/models/Organization'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   await connectDB()
 
   // Already have a boss → disabled
@@ -61,3 +62,5 @@ export async function POST(req: NextRequest) {
     firstName: boss.firstName,
   }, { status: 201 })
 }
+
+export const POST = dbGuard(POST_handler)

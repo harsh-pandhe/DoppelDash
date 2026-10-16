@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Expense from '@/models/Expense'
@@ -16,7 +17,8 @@ import { servePrivateFile } from '@/lib/uploads/privateFile'
  *
  * Path: /api/rms/<expenseId>/receipt/<n>[.ext]   (n = index in `receipts`; `l<n>` = index in `lineItems`)
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string; file: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string; file: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -41,3 +43,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string;
 
   return servePrivateFile(stored, orgId, 'receipt', 'receipts')
 }
+
+export const GET = dbGuard(GET_handler)

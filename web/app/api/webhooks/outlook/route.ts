@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
@@ -14,7 +15,7 @@ function secretMatches(got: unknown, expected: string): boolean {
 }
 
 // Graph API sends a GET with validationToken on subscription creation
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const token = new URL(req.url).searchParams.get('validationToken')
   // Graph's subscription handshake: echo the token as inert text (never HTML), bounded in size.
   if (token) {
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ error: 'Not found' }, { status: 404 })
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const body = await readJsonObject<{ value?: unknown }>(req)
   if (!body) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   const notifications = body?.value as Array<{
@@ -113,3 +114,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

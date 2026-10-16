@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import Invitation from '@/models/Invitation'
 import { revokeInvitation } from '@/lib/invitations/invitationService'
 
-export async function GET(
+async function GET_handler(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -34,7 +35,7 @@ export async function GET(
   return NextResponse.json(invitation)
 }
 
-export async function DELETE(
+async function DELETE_handler(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -71,3 +72,6 @@ export async function DELETE(
     return NextResponse.json({ error: error.message || 'Failed to revoke invitation' }, { status })
   }
 }
+
+export const GET = dbGuard(GET_handler)
+export const DELETE = dbGuard(DELETE_handler)

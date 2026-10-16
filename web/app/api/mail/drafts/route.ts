@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import MailDraft, { IMailRecipient } from '@/models/MailDraft'
 import { getUser } from '@/lib/auth'
 
 // GET — list the caller's drafts (no bodies, keep payload light)
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -26,7 +27,7 @@ export async function GET() {
 }
 
 // POST — create a new draft
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -42,3 +43,6 @@ export async function POST(req: NextRequest) {
   })
   return NextResponse.json(draft, { status: 201 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

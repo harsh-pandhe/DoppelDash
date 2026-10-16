@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -59,7 +60,7 @@ const MESSAGE_PROMPTS: Record<string, (c: { name: string; company?: string; desi
     `Write a short professional introduction message to ${c.name}${c.designation ? `, ${c.designation}` : ''}${c.company ? ` at ${c.company}` : ''}. Introduce yourself as a representative from our company.${ctx ? ` Additional context: ${ctx}.` : ''} 3 sentences max. Output only the message text.`,
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -208,3 +209,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI generation failed' }, { status: 502 })
   }
 }
+
+export const POST = dbGuard(POST_handler)

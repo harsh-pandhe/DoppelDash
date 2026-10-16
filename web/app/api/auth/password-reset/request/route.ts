@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
@@ -8,7 +9,7 @@ import { rateLimit } from '@/lib/ratelimit'
 import { getMailService } from '@/lib/mail'
 import { devOnly } from '@/lib/auth/devShortcuts'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   if (!(await rateLimit(`pwd-reset-req-ip:${ip}`, 5, 60_000))) {
     return NextResponse.json({ error: 'Too many password reset requests — please wait 1 minute' }, { status: 429 })
@@ -77,3 +78,5 @@ export async function POST(req: NextRequest) {
   // production and on any deploy platform, so the key never serialises there).
   return NextResponse.json({ message: genericMessage, resetUrl: devOnly(resetUrl) }, { status: 200 })
 }
+
+export const POST = dbGuard(POST_handler)

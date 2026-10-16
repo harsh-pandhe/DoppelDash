@@ -1,18 +1,24 @@
 import { NextRequest } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { handleGetOrgSettings, handleMutateOrgSettings } from '@/lib/settings/orgSettingsHandler'
 
-export async function GET() {
+async function GET_handler() {
   return handleGetOrgSettings()
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   return handleMutateOrgSettings(req)
 }
 
-export async function PATCH(req: NextRequest) {
+async function PATCH_handler(req: NextRequest) {
   return handleMutateOrgSettings(req)
 }
 
-export async function PUT(req: NextRequest) {
+async function PUT_handler(req: NextRequest) {
   return handleMutateOrgSettings(req)
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)
+export const PATCH = dbGuard(PATCH_handler)
+export const PUT = dbGuard(PUT_handler)

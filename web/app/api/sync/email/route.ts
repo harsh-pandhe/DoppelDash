@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import SyncState from '@/models/SyncState'
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 const notAvailable = () => NextResponse.json({ error: 'The shared mailbox is not available for this organisation.', code: 'imap_not_available' }, { status: 403 })
 
-export async function POST() {
+async function POST_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (user?.role !== 'admin' && user?.role !== 'manager') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -84,7 +85,7 @@ export async function POST() {
   })
 }
 
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!canUseSharedImap(orgId)) return NextResponse.json({ configured: false, lastSyncedAt: null })
@@ -97,3 +98,6 @@ export async function GET() {
     lastSyncedAt: state?.lastSyncedAt || null,
   })
 }
+
+export const POST = dbGuard(POST_handler)
+export const GET = dbGuard(GET_handler)

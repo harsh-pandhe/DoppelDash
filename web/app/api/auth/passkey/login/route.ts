@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { passkeyLoginOptions, passkeyLoginVerify, signToken, isWebAccessAllowed, setWebSessionCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 import type { AuthenticationResponseJSON } from '@simplewebauthn/types'
 
 /** Get authentication options for a passkey sign-in (public, by email). */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
   if (!(await rateLimit(`pk-login:${ip}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts — wait 1 minute' }, { status: 429 })
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
 }
 
 /** Verify the browser's authentication response and create the session. */
-export async function PUT(req: NextRequest) {
+async function PUT_handler(req: NextRequest) {
   const raw = await req.text().catch(() => '')
   if (raw.length > 64 * 1024) {
     return NextResponse.json({ error: 'Payload too large', code: 'payload_too_large' }, { status: 413 })
@@ -91,3 +92,6 @@ export async function PUT(req: NextRequest) {
   if (webAccess) setWebSessionCookie(res, token)
   return res
 }
+
+export const POST = dbGuard(POST_handler)
+export const PUT = dbGuard(PUT_handler)

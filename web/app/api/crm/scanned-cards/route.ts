@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import ScannedCard from '@/models/ScannedCard'
@@ -7,7 +8,7 @@ import { getUser } from '@/lib/auth'
 import { validateScannedCardInput } from '@/lib/ocr/card'
 
 // GET — list the caller's scanned cards (newest first)
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
@@ -16,7 +17,7 @@ export async function GET() {
 }
 
 // POST — store a scanned card (image + OCR result)
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -46,3 +47,6 @@ export async function POST(req: NextRequest) {
   })
   return NextResponse.json(card, { status: 201 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

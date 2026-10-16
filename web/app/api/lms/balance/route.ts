@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import LeaveBalance from '@/models/LeaveBalance'
@@ -13,7 +14,7 @@ const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2,
  * Used = sum of approved days in calendar year, per type.
  * `medical` is legacy data — counted as `sick` for backwards compatibility.
  */
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -53,3 +54,5 @@ export async function GET() {
     lwpDays: usedMap['lwp'] || 0,
   })
 }
+
+export const GET = dbGuard(GET_handler)

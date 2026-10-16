@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
@@ -16,7 +17,7 @@ import {
 } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
   if (!(await rateLimit(`register:${ip}`, 5, 60_000))) {
     return NextResponse.json({ error: 'Too many registration attempts — please wait 1 minute' }, { status: 429 })
@@ -274,3 +275,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+export const POST = dbGuard(POST_handler)

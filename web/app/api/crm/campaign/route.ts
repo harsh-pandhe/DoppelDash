@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
@@ -8,7 +9,7 @@ import CampaignLog from '@/models/CampaignLog'
 import { canUseFeature } from '@/lib/entitlements/entitlementService'
 
 // GET — preview contacts for a tag, OR ?history=1 for the caller's sent-campaign log
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 // POST — send the campaign
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -141,3 +142,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ sent, failed, total: contacts.length, channel, test: !!body.testEmail })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

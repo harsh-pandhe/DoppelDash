@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { randomBytes } from 'crypto'
 import { connectDB } from '@/lib/db'
 import SharedDashboard from '@/models/SharedDashboard'
@@ -17,7 +18,7 @@ const MAX_LAYOUT_ENTRIES = 50
 const MAX_FILTER_LENGTH = 100
 
 // List existing shares for the current owner
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -39,7 +40,7 @@ export async function GET() {
 }
 
 // Create a new share token from the supplied layout + filters snapshot
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -123,3 +124,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ token, url: `/shared/${token}` })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Expense from '@/models/Expense'
@@ -13,7 +14,8 @@ import { validateExpense, validateReview } from '@/lib/expenses/validation'
 import { destroyAttachments } from '@/lib/uploads/attachmentStorage'
 import { presentExpense, checkNewReceipts, storedReceipts, storedLineReceipts } from '@/lib/expenses/receipts'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -26,7 +28,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json(presentExpense(expense as never))
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -224,7 +227,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // Employee withdraws their own returned/pending_manager request; managers/boss can delete any.
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -254,3 +258,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   })
   return NextResponse.json({ success: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)
+export const DELETE = dbGuard(DELETE_handler)

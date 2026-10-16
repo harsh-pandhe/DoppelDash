@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser, devOnly } from '@/lib/auth'
@@ -10,7 +11,7 @@ import User from '@/models/User'
 import { createInvitation } from '@/lib/invitations/invitationService'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -45,7 +46,7 @@ export async function GET() {
   return NextResponse.json(payload)
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const userRole = user?.role || 'employee'
@@ -157,3 +158,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Failed to create invitation' }, { status })
   }
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

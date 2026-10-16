@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
@@ -7,7 +8,7 @@ import { getUser, getUserById } from '@/lib/auth'
 import { encryptBankDetails, decryptBankDetails } from '@/lib/encrypt'
 import { SELF_EDITABLE, pickAllowed, badScalars } from '@/lib/employees/editable'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const effectiveOrgId = orgId
@@ -39,7 +40,7 @@ export async function GET() {
   return NextResponse.json({ ...empWithDecryptedBank, reportingManager })
 }
 
-export async function PATCH(req: NextRequest) {
+async function PATCH_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
@@ -89,3 +90,6 @@ export async function PATCH(req: NextRequest) {
   const out = emp.toObject ? emp.toObject() : emp
   return NextResponse.json({ ...out, bankDetails: decryptBankDetails(out.bankDetails) })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)

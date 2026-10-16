@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -33,7 +34,7 @@ function indiaHolidays(year: number) {
   ].map(h => ({ ...h, year, isRecurringYearly: true, orgId: null }))
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const effectiveOrgId = orgId
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(holidays)
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(holiday)
 }
 
-export async function DELETE(req: NextRequest) {
+async function DELETE_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -89,3 +90,7 @@ export async function DELETE(req: NextRequest) {
   await PublicHoliday.findOneAndDelete({ _id: id, orgId: effectiveOrgId })
   return NextResponse.json({ success: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)
+export const DELETE = dbGuard(DELETE_handler)

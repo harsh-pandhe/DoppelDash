@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import Organization from '@/models/Organization'
@@ -14,7 +15,7 @@ import { getOrganizationEntitlements } from '@/lib/entitlements/entitlementServi
  * are still present at the top level):
  *   { …user, user, organization, entitlements, onboarding }
  */
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser(req)
   if (!userId || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -57,3 +58,5 @@ export async function GET(req: NextRequest) {
     },
   })
 }
+
+export const GET = dbGuard(GET_handler)

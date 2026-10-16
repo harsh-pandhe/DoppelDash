@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import crypto from 'node:crypto'
 import { getUser, devOnly } from '@/lib/auth'
 import { INVITE_LIMITS } from '@/lib/auth/limits'
@@ -7,7 +8,7 @@ import Invitation from '@/models/Invitation'
 import { connectDB } from '@/lib/db'
 import { resendInvitation } from '@/lib/invitations/invitationService'
 
-export async function POST(
+async function POST_handler(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -59,3 +60,5 @@ export async function POST(
     return NextResponse.json({ error: error.message || 'Failed to resend invitation' }, { status })
   }
 }
+
+export const POST = dbGuard(POST_handler)

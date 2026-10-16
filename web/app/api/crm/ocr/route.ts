@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { rateLimit } from '@/lib/ratelimit'
@@ -51,7 +52,7 @@ async function extractWithOllama(base64Image: string, timeoutMs: number) {
   return parsed
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -125,3 +126,5 @@ export async function POST(req: NextRequest) {
     existingId: existing ? String((existing as { _id: unknown })._id) : null,
   })
 }
+
+export const POST = dbGuard(POST_handler)

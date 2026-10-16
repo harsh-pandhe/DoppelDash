@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser, passkeyRegistrationOptions, passkeyRegistrationVerify } from '@/lib/auth'
 import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
 import type { RegistrationResponseJSON } from '@simplewebauthn/types'
 
 /** Get WebAuthn registration options (signed-in user adding a passkey). */
-export async function POST() {
+async function POST_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -18,7 +19,7 @@ export async function POST() {
 }
 
 /** Verify the browser's registration response and save the credential. */
-export async function PUT(req: NextRequest) {
+async function PUT_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -58,3 +59,6 @@ export async function PUT(req: NextRequest) {
   })
   return NextResponse.json({ ok: true })
 }
+
+export const POST = dbGuard(POST_handler)
+export const PUT = dbGuard(PUT_handler)

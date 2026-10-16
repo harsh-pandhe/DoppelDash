@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
 import Leave from '@/models/Leave'
@@ -6,7 +7,7 @@ import Expense from '@/models/Expense'
 import TravelRequest from '@/models/TravelRequest'
 import { getUser, listUsers } from '@/lib/auth'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -74,3 +75,5 @@ export async function GET() {
     loginByDay,
   })
 }
+
+export const GET = dbGuard(GET_handler)

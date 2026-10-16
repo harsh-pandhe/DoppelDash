@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import ScannedCard from '@/models/ScannedCard'
@@ -7,7 +8,8 @@ import { getUser } from '@/lib/auth'
 import { validateScannedCardInput } from '@/lib/ocr/card'
 
 // PATCH — update parsed fields or link an imported contact
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -36,7 +38,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE — remove a scanned card
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -47,3 +50,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   await card.deleteOne()
   return NextResponse.json({ success: true })
 }
+
+export const PATCH = dbGuard(PATCH_handler)
+export const DELETE = dbGuard(DELETE_handler)

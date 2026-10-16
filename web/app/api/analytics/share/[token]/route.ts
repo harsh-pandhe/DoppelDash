@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import SharedDashboard from '@/models/SharedDashboard'
 import { getUser } from '@/lib/auth'
@@ -7,7 +8,8 @@ import { rateLimit } from '@/lib/ratelimit'
 const TOKEN_REGEX = /^[a-f0-9]{32}$/i
 
 // Revoke a share — owner only
-export async function DELETE(_req: NextRequest, { params }: { params: { token: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ token: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -25,3 +27,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: { token: s
   if (res.deletedCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ ok: true })
 }
+
+export const DELETE = dbGuard(DELETE_handler)

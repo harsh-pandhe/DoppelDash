@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Expense from '@/models/Expense'
@@ -12,7 +13,7 @@ import { validateExpense, EXPENSE_STATUSES } from '@/lib/expenses/validation'
 import { writeAudit } from '@/lib/audit'
 import { presentExpense, checkNewReceipts } from '@/lib/expenses/receipts'
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const effectiveOrgId = orgId
@@ -138,3 +139,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(presentExpense(expense.toObject()), { status: 201 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

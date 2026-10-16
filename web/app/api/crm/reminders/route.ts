@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import { getUser } from '@/lib/auth'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
@@ -21,7 +22,7 @@ export async function GET() {
 }
 
 // Dismiss a reminder so it stops resurfacing until the reminderDate is changed
-export async function PATCH(req: NextRequest) {
+async function PATCH_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { contactId } = await req.json().catch(() => ({})) as { contactId?: string }
@@ -36,3 +37,6 @@ export async function PATCH(req: NextRequest) {
   if (!contact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ success: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)

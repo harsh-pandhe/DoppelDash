@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Subscription from '@/models/Subscription'
 import { PLAY_CONFIG } from '@/lib/billing/playConfig'
@@ -19,7 +20,7 @@ import { apiError, readJson } from '@/lib/travel/http'
  *  3. Duplicate deliveries are acknowledged without work: the message id is claimed with an atomic conditional update.
  *  4. Unknown tokens / other packages are acknowledged (200) so Google does not retry forever; they change nothing.
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const auth = await authenticateRtdn(req.headers.get('authorization'))
   if (!auth.ok) return apiError(auth.status, auth.code === 'rtdn_not_configured' ? 'Notification endpoint is not configured.' : 'Unauthorized notification source.', auth.code)
 
@@ -91,3 +92,5 @@ export async function POST(req: NextRequest) {
   const entitlements = await getOrganizationEntitlements(updated.orgId)
   return NextResponse.json({ status: 'ok', notificationType, orgId: updated.orgId, plan: entitlements.plan, subscriptionStatus: updated.status })
 }
+
+export const POST = dbGuard(POST_handler)

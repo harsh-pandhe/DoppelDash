@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import LeaveBalance from '@/models/LeaveBalance'
@@ -12,7 +13,7 @@ import { claimMedicalDocs, parseMedicalDocsInput, presentLeave, releaseUnreferen
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
@@ -129,3 +130,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(presentLeave(leave.toObject()), { status: 201 })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

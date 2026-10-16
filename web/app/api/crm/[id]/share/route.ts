@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { randomBytes } from 'crypto'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -9,7 +10,8 @@ const SHARE_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000   // 30 days
 
 // Get (or create) the current share link for a contact. Reuses an unexpired
 // token; issues a fresh one if missing/expired.
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -29,7 +31,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 // Force-regenerate the share link, invalidating the old one
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+async function POST_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -46,7 +49,8 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
 }
 
 // Revoke the share link
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -59,3 +63,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!contact) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ success: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)
+export const DELETE = dbGuard(DELETE_handler)

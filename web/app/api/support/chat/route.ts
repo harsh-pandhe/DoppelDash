@@ -8,6 +8,7 @@
  *   4. no prompt/transcript persistence or logging; raw provider errors never leave the server
  */
 import { randomBytes } from 'crypto'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimitConsume } from '@/lib/ratelimit'
 import { geminiBase } from '@/lib/gemini'
@@ -45,7 +46,7 @@ function logFailure(cid: string, category: string, status?: number) {
   console.error('[support/chat] ' + JSON.stringify({ event: 'failure', category, ...(status ? { providerStatus: status } : {}), cid }))
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const cid = randomBytes(6).toString('hex')
   const reply = (body: Record<string, unknown>, status = 200) => NextResponse.json(body, { status, headers: { 'x-correlation-id': cid } })
 
@@ -106,3 +107,5 @@ export async function POST(req: NextRequest) {
     return reply({ text: `Network hiccup. Try again, or email ${contact()}.` })
   }
 }
+
+export const POST = dbGuard(POST_handler)

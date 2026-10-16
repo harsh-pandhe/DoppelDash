@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { getUser, COOKIE_NAME, COOKIE_OPTS, revokeAllMobileRefreshTokens } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { rateLimit } from '@/lib/ratelimit'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -58,3 +59,5 @@ export async function POST(req: NextRequest) {
   res.cookies.set(COOKIE_NAME, '', { ...COOKIE_OPTS, maxAge: 0, path: '/' })
   return res
 }
+
+export const POST = dbGuard(POST_handler)

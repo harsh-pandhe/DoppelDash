@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { getUser, listUsers } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
@@ -22,7 +23,7 @@ export interface NotifItem {
   urgent?:  boolean
 }
 
-export async function GET() {
+async function GET_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role  = user?.role || 'employee'
@@ -175,7 +176,7 @@ export async function GET() {
 
 // Bulk-approve pending expenses straight from the notifications panel.
 // Manager: pending_manager -> pending_admin. Boss: pending_admin -> paid.
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -239,3 +240,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ approved, skipped: rawIds.length - approved })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

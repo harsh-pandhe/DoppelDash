@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
 import Employee from '@/models/Employee'
@@ -6,7 +7,7 @@ import { getUser, listUsers } from '@/lib/auth'
 
 // Team workload heatmap: for each team member, which of the next N days they're
 // on approved leave. Manager/boss only.
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -65,3 +66,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ startDate: dayKeys[0], days: dayKeys, rows })
 }
+
+export const GET = dbGuard(GET_handler)

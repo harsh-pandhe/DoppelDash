@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -13,7 +14,7 @@ import { REFRESH_LIMITS } from '@/lib/auth/limits'
 // simultaneous requests carrying the same token exactly one succeeds. Every
 // failure — unknown, expired, reused, stale after a password change, suspended
 // account — is the same generic 401 so nothing can be probed.
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   if (!(await rateLimit(`refresh:${ip}`, REFRESH_LIMITS.perIpPerMinute, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
@@ -43,3 +44,5 @@ export async function POST(req: NextRequest) {
   const accessToken = await signMobileAccessToken(user.toPublic())
   return NextResponse.json({ accessToken, refreshToken: rotated.refreshToken })
 }
+
+export const POST = dbGuard(POST_handler)

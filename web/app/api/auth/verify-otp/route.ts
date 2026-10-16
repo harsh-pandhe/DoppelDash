@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, isWebAccessAllowed, setWebSessionCookie, signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const raw = await req.text().catch(() => '')
   if (raw.length > 64 * 1024) {
     return NextResponse.json({ error: 'Payload too large', code: 'payload_too_large' }, { status: 413 })
@@ -77,3 +78,5 @@ export async function POST(req: NextRequest) {
   if (webAccess) setWebSessionCookie(res, token)
   return res
 }
+
+export const POST = dbGuard(POST_handler)

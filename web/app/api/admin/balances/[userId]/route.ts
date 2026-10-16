@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -10,7 +11,8 @@ import { BALANCE_FIELDS } from '@/lib/apiFields'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2, lwpDays: 0 }
 
-export async function GET(_: NextRequest, { params }: { params: { userId: string } }) {
+async function GET_handler(_: NextRequest, { params: paramsPromise }: { params: Promise<{ userId: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -27,7 +29,8 @@ export async function GET(_: NextRequest, { params }: { params: { userId: string
   return NextResponse.json(bal || { userId: params.userId, orgId: org, year, ...DEFAULTS })
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { userId: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ userId: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -69,3 +72,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { userId: st
 
   return NextResponse.json(bal)
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)

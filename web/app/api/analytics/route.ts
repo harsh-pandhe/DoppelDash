@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { computeAnalytics } from '@/lib/analytics/compute'
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -20,3 +21,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(data)
 }
+
+export const GET = dbGuard(GET_handler)

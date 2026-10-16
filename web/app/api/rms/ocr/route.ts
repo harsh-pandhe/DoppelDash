@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { rateLimit } from '@/lib/ratelimit'
 import { getUser } from '@/lib/auth'
 import { checkOcrImage } from '@/lib/ocr/image'
@@ -10,7 +11,7 @@ const QUOTA_KEY = 'receiptScans'
 const quotaView = (q: { used: number; limit: number; remaining: number; resetsAt: string }) => ({ used: q.used, limit: q.limit, remaining: q.remaining, resetsAt: q.resetsAt })
 
 /** Remaining receipt scans this month for the caller's organisation (read-only; consumes nothing). */
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const [enabled, limit] = await Promise.all([canUseFeature(orgId, 'ocrReceipts'), getOrganizationLimit(orgId, 'maxMonthlyReceiptScans')])
@@ -23,7 +24,7 @@ export async function GET() {
  * Always returns a usable response: when OCR cannot read the image the client gets `source: 'fallback'` with empty
  * fields and fills the form by hand — OCR trouble never blocks the expense flow.
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -65,3 +66,6 @@ export async function POST(req: NextRequest) {
     quota: quotaView({ used, limit, remaining: Math.max(0, limit - used), resetsAt: quota.resetsAt }),
   })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

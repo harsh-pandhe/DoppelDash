@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { apiError } from '@/lib/travel/http'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -13,7 +14,8 @@ import { servePrivateFile } from '@/lib/uploads/privateFile'
  * organisation; other tenants get 404), re-checked on every request. Streamed server-side from private storage — no provider URL ever reaches a client.
  * Path: /api/travel/<tripId>/itinerary/<n>[.ext]   (n = index in `itineraryDocs`)
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string; file: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string; file: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   if (!mongoose.isValidObjectId(params.id)) return apiError(404, 'Not found', 'not_found')
@@ -31,3 +33,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string;
   if (!isReceiptRef(stored)) return NextResponse.json({ error: 'This document is a legacy file and is not served by this endpoint.', code: 'legacy_attachment' }, { status: 404 })
   return servePrivateFile(stored, orgId, 'itinerary', 'travel-docs')
 }
+
+export const GET = dbGuard(GET_handler)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
@@ -6,7 +7,8 @@ import Announcement from '@/models/Announcement'
 import { getUser } from '@/lib/auth'
 import { sanitizeMailHtml } from '@/lib/sanitizeHtml'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -30,7 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json(item)
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+async function DELETE_handler(_: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -43,3 +46,6 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   if (!res) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ success: true })
 }
+
+export const PATCH = dbGuard(PATCH_handler)
+export const DELETE = dbGuard(DELETE_handler)

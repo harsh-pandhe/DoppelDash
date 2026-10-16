@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
@@ -10,7 +11,7 @@ import { getMailService } from '@/lib/mail'
 import { devOnly } from '@/lib/auth/devShortcuts'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -70,7 +71,7 @@ export async function GET() {
   return NextResponse.json(result)
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -181,3 +182,6 @@ export async function POST(req: NextRequest) {
     emailSent,
   })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)

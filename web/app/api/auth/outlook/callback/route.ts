@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import OutlookToken from '@/models/OutlookToken'
 import { getUser } from '@/lib/auth'
@@ -26,7 +27,7 @@ async function createGraphSubscription(accessToken: string, appUrl: string): Pro
   }
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code   = searchParams.get('code')
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
@@ -89,3 +90,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.redirect(`${appUrl}/settings?outlook=connected`)
 }
+
+export const GET = dbGuard(GET_handler)

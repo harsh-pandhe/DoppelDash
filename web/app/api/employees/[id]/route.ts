@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
@@ -13,7 +14,8 @@ import { REVIEWER_EDITABLE, pickAllowed, badScalars } from '@/lib/employees/edit
  *        medical details only to the owner and admins.
  *  PATCH manager/admin: work assignment only (see REVIEWER_EDITABLE). Everything else is refused with the field names.
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
@@ -27,7 +29,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   return NextResponse.json(isOwner || role === 'admin' ? { ...rest, medicalDetails } : rest)
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const role = user?.role || 'employee'
@@ -62,3 +65,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     throw err
   }
 }
+
+export const GET = dbGuard(GET_handler)
+export const PATCH = dbGuard(PATCH_handler)

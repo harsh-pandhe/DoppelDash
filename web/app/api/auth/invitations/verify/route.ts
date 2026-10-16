@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import { verifyInvitationToken } from '@/lib/invitations/invitationService'
@@ -18,7 +19,7 @@ import { rateLimit } from '@/lib/ratelimit'
 const NO_STORE = { 'Cache-Control': 'no-store' }
 const json = (body: Record<string, unknown>, status: number) => NextResponse.json(body, { status, headers: NO_STORE })
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for') || 'unknown'
   if (!(await rateLimit(`invite-verify-ip:${ip}`, 30, 60_000))) {
     return json({ valid: false, reason: 'rate_limited', error: 'Too many attempts — please wait 1 minute' }, 429)
@@ -38,3 +39,5 @@ export async function POST(req: NextRequest) {
   if (!result.valid) return json({ ...result }, result.reason === 'invalid_token' ? 404 : 410)
   return json({ ...result }, 200)
 }
+
+export const POST = dbGuard(POST_handler)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import { encrypt } from '@/lib/encrypt'
@@ -51,7 +52,7 @@ function summarize(cfg: { host: string; port: number; secure: boolean; username:
   }
 }
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const a = await admin(req)
   if (a.error) return a.error
   await connectDB()
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ entitled, provider: summarize(cfg) })
 }
 
-export async function PUT(req: NextRequest) {
+async function PUT_handler(req: NextRequest) {
   const a = await admin(req)
   if (a.error) return a.error
 
@@ -142,7 +143,7 @@ export async function PUT(req: NextRequest) {
   )
 }
 
-export async function DELETE(req: NextRequest) {
+async function DELETE_handler(req: NextRequest) {
   const a = await admin(req)
   if (a.error) return a.error
   await connectDB()
@@ -153,3 +154,7 @@ export async function DELETE(req: NextRequest) {
   })
   return NextResponse.json({ ok: true, provider: { configured: false } })
 }
+
+export const GET = dbGuard(GET_handler)
+export const PUT = dbGuard(PUT_handler)
+export const DELETE = dbGuard(DELETE_handler)

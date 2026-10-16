@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import { getUser } from '@/lib/auth'
@@ -11,7 +12,8 @@ import { FailpointCrash, requestedFailpoint } from '@/lib/travel/failpoints'
  * calls, in any order or in parallel, resolve to ONE expense (201 for the call that created it, 200 for every other). The protocol,
  * its recovery rules and its limits are in lib/travel/conversion.ts and docs/TRAVEL_VERTICAL_AUDIT.md (Slice 4).
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+async function POST_handler(req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = await paramsPromise
   const { userId, orgId } = await getUser()
   if (!userId) return apiError(401, 'Unauthorized', 'unauthorized')
   if (!mongoose.isValidObjectId(params.id)) return apiError(404, 'Not found', 'not_found')
@@ -25,3 +27,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return apiError(500, 'We couldn’t create the expense. Please try again.', 'conversion_failed')
   }
 }
+
+export const POST = dbGuard(POST_handler)

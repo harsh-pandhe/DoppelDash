@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { connectDB } from '@/lib/db'
 import PasskeyCredential from '@/models/PasskeyCredential'
@@ -6,7 +7,7 @@ import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
 
 /** List the signed-in user's passkeys. */
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -32,7 +33,7 @@ export async function GET() {
 }
 
 /** Remove a passkey by its document id. */
-export async function DELETE(req: NextRequest) {
+async function DELETE_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId || !user || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -79,3 +80,6 @@ export async function DELETE(req: NextRequest) {
   })
   return NextResponse.json({ ok: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const DELETE = dbGuard(DELETE_handler)

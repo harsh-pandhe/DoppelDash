@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import Leave from '@/models/Leave'
@@ -14,7 +15,8 @@ import { servePrivateFile } from '@/lib/uploads/privateFile'
  * storage reference ever reaches a client (`Cache-Control: no-store`).
  * Path: /api/lms/<leaveId>/document/<n>[.ext]   (n = index in `medicalDocs`)
  */
-export async function GET(_req: NextRequest, { params }: { params: { id: string; file: string } }) {
+async function GET_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string; file: string }> }) {
+  const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -33,3 +35,5 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string;
   if (!isReceiptRef(stored)) return NextResponse.json({ error: 'This document is a legacy file and is not served by this endpoint.', code: 'legacy_attachment' }, { status: 404 })
   return servePrivateFile(stored, orgId, 'medical-document', 'leave-docs')
 }
+
+export const GET = dbGuard(GET_handler)

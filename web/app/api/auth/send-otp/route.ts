@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
@@ -6,7 +7,7 @@ import { generateOTP, sendOTP, verifyPreAuthToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
 
 /** Send (or resend) the email OTP for a user mid-login. */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   let body: { preAuthToken?: unknown } = {}
   {
@@ -39,3 +40,5 @@ export async function POST(req: NextRequest) {
   }
   return NextResponse.json({ ok: true })
 }
+
+export const POST = dbGuard(POST_handler)
