@@ -10,7 +10,16 @@ const args = process.argv.slice(2); const flag = n => (args.find(a => a.startsWi
 const base = flag('url').replace(/\/+$/, ''); const expect = flag('expect-commit'); const prod = args.includes('--production')
 if (!/^https?:\/\//.test(base)) { console.error('Usage: --url=https://host [--expect-commit=<sha>] [--production]'); process.exit(2) }
 const out = []; const check = (name, ok, detail = '') => { out.push({ name, ok }); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  — ' + detail : ''}`) }
-const get = async (p, init = {}) => { try { const r = await fetch(base + p, { redirect: 'manual', signal: AbortSignal.timeout(20000), ...init }); return { r, text: await r.text() } } catch (e) { return { r: null, text: '', err: e.name } } }
+let networkRetries = 0
+// A network-level exception (timeout/reset: no HTTP answer at all) is retried up to 3 times; an HTTP status — right or wrong — is NEVER retried or masked.
+const get = async (p, init = {}) => {
+  let last
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try { const r = await fetch(base + p, { redirect: 'manual', signal: AbortSignal.timeout(20000), ...init }); return { r, text: await r.text() } }
+    catch (e) { last = e; if (attempt < 3) { networkRetries++; await new Promise(res => setTimeout(res, 800 * attempt)) } }
+  }
+  return { r: null, text: '', err: (last && last.name) || 'Error' }
+}
 const LEAK = /mongodb(\+srv)?:\/\/|MongoServer|\bat [A-Za-z_.]+ \(.*:\d+:\d+\)|node_modules|ECONNREFUSED/i
 ;(async () => {
   if (prod) check('uses HTTPS', base.startsWith('https://'))
@@ -32,5 +41,5 @@ const LEAK = /mongodb(\+srv)?:\/\/|MongoServer|\bat [A-Za-z_.]+ \(.*:\d+:\d+\)|n
   const inv = await get('/api/auth/invitations/probe'); check('removed invitation GET endpoint answers 405', inv.r?.status === 405)
   for (const p of ['/privacy', '/terms', '/support', '/delete-account', '/web-access-restricted']) { const r = await get(p); check(`${p} is public (200)`, r.r?.status === 200) }
   const bad = await get('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{not json' }); check('malformed login body → 400 without internals', bad.r?.status === 400 && !LEAK.test(bad.text), `status ${bad.r?.status}`)
-  const failed = out.filter(o => !o.ok).length; console.log(`\n${failed ? failed + ' CHECK(S) FAILED' : 'ALL SMOKE CHECKS PASS'} (${out.length} checks) against ${new URL(base).host}`); process.exit(failed ? 1 : 0)
+  const failed = out.filter(o => !o.ok).length; console.log(`\n${failed ? failed + ' CHECK(S) FAILED' : 'ALL SMOKE CHECKS PASS'} (${out.length} checks) against ${new URL(base).host}${networkRetries ? ` — ${networkRetries} transient network retr${networkRetries === 1 ? "y" : "ies"} (no HTTP answer received; statuses are never retried)` : ""}`); process.exit(failed ? 1 : 0)
 })()
