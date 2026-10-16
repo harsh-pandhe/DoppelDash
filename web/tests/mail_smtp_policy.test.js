@@ -70,3 +70,16 @@ test('S6. a valid public configuration is stored (password encrypted, never retu
   assert.equal((await kit.api('/api/user/email-config/test', { method: 'POST' })).status, 401)
   assert.equal((await kit.api('/api/user/email-config', { method: 'DELETE', token: tok })).status, 200); assert.equal(await stored(), null)
 })
+
+test('S7. DNS-rebinding pin: the connection goes to the VALIDATED address with TLS verifying the original name; a name that resolves privately is refused; literals pass through', async () => {
+  const { resolvePublicSmtpTarget } = policy(); const { smtpTransportOptions } = kit.load('lib/mail/transports/smtp.ts')
+  const t = await resolvePublicSmtpTarget('smtp.example.com', async () => ['203.0.113.9', '203.0.113.10'])
+  assert.deepEqual(t, { address: '203.0.113.9', servername: 'smtp.example.com' })
+  const o = smtpTransportOptions({ host: 'smtp.example.com', port: 587, secure: false, user: 'u', pass: 'p', from: 'f' }, t)
+  assert.equal(o.host, '203.0.113.9'); assert.equal(o.tls.servername, 'smtp.example.com'); assert.equal(o.name, 'smtp.example.com'); assert.equal(o.socketTimeout, 20000)
+  assert.equal(smtpTransportOptions({ host: 'smtp.example.com', port: 587, secure: false, user: 'u', pass: 'p', from: 'f' }).host, 'smtp.example.com', 'unpinned (trusted platform SMTP) is unchanged')
+  await assert.rejects(resolvePublicSmtpTarget('rebind.example.com', async () => ['203.0.113.9', '169.254.169.254']), /private_host/)   // ANY private answer refuses
+  await assert.rejects(resolvePublicSmtpTarget('x.example.com', async () => []), /unresolvable_host/)
+  assert.deepEqual(await resolvePublicSmtpTarget('203.0.113.7', async () => { throw new Error('no DNS for literals') }), { address: '203.0.113.7', servername: undefined })
+  await assert.rejects(resolvePublicSmtpTarget('localhost'), /private_host/)
+})

@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { rateLimit } from '@/lib/ratelimit'
-import { assertPublicSmtpHost, checkSmtpHostSyntax, smtpHostPolicyEnforced, SmtpPolicyError, SMTP_POLICY_MESSAGES } from '@/lib/mail/smtpHostPolicy'
+import { resolvePublicSmtpTarget, checkSmtpHostSyntax, smtpHostPolicyEnforced, SmtpPolicyError, SMTP_POLICY_MESSAGES } from '@/lib/mail/smtpHostPolicy'
 import { connectDB } from '@/lib/db'
 import UserEmailConfig from '@/models/UserEmailConfig'
 import { decrypt } from '@/lib/encrypt'
 import nodemailer from 'nodemailer'
 import { getUser } from '@/lib/auth'
 
-export async function POST() {
+async function POST_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const effectiveOrgId = orgId
@@ -23,10 +24,14 @@ export async function POST() {
 
   try {
     // SSRF guard: the host must resolve to public addresses only (enforced on deployed hosts).
-    if (smtpHostPolicyEnforced()) await assertPublicSmtpHost(config.smtpHost as string)
+    // Resolve once, validate, then CONNECT TO THAT ADDRESS (TLS still verifies the name): no DNS-rebinding window between check and connect.
+    let target: { address: string; servername: string | undefined } | undefined
+    if (smtpHostPolicyEnforced()) target = await resolvePublicSmtpTarget(config.smtpHost as string)
     else if (!(process.env.ALLOW_PRIVATE_SMTP_HOSTS === 'true')) checkSmtpHostSyntax(config.smtpHost as string)
     const transporter = nodemailer.createTransport({
-      host:   config.smtpHost as string,
+      host:   target ? target.address : (config.smtpHost as string),
+      ...(target?.servername ? { tls: { servername: target.servername }, name: target.servername } : {}),
+      connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000,
       port:   config.smtpPort as number,
       secure: (config.smtpPort as number) === 465,
       auth: {
@@ -56,3 +61,5 @@ export async function POST() {
     return NextResponse.json({ error: message, code }, { status: 400 })
   }
 }
+
+export const POST = dbGuard(POST_handler)

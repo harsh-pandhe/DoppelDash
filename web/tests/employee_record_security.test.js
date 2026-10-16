@@ -87,3 +87,28 @@ test('E6. PATCH /api/employees/[id]: employees 403; other tenant 404; managers/a
   assert.equal((await patch(tok.Amanager, A.employee.id, { reportingManagerId: B.manager.id })).status, 400, 'a manager from another organisation is not a valid reporting manager')
   assert.equal((await patch(tok.Aadmin, A.employee.id, { reportingManagerId: A.manager.id })).status, 200)
 })
+
+test('E7. field-leak sweep: no list, detail, analytics, report, notification, search or directory response contains another employee’s bank, medical, address, emergency-contact data — for every role — and admin user detail never returns the bank blob', async () => {
+  const LEAKY = /ENCRYPTED-BLOB|accountNumber|ifscCode|asthma|bloodGroup|Secret Lane|\bMum\b|emergencyContacts|medicalDetails|bankDetails/
+  const routes = ['/api/employees/directory', '/api/reports', '/api/notifications', '/api/analytics', '/api/analytics/software', '/api/lms/workload', '/api/lms/calendar', '/api/lms', '/api/rms', '/api/travel', '/api/crm', '/api/announcements', '/api/holidays', '/api/auth/me', '/api/search?q=Eve', '/api/admin/users', '/api/admin/audit']
+  const asPeer = { 'peer': peer.token, 'Amanager': tok.Amanager, 'Aadmin': tok.Aadmin }
+  for (const [who, token] of Object.entries(asPeer)) for (const p of routes) {
+    const r = await kit.api(p, { token }); if (r.status === 403) continue
+    assert.ok(r.status < 500, `${who} ${p} → ${r.status}`); assert.doesNotMatch(r.text, LEAKY, `${who} ${p} leaks sensitive employee fields`)
+  }
+  const d = await kit.api(`/api/admin/users/${A.employee.id}`, { token: tok.Aadmin }); assert.equal(d.status, 200)
+  assert.equal(d.json.employee.bankDetails, undefined); assert.doesNotMatch(d.text, /ENCRYPTED-BLOB|accountNumber/); assert.equal(d.json.employee.firstName, 'Eve')
+  for (const t of [tok.Aemployee, tok.Amanager, peer.token]) assert.equal((await kit.api(`/api/admin/users/${A.employee.id}`, { token: t })).status, 403)
+  assert.equal((await kit.api(`/api/admin/users/${A.employee.id}`, { token: tok.Badmin })).status, 404)
+  const own = await kit.api('/api/employees/me', { token: tok.Aemployee }); assert.equal(own.status, 200); assert.match(own.text, /Secret Lane|bankName/, 'the owner still sees their own data')
+})
+
+test('E8. an invitation for a CONTRACTOR (offered by the invite dialog) can be accepted: the stored employee type is the schema value `contract` (found by the stricter Mongoose typings: `contractor` is not in the Employee enum, so acceptance failed)', async () => {
+  const email = `contractor_${kit.rand()}@test.dd`
+  const inv = await kit.api('/api/admin/invitations', { method: 'POST', token: tok.Aadmin, body: { email, role: 'employee', firstName: 'Con', lastName: 'Tractor', employeeType: 'contractor' } })
+  assert.equal(inv.status, 201, inv.text); const raw = inv.json.rawToken; assert.ok(raw)
+  const acc = await kit.api('/api/auth/invitations/accept', { method: 'POST', body: { token: raw, password: 'Inv!ted#Passw0rd9', firstName: 'Con', lastName: 'Tractor' } })
+  assert.ok([200, 201].includes(acc.status), `accept → ${acc.status} ${acc.text}`)
+  const u = await db.collection('users').findOne({ email }); assert.ok(u, 'the account was created'); const e = await db.collection('employees').findOne({ clerkUserId: String(u._id) })
+  assert.ok(e, 'the employee record was created'); assert.equal(e.employeeType, 'contract')
+})

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import crypto from 'crypto'
 import { connectDB } from '@/lib/db'
 import { getUser } from '@/lib/auth/getUser'
@@ -14,7 +15,7 @@ import { runDeletionSteps, orgDisbandSteps, personalSteps } from '@/lib/account/
  * Authenticated self-service account and personal data deletion.
  * Satisfies Google Play Data Safety requirements and DPDP Act / GDPR compliance.
  */
-export async function DELETE(req: NextRequest) {
+async function DELETE_handler(req: NextRequest) {
   try {
     const { userId, user, orgId: sessionOrgId } = await getUser(req)
     if (!userId || !user || !sessionOrgId) {
@@ -106,3 +107,5 @@ export async function DELETE(req: NextRequest) {
     )
   }
 }
+
+export const DELETE = dbGuard(DELETE_handler)

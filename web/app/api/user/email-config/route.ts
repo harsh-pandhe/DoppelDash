@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { isSendableAddress } from '@/lib/mail/escape'
 import { checkSmtpHostSyntax, checkSmtpPort, SmtpPolicyError, SMTP_POLICY_MESSAGES } from '@/lib/mail/smtpHostPolicy'
 import { isProductionLike } from '@/lib/auth/devShortcuts'
@@ -8,7 +9,7 @@ import UserEmailConfig from '@/models/UserEmailConfig'
 import { encrypt } from '@/lib/encrypt'
 import { getUser } from '@/lib/auth'
 
-export async function GET() {
+async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -24,7 +25,7 @@ export async function GET() {
   })
 }
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true })
 }
 
-export async function DELETE() {
+async function DELETE_handler() {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -70,3 +71,7 @@ export async function DELETE() {
   await UserEmailConfig.deleteOne({ userId, orgId })
   return NextResponse.json({ ok: true })
 }
+
+export const GET = dbGuard(GET_handler)
+export const POST = dbGuard(POST_handler)
+export const DELETE = dbGuard(DELETE_handler)

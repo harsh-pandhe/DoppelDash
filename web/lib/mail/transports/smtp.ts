@@ -1,6 +1,6 @@
 import { MailTransportError, type MailEnvelope, type MailTransport } from '../types'
 import { isSendableAddress, singleLine } from '../escape'
-import { assertPublicSmtpHost, smtpHostPolicyEnforced, SmtpPolicyError } from '../smtpHostPolicy'
+import { resolvePublicSmtpTarget, smtpHostPolicyEnforced, SmtpPolicyError } from '../smtpHostPolicy'
 
 export interface SmtpSettings {
   host: string
@@ -16,25 +16,31 @@ type CreateTransport = (options: unknown) => Transporter
 type Transporter = { sendMail(msg: Record<string, unknown>): Promise<unknown> }
 const cache = new Map<string, Transporter>()
 
-async function createTransporter(s: SmtpSettings): Promise<Transporter> {
+/** Pure: the nodemailer options for these settings; with a pinned `target` the socket goes to the VALIDATED address and TLS verifies the original name. */
+export function smtpTransportOptions(s: SmtpSettings, target?: { address: string; servername: string | undefined }) {
+  return {
+    host: target ? target.address : s.host,
+    port: s.port,
+    secure: s.secure,
+    auth: { user: s.user, pass: s.pass },
+    ...(target?.servername ? { tls: { servername: target.servername }, name: target.servername } : {}),
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  }
+}
+
+async function createTransporter(s: SmtpSettings, target?: { address: string; servername: string | undefined }): Promise<Transporter> {
   // Under webpack `import('nodemailer')` exposes `.default`; under plain Node/jiti it may not.
   const mod = (await import('nodemailer')) as unknown as { default?: { createTransport: CreateTransport }; createTransport?: CreateTransport }
   const create = (mod.default?.createTransport ?? mod.createTransport) as CreateTransport | undefined
   if (!create) throw new MailTransportError('SMTP library unavailable', 'library_unavailable')
-  return create({
-    host: s.host,
-    port: s.port,
-    secure: s.secure,
-    auth: { user: s.user, pass: s.pass },
-    connectionTimeout: 10_000,
-    greetingTimeout: 10_000,
-    socketTimeout: 20_000,
-  })
+  return create(smtpTransportOptions(s, target))
 }
 
 /** Cache key deliberately includes a hash-free fingerprint only of non-secret parts + pass length. */
-function cacheKey(id: string, s: SmtpSettings): string {
-  return `${id}|${s.host}|${s.port}|${s.secure}|${s.user}|${s.pass.length}|${s.from}`
+function cacheKey(id: string, s: SmtpSettings, pinned = ''): string {
+  return `${id}|${s.host}|${pinned}|${s.port}|${s.secure}|${s.user}|${s.pass.length}|${s.from}`
 }
 
 /**
@@ -65,14 +71,15 @@ export class SmtpMailTransport implements MailTransport {
     if (recipients.length === 0) throw new MailTransportError('No sendable recipient', 'invalid_recipient')
 
     // User/organisation-supplied servers must resolve to PUBLIC addresses (SSRF guard); the platform's env-configured SMTP is trusted.
+    let target: { address: string; servername: string | undefined } | undefined
     if (this.opts.publicHostsOnly && smtpHostPolicyEnforced()) {
-      try { await assertPublicSmtpHost(s.host) } catch (e) { throw new MailTransportError('SMTP host not allowed', e instanceof SmtpPolicyError ? 'host_not_allowed' : 'provider_error') }
+      try { target = await resolvePublicSmtpTarget(s.host) } catch (e) { throw new MailTransportError('SMTP host not allowed', e instanceof SmtpPolicyError ? 'host_not_allowed' : 'provider_error') }
     }
 
-    const key = cacheKey(this.id, s)
+    const key = cacheKey(this.id, s, target?.address)
     let transporter = cache.get(key)
     if (!transporter) {
-      transporter = await createTransporter(s)
+      transporter = await createTransporter(s, target)
       cache.set(key, transporter)
     }
 

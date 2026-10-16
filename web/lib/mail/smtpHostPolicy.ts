@@ -66,6 +66,21 @@ export async function assertPublicSmtpHost(host: string, resolve: Resolver = def
   if (!addrs.length || addrs.some(isPrivateAddress)) throw new SmtpPolicyError(addrs.length ? 'private_host' : 'unresolvable_host')
 }
 
+/**
+ * Resolve ONCE, validate, and return the address the connection must use. Connecting to the validated IP (with TLS `servername` = the host name)
+ * closes the DNS-rebinding window between "check" and "connect" that a hostname-only check leaves open.
+ */
+export async function resolvePublicSmtpTarget(host: string, resolve: Resolver = defaultResolver): Promise<{ address: string; servername: string | undefined }> {
+  checkSmtpHostSyntax(host)
+  const bare = host.trim().toLowerCase().replace(/^\[|\]$/g, '')
+  if (net.isIP(bare)) return { address: bare, servername: undefined }
+  let addrs: string[]
+  try { addrs = await resolve(bare) } catch { throw new SmtpPolicyError('unresolvable_host') }
+  if (!addrs.length) throw new SmtpPolicyError('unresolvable_host')
+  if (addrs.some(isPrivateAddress)) throw new SmtpPolicyError('private_host')
+  return { address: addrs[0], servername: bare }
+}
+
 export const SMTP_POLICY_MESSAGES: Record<SmtpPolicyError['code'], string> = {
   invalid_host: 'Enter a valid public SMTP server name.',
   private_host: 'SMTP host must be a public mail server.',
