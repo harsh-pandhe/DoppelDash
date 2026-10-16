@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Organization from '@/models/Organization'
@@ -28,6 +29,13 @@ import { encrypt, encryptBankDetails } from '@/lib/encrypt'
  * Default password for every seeded account: `Pass1234!`
  * Admin email: harshpandhehome@gmail.com (testable inbox for OTP)
  */
+
+// Seed data is plain literals (e.g. `tier: string`); newer Mongoose typings reject widened literals in create(), so the seed models are loosened HERE ONLY.
+type LooseCreate = { create: (d: Record<string, unknown>) => Promise<unknown> }
+const EmployeeSeed = Employee as unknown as LooseCreate
+const LeaveSeed = Leave as unknown as LooseCreate
+const ExpenseSeed = Expense as unknown as LooseCreate
+const TravelSeed = TravelRequest as unknown as LooseCreate
 
 const DEFAULT_PASSWORD = 'Pass1234!'
 
@@ -72,7 +80,7 @@ const fakeReceipt = (vendor: string, amount: number, dateStr: string) => {
 const SEED_ORG_ID = 'org_doppelmayr'
 const withOrg = <T extends object>(rows: T[]) => rows.map(r => ({ orgId: SEED_ORG_ID, ...r }))
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
   // This endpoint wipes EVERY collection. In production it stays fully disabled
   // unless explicitly opted in with ALLOW_DEV_SEED=true — so a leaked
@@ -168,7 +176,7 @@ export async function POST(req: NextRequest) {
   ]
 
   // Boss
-  await Employee.create({ orgId: SEED_ORG_ID,
+  await EmployeeSeed.create({ orgId: SEED_ORG_ID,
     clerkUserId: boss._id.toString(), employeeId: 'EMP-001',
     createdByUserId: boss._id.toString(),
     firstName: 'Harsh', lastName: 'Pandhe', email: boss.email,
@@ -186,7 +194,7 @@ export async function POST(req: NextRequest) {
   })
 
   // Managers
-  await Employee.create({ orgId: SEED_ORG_ID,
+  await EmployeeSeed.create({ orgId: SEED_ORG_ID,
     clerkUserId: managerA._id.toString(), employeeId: 'EMP-002',
     createdByUserId: boss._id.toString(),
     firstName: 'Priya', lastName: 'Iyer', email: managerA.email,
@@ -201,7 +209,7 @@ export async function POST(req: NextRequest) {
     medicalDetails: { bloodGroup: 'A+', allergies: ['Peanuts'], medications: [], conditions: [] },
     lastLoginAt: D(-1), loginCount: 27,
   })
-  await Employee.create({ orgId: SEED_ORG_ID,
+  await EmployeeSeed.create({ orgId: SEED_ORG_ID,
     clerkUserId: managerB._id.toString(), employeeId: 'EMP-003',
     createdByUserId: boss._id.toString(),
     firstName: 'Rohan', lastName: 'Kapoor', email: managerB.email,
@@ -221,7 +229,7 @@ export async function POST(req: NextRequest) {
   await Promise.all(empSeeds.map(async (e, i) => {
     const u = employees[i]
     const prvIndex = i % PRIV_LEVELS.length
-    return Employee.create({ orgId: SEED_ORG_ID,
+    return EmployeeSeed.create({ orgId: SEED_ORG_ID,
       clerkUserId: u._id.toString(), employeeId: `EMP-${String(i + 4).padStart(3, '0')}`,
       createdByUserId: e.mgr._id.toString(),
       firstName: e.f, lastName: e.l, email: e.email,
@@ -275,7 +283,7 @@ export async function POST(req: NextRequest) {
     // Rohan (manager) — pending privilege
     { u: managerB,     type: 'privilege', from: 21, to: 22, reason: 'Conference attendance.',          status: 'pending'  },
   ]
-  await Promise.all(leaveSeeds.map(l => Leave.create({ orgId: SEED_ORG_ID,
+  await Promise.all(leaveSeeds.map(l => LeaveSeed.create({ orgId: SEED_ORG_ID,
     userId: l.u._id.toString(), userName: `${l.u.firstName} ${l.u.lastName}`,
     type: l.type, startDate: D(l.from), endDate: D(l.to),
     days: Math.max(1, l.to - l.from + 1),
@@ -312,7 +320,7 @@ export async function POST(req: NextRequest) {
         category: 'misc', receiptUrl: fakeReceipt(vendor + ' (2)', e.amount - Math.round(e.amount * 0.6), dateStr),
         status: e.status === 'paid' ? 'approved' : 'pending' },
     ] : []
-    return Expense.create({ orgId: SEED_ORG_ID,
+    return ExpenseSeed.create({ orgId: SEED_ORG_ID,
       userId: e.u._id.toString(), userName: `${e.u.firstName} ${e.u.lastName}`,
       title: e.title, reason: e.reason, amount: e.amount,
       travelFrom: e.from || undefined, travelTo: e.to || undefined,
@@ -354,7 +362,7 @@ export async function POST(req: NextRequest) {
       mgrNote: 'Defer — kick-off rescheduled to Q3.',
     },
   ]
-  await Promise.all(travelSeeds.map(t => TravelRequest.create({ orgId: SEED_ORG_ID,
+  await Promise.all(travelSeeds.map(t => TravelSeed.create({ orgId: SEED_ORG_ID,
     userId: t.u._id.toString(), userName: `${t.u.firstName} ${t.u.lastName}`,
     purpose: t.purpose, destination: t.destination,
     departureDate: D(t.depart), returnDate: D(t.ret),
@@ -539,3 +547,5 @@ export async function POST(req: NextRequest) {
     },
   })
 }
+
+export const POST = dbGuard(POST_handler)

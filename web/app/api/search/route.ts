@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
 import Leave from '@/models/Leave'
@@ -6,7 +7,7 @@ import Expense from '@/models/Expense'
 import Announcement from '@/models/Announcement'
 import { getUser } from '@/lib/auth'
 
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   const ownScope = isManager ? { orgId: effectiveOrgId } : { userId, orgId: effectiveOrgId }
 
   const [contacts, leaves, expenses, announcements] = await Promise.all([
-    Contact.find({ ...contactScope, $and: [{ $or: [{ name: re }, { email: re }, { company: re }, { designation: re }] }] }, 'name email company designation photo').limit(5).lean(),
+    Contact.find({ ...contactScope, $and: [{ $or: [{ name: re }, { email: re }, { company: re }, { designation: re }] }] } as Record<string, unknown>, 'name email company designation photo').limit(5).lean(),
     Leave.find({ ...ownScope, $or: [{ userName: re }, { reason: re }, { type: re }] }, 'userName type days status startDate').limit(5).lean(),
     Expense.find({ ...ownScope, $or: [{ title: re }, { reason: re }, { userName: re }] }, 'title amount status startDate userName').limit(5).lean(),
     Announcement.find({ orgId: effectiveOrgId, $or: [{ title: re }, { body: re }] }, 'title priority createdAt').limit(3).lean(),
@@ -45,3 +46,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ results })
 }
+
+export const GET = dbGuard(GET_handler)

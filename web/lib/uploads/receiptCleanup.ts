@@ -92,7 +92,7 @@ export async function runReceiptCleanup(opts: CleanupOptions): Promise<CleanupRe
     let row
     try {
       row = await ReceiptUpload.findOneAndUpdate(
-        { $or: [{ ...due, ...old }, { state: 'deleting', leaseUntil: { $lte: now }, ...old }] },
+        { $or: [{ ...due, ...old }, { state: 'deleting', leaseUntil: { $lte: now }, ...old }] } as Record<string, unknown>,
         { $set: { state: 'deleting', leaseUntil: new Date(now.getTime() + LEASE_MS) } },
         { sort: { nextCheckAt: 1 }, new: false },
       ).lean()
@@ -114,7 +114,7 @@ export async function runReceiptCleanup(opts: CleanupOptions): Promise<CleanupRe
     if (res === 'not_found') rep.alreadyGone++; else rep.deleted++
     await ReceiptUpload.deleteOne({ _id: row._id, state: 'deleting' }).catch(() => { rep.failed++ })
   }
-  try { rep.more = !!(await ReceiptUpload.exists({ ...due, ...old })) } catch { rep.more = true }
+  try { rep.more = !!(await ReceiptUpload.exists({ ...due, ...old } as Record<string, unknown>)) } catch { rep.more = true }
   return rep
 }
 

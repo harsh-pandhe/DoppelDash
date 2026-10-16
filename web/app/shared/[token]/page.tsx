@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { TrendingUp, Lock, AlertTriangle } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TileBody, tileById, type AnalyticsData, type LayoutEntry } from '../../(app)/analytics/analyticsTiles'
@@ -14,7 +15,8 @@ interface SharedResponse {
   expired?: boolean
 }
 
-export default function SharedDashboardPage({ params }: { params: { token: string } }) {
+export default function SharedDashboardPage() {
+  const params = useParams<{ token: string }>()   // Next 15: the page `params` prop is a Promise; the hook is synchronous in client components
   const [res, setRes] = useState<SharedResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

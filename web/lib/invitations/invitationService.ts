@@ -313,7 +313,7 @@ export async function acceptInvitation(params: {
       email,
       department: department || 'General',
       designation: designation || (role === 'manager' ? 'Manager' : 'Staff'),
-      employeeType: employeeType || 'full_time',
+      employeeType: (employeeType === 'contractor' ? 'contract' : employeeType) || 'full_time',
       joiningDate: new Date(),
       onboardingComplete: false,
       onboardingStep: 0,

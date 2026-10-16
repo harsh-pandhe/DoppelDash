@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import mongoose from 'mongoose'
 
@@ -18,7 +19,7 @@ import mongoose from 'mongoose'
  *          contacts / scanned cards / announcements / audit logs / inbox /
  *          campaign logs / mail drafts / sync state.
  */
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
     return NextResponse.json({ error: 'Destructive reset is disabled in production' }, { status: 403 })
@@ -68,3 +69,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, kept, deleted })
 }
+
+export const POST = dbGuard(POST_handler)

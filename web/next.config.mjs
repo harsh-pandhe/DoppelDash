@@ -58,7 +58,14 @@ const nextConfig = {
     ],
   },
   async headers() {
-    return [{ source: '/:path*', headers: SECURITY_HEADERS }]
+    // Private file proxies (medical documents, receipts, itinerary files) send their OWN locked-down CSP (`default-src 'none'; sandbox`).
+    // Next 15 applies config headers after route headers, so the site-wide CSP would OVERRIDE it (caught by tests): keep the other security
+    // headers on those paths but not the site CSP.
+    const PRIVATE_FILES = '/api/:resource(lms|rms|travel)/:id/:kind(document|receipt|itinerary)/:file'
+    return [
+      { source: PRIVATE_FILES, headers: SECURITY_HEADERS.filter(h => h.key !== 'Content-Security-Policy') },
+      { source: '/((?!api/(?:lms|rms|travel)/[^/]+/(?:document|receipt|itinerary)/).*)', headers: SECURITY_HEADERS },
+    ]
   },
 }
 

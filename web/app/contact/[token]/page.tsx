@@ -32,8 +32,9 @@ async function getContact(token: string): Promise<PublicContact | null> {
   } catch { return null }
 }
 
-export default async function PublicContactPage({ params }: { params: { token: string } }) {
-  const contact = await getContact(params.token)
+export default async function PublicContactPage(props: { params: Promise<{ token: string }> }) {
+  const { token } = await props.params
+  const contact = await getContact(token)
   if (!contact) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-[#e8f0fa] p-4">

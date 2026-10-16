@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
 import mongoose from 'mongoose'
 import { ensureDoppelmayrBrand } from '@/lib/provisioning/doppelmayrBrand'
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   const required = process.env.DEV_SEED_SECRET
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEV_SEED !== 'true') {
     return NextResponse.json({ error: 'Destructive seed is disabled in production' }, { status: 403 })
@@ -76,3 +77,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, migrated: result, rolesNow: roles })
 }
+
+export const POST = dbGuard(POST_handler)
