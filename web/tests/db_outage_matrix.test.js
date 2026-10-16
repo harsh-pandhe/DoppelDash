@@ -84,3 +84,24 @@ test('O5. error classification: connectivity/timeout errors map to 503, everythi
   for (const e of [{ name: 'MongoServerSelectionError', message: 'x' }, { name: 'MongoNetworkError', message: 'x' }, { name: 'MongoNetworkTimeoutError', message: 'x' }, { name: 'MongooseError', message: 'Operation `users.findOne()` buffering timed out after 10000ms' }, { name: 'MongoServerError', code: 50, message: 'operation exceeded time limit' }, { name: 'Error', message: 'wrap', cause: { name: 'MongoPoolClearedError', message: 'x' } }, { name: 'Error', message: '[deploy-context] database access is disabled' }]) assert.equal(isDbUnavailable(e), true, JSON.stringify(e))
   for (const e of [new Error('boom'), { name: 'ValidationError', message: 'bad' }, { name: 'MongoServerError', code: 11000, message: 'E11000 duplicate' }, { name: 'CastError', message: 'cast' }, null, 'str', { name: 'SyntaxError', message: 'Unexpected token' }]) assert.equal(isDbUnavailable(e), false, String(e && e.name))
 })
+
+test('O6. STATIC completeness: every exported handler under app/api is wrapped by dbGuard, except the handlers that never touch the database (health, removed invitation GET/HEAD, 405 stubs on receipts-cleanup)', () => {
+  const fs = require('node:fs'), root = path.resolve(__dirname, '..', 'app/api'); const unwrapped = []
+  const walk = d => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name === 'route.ts') { const t = fs.readFileSync(p, 'utf8'); for (const m of t.matchAll(/export\s+(?:async\s+function|const)\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b([^\n]*)/g)) if (!/dbGuard\(/.test(m[2])) unwrapped.push(`${path.relative(root, p)} ${m[1]}`) } } }
+  walk(root)
+  const ALLOWED = ['auth/invitations/[token]/route.ts GET', 'auth/invitations/[token]/route.ts HEAD', 'health/route.ts GET', 'health/route.ts HEAD', ...['GET', 'PUT', 'PATCH', 'DELETE'].map(m => `cron/receipts-cleanup/route.ts ${m}`)]
+  assert.deepEqual(unwrapped.filter(u => !ALLOWED.includes(u.replace(/\\/g, '/'))), [], 'a new DB-backed handler must be wrapped with dbGuard')
+})
+
+test('O7. mail, invitation, org-config and email-config paths also fail closed with 503 during the outage (no partial send / no stale grant)', async () => {
+  const failures = []
+  for (const [method, p, tok, body] of [
+    ['GET', '/api/admin/invitations', good.admin], ['POST', '/api/admin/invitations', good.admin, { email: `i_${kit.rand()}@test.dd`, role: 'employee' }],
+    ['POST', '/api/auth/invitations/accept', null, { token: 'x'.repeat(40), password: 'Str0ng!Passw0rd' }], ['POST', '/api/auth/invitations/verify', null, { token: 'x'.repeat(40) }],
+    ['GET', '/api/org/mail-config', good.admin], ['GET', '/api/user/email-config', good.access], ['GET', '/api/mail/drafts', good.access],
+  ]) {
+    const r = await call(p, { method, token: tok, body })
+    if (!(r.status === 503 && r.json && r.json.code === 'service_unavailable' && !LEAK.test(r.text))) failures.push(`${method} ${p} → ${r.status} ${r.text.slice(0, 90)}`)
+  }
+  assert.deepEqual(failures, [], failures.join('\n'))
+})

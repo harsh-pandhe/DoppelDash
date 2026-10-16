@@ -5,6 +5,7 @@
  *
  * Heavy deps (jspdf, xlsx) are lazy-imported so they stay out of the main bundle.
  */
+import { buildBrandedSheet } from '@/lib/xlsxSheet'
 
 const BRAND_BLUE: [number, number, number] = [0, 87, 168] // #0057A8
 const GRAPHITE:   [number, number, number] = [40, 40, 40]
@@ -114,19 +115,7 @@ export async function brandedXLSX(opts: {
   filename: string
 }) {
   const { utils, writeFile } = await import('xlsx')
-  const aoa: (string | number)[][] = [
-    [`Doppelmayr India — ${opts.title}`],
-    [[opts.subtitle, `Generated ${fmtDate()}`].filter(Boolean).join('  ·  ')],
-    [],
-    opts.head,
-    ...opts.rows,
-  ]
-  const ws = utils.aoa_to_sheet(aoa)
-  // column widths from longest cell per column
-  ws['!cols'] = opts.head.map((h, c) => {
-    const max = Math.max(h.length, ...opts.rows.map(r => String(r[c] ?? '').length))
-    return { wch: Math.min(Math.max(max + 2, 10), 40) }
-  })
+  const ws = buildBrandedSheet(utils, { title: opts.title, subtitle: opts.subtitle, head: opts.head, rows: opts.rows, generated: fmtDate() })
   const wb = utils.book_new()
   utils.book_append_sheet(wb, ws, opts.sheet || 'Report')
   writeFile(wb, opts.filename)

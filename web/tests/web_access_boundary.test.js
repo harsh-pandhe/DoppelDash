@@ -193,7 +193,7 @@ test('D2. no organisation-id / slug special case exists in runtime code', () => 
   assert.deepEqual(offenders, [], `runtime code must not special-case an organisation: ${offenders.join(', ')}`)
   assert.deepEqual(importers.sort(), ['app/api/dev/migrate/route.ts'], 'only the secret-gated migrate step may import the Doppelmayr provisioning')
   assert.deepEqual(entitlementImporters, [], 'the entitlement provisioning module is operator-script only: no request-time code may import it')
-  assert.equal(fs.existsSync(path.join(root, 'middleware.ts')) && /org_doppelmayr/.test(fs.readFileSync(path.join(root, 'middleware.ts'), 'utf8')), false)
+  assert.equal(fs.existsSync(path.join(root, 'proxy.ts')) && /org_doppelmayr/.test(fs.readFileSync(path.join(root, 'proxy.ts'), 'utf8')), false)
 })
 
 /* ───────────────────────── 3. organisation-aware mail branding / provider selection ───────────────────────── */

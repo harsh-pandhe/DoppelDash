@@ -1,7 +1,7 @@
 name: web-ci
 on:
   push:
-    branches: ['integration/**']
+    branches: ['integration/**', 'phase-*']
   pull_request:
     branches: ['integration/**', 'main']
   workflow_dispatch:

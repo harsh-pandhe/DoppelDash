@@ -270,7 +270,7 @@ test('F5c. no source file silently assigns org_doppelmayr as a runtime fallback'
   try {
     out = execFileSync('grep', [
       '-rnE', "\\|\\|\\s*['\"]org_doppelmayr['\"]|default:\\s*['\"]org_doppelmayr['\"]|DEFAULT_ORG_ID",
-      'app', 'lib', 'models', 'components', 'middleware.ts', '--include=*.ts', '--include=*.tsx',
+      'app', 'lib', 'models', 'components', 'proxy.ts', '--include=*.ts', '--include=*.tsx',
     ], { cwd: root, encoding: 'utf8' }).toString()
   } catch (e) {
     if (e.status !== 1) throw e // grep exit 1 == no matches == good

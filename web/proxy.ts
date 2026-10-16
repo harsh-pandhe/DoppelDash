@@ -66,7 +66,7 @@ function isPublic(pathname: string) {
 const LEGACY_LINK_BRIDGE = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta name="robots" content="noindex"><title>Opening…</title></head><body><script>(function(){var p=new URLSearchParams(location.search).get('token');location.replace(location.pathname+(p?'#token='+encodeURIComponent(p):''));})();</script><noscript>JavaScript is required to open this link.</noscript></body></html>`
 const TOKEN_PAGES = new Set(['/invite', '/reset-password'])
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const legacyToken = TOKEN_PAGES.has(pathname) ? req.nextUrl.searchParams.get('token') : null

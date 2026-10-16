@@ -112,3 +112,15 @@ test('E8. an invitation for a CONTRACTOR (offered by the invite dialog) can be a
   const u = await db.collection('users').findOne({ email }); assert.ok(u, 'the account was created'); const e = await db.collection('employees').findOne({ clerkUserId: String(u._id) })
   assert.ok(e, 'the employee record was created'); assert.equal(e.employeeType, 'contract')
 })
+
+test('E9. CONCURRENCY: two simultaneous accepts of the same single-use invitation create exactly one account and one employee; the loser is refused (no duplicate, no 500)', async () => {
+  const email = `race_${kit.rand()}@test.dd`
+  const inv = await kit.api('/api/admin/invitations', { method: 'POST', token: tok.Aadmin, body: { email, role: 'employee', firstName: 'Ra', lastName: 'Ce', employeeType: 'full_time' } })
+  assert.equal(inv.status, 201, inv.text); const raw = inv.json.rawToken
+  const attempt = () => kit.api('/api/auth/invitations/accept', { method: 'POST', body: { token: raw, password: 'Inv!ted#Passw0rd9', firstName: 'Ra', lastName: 'Ce' }, ip: kit.freshIp() })
+  const rs = await Promise.all([attempt(), attempt(), attempt()])
+  const ok = rs.filter(r => [200, 201].includes(r.status)); assert.equal(ok.length, 1, rs.map(r => r.status).join(','))
+  assert.ok(rs.filter(r => !ok.includes(r)).every(r => [400, 404, 409, 410].includes(r.status)), rs.map(r => r.status).join(','))
+  assert.equal(await db.collection('users').countDocuments({ email }), 1)
+  const u = await db.collection('users').findOne({ email }); assert.equal(await db.collection('employees').countDocuments({ clerkUserId: String(u._id) }), 1)
+})
