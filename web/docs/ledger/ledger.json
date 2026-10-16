@@ -252,6 +252,8 @@
    ],
    "tests": [
     "tests/batch_i.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/travel_conversion.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -304,10 +306,10 @@
     "tests/auth_foundation.test.js",
     "tests/batch_f.test.js",
     "tests/batch_g.test.js",
+    "tests/employee_record_security.test.js",
     "tests/invitation_token_hygiene.test.js",
     "tests/mail_architecture.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -332,10 +334,10 @@
     "tests/auth_foundation.test.js",
     "tests/batch_f.test.js",
     "tests/batch_g.test.js",
+    "tests/employee_record_security.test.js",
     "tests/invitation_token_hygiene.test.js",
     "tests/mail_architecture.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -360,10 +362,10 @@
     "tests/auth_foundation.test.js",
     "tests/batch_f.test.js",
     "tests/batch_g.test.js",
+    "tests/employee_record_security.test.js",
     "tests/invitation_token_hygiene.test.js",
     "tests/mail_architecture.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -414,8 +416,8 @@
     "tests/batch_d.test.js",
     "tests/batch_h.test.js",
     "tests/batch_j1.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -445,8 +447,8 @@
     "tests/batch_d.test.js",
     "tests/batch_h.test.js",
     "tests/batch_j1.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -473,6 +475,7 @@
     "tests/auth_foundation.test.js",
     "tests/batch_b.test.js",
     "tests/batch_i.test.js",
+    "tests/employee_record_security.test.js",
     "tests/malformed_input_sweep.test.js"
    ]
   },
@@ -574,7 +577,8 @@
    "webCallers": [],
    "androidCallers": [],
    "tests": [
-    "tests/batch_b.test.js"
+    "tests/batch_b.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -601,6 +605,8 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -629,6 +635,8 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -700,6 +708,8 @@
     "tests/auth_foundation.test.js",
     "tests/batch_f.test.js",
     "tests/batch_g.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/invitation_token_hygiene.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/route_gap_closure.test.js"
@@ -727,6 +737,7 @@
     "tests/auth_foundation.test.js",
     "tests/batch_f.test.js",
     "tests/batch_g.test.js",
+    "tests/employee_record_security.test.js",
     "tests/invitation_token_hygiene.test.js",
     "tests/malformed_input_sweep.test.js"
    ]
@@ -777,10 +788,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/entitlement_hardening.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/mail_architecture.test.js",
-    "tests/malformed_input_sweep.test.js"
+    "tests/mail_architecture.test.js"
    ]
   },
   {
@@ -835,9 +846,9 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
-    "tests/entitlement_hardening.test.js",
-    "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/invitation_token_hygiene.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/dependency_hardening.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -1008,10 +1019,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_k.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/mail_architecture.test.js",
     "tests/malformed_input_sweep.test.js",
-    "tests/password_reset_token_hygiene.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/password_reset_token_hygiene.test.js"
    ]
   },
   {
@@ -1033,6 +1044,7 @@
    "tests": [
     "tests/auth_foundation.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/z_final_log_secret_scan.test.js"
    ]
@@ -1168,10 +1180,10 @@
     "tests/batch_h.test.js",
     "tests/batch_h1.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/entitlement_hardening.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/passkey_totp_concurrency.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -1194,6 +1206,7 @@
     "tests/auth_foundation.test.js",
     "tests/batch_l.test.js",
     "tests/batch_l1.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/expenses_vertical.test.js",
     "tests/secret_exposure.test.js",
     "tests/web_access_boundary.test.js",
@@ -1215,7 +1228,8 @@
    "androidCallers": [],
    "tests": [
     "tests/batch_m.test.js",
-    "tests/billing_rtdn.test.js"
+    "tests/billing_rtdn.test.js",
+    "tests/db_outage_matrix.test.js"
    ]
   },
   {
@@ -1237,6 +1251,7 @@
    ],
    "tests": [
     "tests/batch_m.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/malformed_input_sweep.test.js"
    ]
   },
@@ -1524,7 +1539,9 @@
    "androidCallers": [],
    "tests": [
     "tests/batch_c.test.js",
-    "tests/batch_k.test.js"
+    "tests/batch_k.test.js",
+    "tests/cron_idempotency.test.js",
+    "tests/db_outage_matrix.test.js"
    ]
   },
   {
@@ -1661,9 +1678,9 @@
     "tests/batch_d.test.js",
     "tests/batch_h.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/employee_record_security.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/secret_exposure.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -1687,7 +1704,9 @@
     "lib/data/repositories/employee_repository.dart"
    ],
    "tests": [
-    "tests/auth_foundation.test.js"
+    "tests/auth_foundation.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -1719,6 +1738,7 @@
     "tests/batch_d.test.js",
     "tests/batch_h.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/employee_record_security.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/secret_exposure.test.js"
@@ -1736,6 +1756,9 @@
    "webCallers": [],
    "androidCallers": [],
    "tests": [
+    "tests/db_outage_matrix.test.js",
+    "tests/dependency_hardening.test.js",
+    "tests/release_scripts.test.js",
     "tests/route_gap_closure.test.js"
    ]
   },
@@ -1762,6 +1785,8 @@
    ],
    "tests": [
     "tests/access_matrix_p2.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/malformed_input_sweep.test.js"
    ]
   },
@@ -1837,9 +1862,9 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
-    "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/leave_medical_docs.test.js",
-    "tests/legacy_medical_inventory.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
+    "tests/entitlement_matrix_mobile_web.test.js"
    ]
   },
   {
@@ -1870,9 +1895,9 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
-    "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/leave_medical_docs.test.js",
-    "tests/legacy_medical_inventory.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
+    "tests/entitlement_matrix_mobile_web.test.js"
    ]
   },
   {
@@ -1898,9 +1923,9 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
-    "tests/entitlement_matrix_mobile_web.test.js",
-    "tests/leave_medical_docs.test.js",
-    "tests/legacy_medical_inventory.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
+    "tests/entitlement_matrix_mobile_web.test.js"
    ]
   },
   {
@@ -1922,6 +1947,7 @@
    ],
    "tests": [
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
     "tests/entitlement_matrix_mobile_web.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -1943,7 +1969,8 @@
    ],
    "androidCallers": [],
    "tests": [
-    "tests/access_matrix_p2.test.js"
+    "tests/access_matrix_p2.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -1963,7 +1990,8 @@
    ],
    "androidCallers": [],
    "tests": [
-    "tests/access_matrix_p2.test.js"
+    "tests/access_matrix_p2.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -2038,6 +2066,8 @@
    "tests": [
     "tests/auth_foundation.test.js",
     "tests/batch_i.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/expenses_vertical.test.js",
     "tests/web_android_shared_data.test.js"
    ]
@@ -2091,8 +2121,8 @@
     "tests/batch_l1.test.js",
     "tests/batch_l2.test.js",
     "tests/batch_m.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/shared_imap_policy.test.js"
+    "tests/db_outage_matrix.test.js",
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -2112,7 +2142,8 @@
    ],
    "androidCallers": [],
    "tests": [
-    "tests/access_matrix_p2.test.js"
+    "tests/access_matrix_p2.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -2141,10 +2172,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/expense_approval_policy.test.js",
-    "tests/expense_idempotency_receipts.test.js",
-    "tests/expense_line_review_bounds.test.js",
-    "tests/expenses_vertical.test.js"
+    "tests/expense_idempotency_receipts.test.js"
    ]
   },
   {
@@ -2175,10 +2206,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/expense_approval_policy.test.js",
-    "tests/expense_idempotency_receipts.test.js",
-    "tests/expense_line_review_bounds.test.js",
-    "tests/expenses_vertical.test.js"
+    "tests/expense_idempotency_receipts.test.js"
    ]
   },
   {
@@ -2203,10 +2234,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/expense_approval_policy.test.js",
-    "tests/expense_idempotency_receipts.test.js",
-    "tests/expense_line_review_bounds.test.js",
-    "tests/expenses_vertical.test.js"
+    "tests/expense_idempotency_receipts.test.js"
    ]
   },
   {
@@ -2254,7 +2285,8 @@
    "tests": [
     "tests/batch_b.test.js",
     "tests/batch_i.test.js",
-    "tests/batch_j.test.js"
+    "tests/batch_j.test.js",
+    "tests/employee_record_security.test.js"
    ]
   },
   {
@@ -2326,10 +2358,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/leave_medical_docs.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -2359,10 +2391,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/leave_medical_docs.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -2387,10 +2419,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/leave_medical_docs.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -2415,10 +2447,10 @@
     "tests/batch_c.test.js",
     "tests/batch_i.test.js",
     "tests/batch_j.test.js",
+    "tests/db_outage_matrix.test.js",
+    "tests/employee_record_security.test.js",
     "tests/leave_medical_docs.test.js",
-    "tests/malformed_input_sweep.test.js",
-    "tests/travel_api.test.js",
-    "tests/travel_attachments.test.js"
+    "tests/malformed_input_sweep.test.js"
    ]
   },
   {
@@ -2440,14 +2472,14 @@
     "lib/data/services/cloudinary_service.dart"
    ],
    "tests": [
+    "tests/db_outage_matrix.test.js",
     "tests/expense_idempotency_receipts.test.js",
     "tests/expenses_vertical.test.js",
     "tests/leave_medical_docs.test.js",
     "tests/malformed_input_sweep.test.js",
     "tests/receipt_cleanup.test.js",
     "tests/receipt_client_limits.test.js",
-    "tests/receipt_ocr_vertical.test.js",
-    "tests/receipt_type_contract.test.js"
+    "tests/receipt_ocr_vertical.test.js"
    ]
   },
   {
@@ -2777,6 +2809,7 @@
    "ALLOW_DEV_SEED",
    "DD_BUILD_SHA",
    "DD_CI_DB",
+   "DD_DB_SELECTION_TIMEOUT_MS",
    "DD_DEPLOY_CONTEXT",
    "DD_DESIGN_SHOWCASE",
    "DEV_SEED_SECRET",

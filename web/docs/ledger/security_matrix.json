@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-10-15T23:38:29.709Z",
+    "generatedAt": "2026-10-16T01:01:22.660Z",
     "generator": "web/scripts/inventory/generate-security-matrix.js",
     "counts": {
       "totalRouteFiles": 93,
@@ -29,6 +29,8 @@
       "providers": [],
       "existingTests": [
         "tests/batch_i.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/travel_conversion.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -117,6 +119,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
+        "tests/employee_record_security.test.js",
         "tests/invitation_token_hygiene.test.js",
         "tests/mail_architecture.test.js",
         "tests/malformed_input_sweep.test.js",
@@ -286,6 +289,8 @@
         "tests/batch_d.test.js",
         "tests/batch_h.test.js",
         "tests/batch_j1.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
         "tests/web_android_shared_data.test.js"
@@ -350,7 +355,8 @@
       "existingTests": [
         "tests/access_matrix_p2.test.js",
         "tests/batch_b.test.js",
-        "tests/batch_d.test.js"
+        "tests/batch_d.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -394,7 +400,8 @@
         "tests/analytics_share_security.test.js",
         "tests/auth_foundation.test.js",
         "tests/batch_b.test.js",
-        "tests/batch_i.test.js"
+        "tests/batch_i.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -509,7 +516,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/batch_b.test.js"
+        "tests/batch_b.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -528,6 +536,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -701,6 +711,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_f.test.js",
         "tests/batch_g.test.js",
+        "tests/employee_record_security.test.js",
         "tests/invitation_token_hygiene.test.js",
         "tests/malformed_input_sweep.test.js"
       ],
@@ -747,6 +758,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/mail_architecture.test.js",
@@ -804,6 +816,9 @@
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/dependency_hardening.test.js",
+        "tests/employee_record_security.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/invitation_token_hygiene.test.js",
@@ -1047,6 +1062,7 @@
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
         "tests/batch_k.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/mail_architecture.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/password_reset_token_hygiene.test.js",
@@ -1071,6 +1087,7 @@
       "existingTests": [
         "tests/auth_foundation.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/z_final_log_secret_scan.test.js"
       ],
@@ -1105,6 +1122,7 @@
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/batch_l2.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/malformed_input_sweep.test.js"
       ],
@@ -1245,6 +1263,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_h.test.js",
         "tests/batch_h1.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/entitlement_hardening.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/malformed_input_sweep.test.js",
@@ -1274,6 +1293,7 @@
         "tests/auth_foundation.test.js",
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/expenses_vertical.test.js",
         "tests/secret_exposure.test.js",
         "tests/web_access_boundary.test.js",
@@ -1299,7 +1319,8 @@
       ],
       "existingTests": [
         "tests/batch_m.test.js",
-        "tests/billing_rtdn.test.js"
+        "tests/billing_rtdn.test.js",
+        "tests/db_outage_matrix.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1319,6 +1340,7 @@
       "providers": [],
       "existingTests": [
         "tests/batch_m.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/malformed_input_sweep.test.js"
       ],
       "missingTests": [],
@@ -1347,6 +1369,8 @@
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/crm_vertical.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/shared_imap_policy.test.js",
         "tests/web_access_boundary.test.js",
@@ -1377,6 +1401,7 @@
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/crm_vertical.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/mail_architecture.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/receipt_ocr_vertical.test.js",
@@ -1432,6 +1457,7 @@
         "tests/batch_l.test.js",
         "tests/batch_l1.test.js",
         "tests/crm_vertical.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/shared_imap_policy.test.js"
       ],
       "missingTests": [],
@@ -1772,7 +1798,9 @@
       "providers": [],
       "existingTests": [
         "tests/batch_c.test.js",
-        "tests/batch_k.test.js"
+        "tests/batch_k.test.js",
+        "tests/cron_idempotency.test.js",
+        "tests/db_outage_matrix.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -1976,6 +2004,7 @@
         "tests/batch_d.test.js",
         "tests/batch_h.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/employee_record_security.test.js",
         "tests/secret_exposure.test.js"
       ],
@@ -2019,7 +2048,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/auth_foundation.test.js"
+        "tests/auth_foundation.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2042,6 +2073,7 @@
         "tests/batch_d.test.js",
         "tests/batch_h.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/employee_record_security.test.js",
         "tests/secret_exposure.test.js"
       ],
@@ -2084,6 +2116,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
+        "tests/dependency_hardening.test.js",
+        "tests/release_scripts.test.js",
         "tests/route_gap_closure.test.js"
       ],
       "missingTests": [],
@@ -2142,7 +2177,9 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/access_matrix_p2.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2246,6 +2283,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/leave_medical_docs.test.js",
         "tests/legacy_medical_inventory.test.js",
@@ -2271,6 +2310,7 @@
       "existingTests": [
         "tests/batch_c.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/leave_medical_docs.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/web_android_shared_data.test.js"
@@ -2317,6 +2357,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/leave_medical_docs.test.js",
         "tests/legacy_medical_inventory.test.js",
@@ -2360,6 +2402,7 @@
       "rateLimit": "`leave-doc:${userId}`, 300, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
         "tests/leave_medical_docs.test.js",
         "tests/legacy_medical_inventory.test.js"
       ],
@@ -2381,6 +2424,7 @@
       "providers": [],
       "existingTests": [
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/entitlement_matrix_mobile_web.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2401,7 +2445,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/access_matrix_p2.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2420,7 +2465,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/access_matrix_p2.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2537,6 +2583,8 @@
       "providers": [],
       "existingTests": [
         "tests/auth_foundation.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/expenses_vertical.test.js",
         "tests/web_android_shared_data.test.js"
       ],
@@ -2641,6 +2689,7 @@
       "providers": [],
       "existingTests": [
         "tests/batch_e.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/web_android_shared_data.test.js"
       ],
       "missingTests": [],
@@ -2723,7 +2772,8 @@
       "rateLimit": "none",
       "providers": [],
       "existingTests": [
-        "tests/access_matrix_p2.test.js"
+        "tests/access_matrix_p2.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -2746,6 +2796,8 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
         "tests/receipt_cleanup.test.js",
@@ -2777,6 +2829,7 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/expense_approval_policy.test.js",
         "tests/expense_idempotency_receipts.test.js",
         "tests/expense_line_review_bounds.test.js",
@@ -2832,6 +2885,7 @@
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/expense_line_review_bounds.test.js",
         "tests/expenses_vertical.test.js",
         "tests/receipt_ocr_vertical.test.js",
@@ -2885,6 +2939,7 @@
       "rateLimit": "`rms-receipt:${userId}`, 300, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
         "tests/receipt_ocr_vertical.test.js",
         "tests/receipt_type_contract.test.js",
         "tests/travel_attachments.test.js",
@@ -2948,7 +3003,8 @@
       "existingTests": [
         "tests/batch_b.test.js",
         "tests/batch_i.test.js",
-        "tests/batch_j.test.js"
+        "tests/batch_j.test.js",
+        "tests/employee_record_security.test.js"
       ],
       "missingTests": [],
       "status": "VERIFIED_FAKE",
@@ -3036,6 +3092,8 @@
         "tests/auth_foundation.test.js",
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
+        "tests/db_outage_matrix.test.js",
+        "tests/employee_record_security.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
@@ -3061,6 +3119,7 @@
       "existingTests": [
         "tests/batch_i.test.js",
         "tests/batch_j.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/leave_medical_docs.test.js",
         "tests/malformed_input_sweep.test.js",
         "tests/travel_api.test.js",
@@ -3112,6 +3171,7 @@
       "existingTests": [
         "tests/batch_c.test.js",
         "tests/batch_i.test.js",
+        "tests/db_outage_matrix.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_conversion.test.js",
@@ -3185,6 +3245,7 @@
       "rateLimit": "`travel-doc:${userId}`, 300, 60_000",
       "providers": [],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
         "tests/travel_api.test.js",
         "tests/travel_attachments.test.js",
         "tests/travel_patch.test.js"
@@ -3208,6 +3269,7 @@
         "Cloudinary"
       ],
       "existingTests": [
+        "tests/db_outage_matrix.test.js",
         "tests/expense_idempotency_receipts.test.js",
         "tests/expenses_vertical.test.js",
         "tests/leave_medical_docs.test.js",

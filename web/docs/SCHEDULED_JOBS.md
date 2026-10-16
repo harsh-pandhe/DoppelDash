@@ -25,3 +25,6 @@ Whichever is chosen: configure **retries off or limited to 1**, alert on non-2xx
 4. Watch the scheduler's own run history for one full day (birthday/onboarding) and 30 minutes (announcements). Record timestamps and HTTP codes.
 5. Failure drill: temporarily point `SMTP_HOST` at an unreachable host in staging → the job still returns 200 and the claim is **not** lost silently (mail failures are logged as `[mail]` codes only).
 Evidence class when done: LIVE-STAGING. Until then: FAKE-VERIFIED.
+
+## Claim leases (Phase 6)
+Birthday, announcement and onboarding jobs claim work with a lease (`lib/cron/claim.ts`): an atomic conditional update ensures one runner per item, an overlapping run skips claimed items, an expired lease is reclaimable (crash recovery), and attempts are capped per day. The scheduler itself remains BLOCKED pending owner decision.

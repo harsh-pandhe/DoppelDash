@@ -14,6 +14,7 @@ PR #1 is open + **draft** + mergeable; not merged.
 `GET /api/health` → `{status, commit, context}` (public, no DB, no secrets). `commit` is embedded at build time from `COMMIT_REF` (Netlify) / `GITHUB_SHA` / `DD_BUILD_SHA` (`next.config.mjs`). Release smoke test: the SHA returned by the production hostname must equal the reviewed commit **and** the Netlify deploy's commit; record deploy id + SHA. Test: `tests/route_gap_closure.test.js` G5. **BLOCKED:** which SHA production is serving today is unknown (no Netlify access).
 
 ## 3. Dependency / secret scan (2026-10-16, `npm audit --omit=dev`, web)
+**Phase 6 update: 48 -> 4 advisories (1 low, 1 moderate, 2 high) after remediation; remaining = next/postcss (needs Next 16), xlsx (no fix, write-only), simplewebauthn (low, major). See `docs/ledger/PHASE6_RELEASE_CLOSURE_2026-10-16.md` §6B. The table below is the pre-remediation record.**
 48 advisories: 1 critical, 13 high, 33 moderate, 1 low. **No dependency change was made** (upgrades need owner approval and a regression pass).
 | Package | Installed → fix | Severity | Exposure in this app | Proposed action |
 |---|---|---|---|---|

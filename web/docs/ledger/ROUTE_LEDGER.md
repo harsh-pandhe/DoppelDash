@@ -59,7 +59,7 @@ Counts: **44** Web pages · **93** API route files / **153** methods · **33** A
 
 | Route | Methods | Guards found | unauth? | Web callers | Android callers | Tests mentioning |
 |---|---|---|---|---|---|---|
-| `/api/admin/audit` | GET | session, role-check, tenant-scoped |  | 1 | 1 | 3 |
+| `/api/admin/audit` | GET | session, role-check, tenant-scoped |  | 1 | 1 | 5 |
 | `/api/admin/balances/[userId]` | GET, PATCH | session, role-check, tenant-scoped |  | 1 | **none** | 4 |
 | `/api/admin/invitations` | GET, POST | session, role-check, rate-limit, tenant-scoped |  | 2 | **none** | 8 |
 | `/api/admin/invitations/[id]` | GET, DELETE | session, role-check, tenant-scoped |  | 1 | **none** | 8 |
@@ -67,18 +67,18 @@ Counts: **44** Web pages · **93** API route files / **153** methods · **33** A
 | `/api/admin/settings` | GET, POST, PUT, PATCH | session, role-check, tenant-scoped |  | — | **none** | 2 |
 | `/api/admin/users` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
 | `/api/admin/users/[userId]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
-| `/api/analytics` | GET | session, role-check, tenant-scoped |  | 2 | 1 | 5 |
+| `/api/analytics` | GET | session, role-check, tenant-scoped |  | 2 | 1 | 6 |
 | `/api/analytics/drill` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
 | `/api/analytics/share` | GET, POST | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/analytics/share/[token]` | DELETE | session, rate-limit, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/analytics/shared/[token]` | GET | rate-limit, tenant-scoped | **yes** | 1 | **none** | 1 |
-| `/api/analytics/software` | GET | session, role-check, tenant-scoped |  | — | **none** | 1 |
-| `/api/announcements` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 6 |
-| `/api/announcements/[id]` | PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 6 |
+| `/api/analytics/software` | GET | session, role-check, tenant-scoped |  | — | **none** | 2 |
+| `/api/announcements` | GET, POST | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
+| `/api/announcements/[id]` | PATCH, DELETE | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
 | `/api/announcements/broadcast` | POST | session, role-check, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/auth/change-password` | POST | session, rate-limit |  | 2 | 1 | 6 |
-| `/api/auth/invitations/[token]` | GET, HEAD | — | **yes** | 1 | 1 | 6 |
-| `/api/auth/invitations/accept` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 5 |
+| `/api/auth/invitations/[token]` | GET, HEAD | — | **yes** | 1 | 1 | 8 |
+| `/api/auth/invitations/accept` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 6 |
 | `/api/auth/invitations/verify` | POST | rate-limit | **yes** | 1 | 1 | 5 |
 | `/api/auth/login` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 8 |
 | `/api/auth/logout` | POST | — | **yes** | 3 | 1 | 7 |
@@ -91,16 +91,16 @@ Counts: **44** Web pages · **93** API route files / **153** methods · **33** A
 | `/api/auth/password-reset/check` | POST | rate-limit | **yes** | 1 | 1 | 3 |
 | `/api/auth/password-reset/confirm` | POST | rate-limit | **yes** | 1 | 1 | 5 |
 | `/api/auth/password-reset/request` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 8 |
-| `/api/auth/refresh` | POST | rate-limit, tenant-scoped | **yes** | — | 2 | 4 |
+| `/api/auth/refresh` | POST | rate-limit, tenant-scoped | **yes** | — | 2 | 5 |
 | `/api/auth/register` | POST | rate-limit, tenant-scoped, web-access | **yes** | — | 1 | 8 |
 | `/api/auth/send-otp` | POST | rate-limit, tenant-scoped | **yes** | 1 | 1 | 2 |
 | `/api/auth/setup` | POST | tenant-scoped | **yes** | — | **none** | 1 |
 | `/api/auth/totp/setup` | POST, PUT, DELETE | session, rate-limit, tenant-scoped |  | 1 | 1 | 2 |
 | `/api/auth/tour-seen` | POST | session |  | 1 | **none** | 1 |
 | `/api/auth/verify-otp` | POST | rate-limit, tenant-scoped, web-access | **yes** | 1 | 1 | 8 |
-| `/api/billing/entitlements` | GET | session, tenant-scoped, web-access |  | — | 1 | 7 |
-| `/api/billing/play/rtdn` | POST | webhook/service-auth, tenant-scoped |  | — | **none** | 2 |
-| `/api/billing/play/verify` | POST | session, rate-limit, tenant-scoped, web-access |  | — | 1 | 2 |
+| `/api/billing/entitlements` | GET | session, tenant-scoped, web-access |  | — | 1 | 8 |
+| `/api/billing/play/rtdn` | POST | webhook/service-auth, tenant-scoped |  | — | **none** | 3 |
+| `/api/billing/play/verify` | POST | session, rate-limit, tenant-scoped, web-access |  | — | 1 | 3 |
 | `/api/crm` | GET, POST | session, role-check, tenant-scoped |  | 5 | 1 | 8 |
 | `/api/crm/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 5 | 2 | 8 |
 | `/api/crm/[id]/share` | GET, POST, DELETE | session, tenant-scoped |  | 1 | 1 | 8 |
@@ -111,36 +111,36 @@ Counts: **44** Web pages · **93** API route files / **153** methods · **33** A
 | `/api/crm/scanned-cards` | GET, POST | session, tenant-scoped |  | 2 | 1 | 5 |
 | `/api/crm/scanned-cards/[id]` | PATCH, DELETE | session, tenant-scoped |  | 2 | 1 | 5 |
 | `/api/cron/announcements` | GET | cron-secret, tenant-scoped |  | — | **none** | 2 |
-| `/api/cron/birthday` | GET | cron-secret, tenant-scoped |  | — | **none** | 2 |
+| `/api/cron/birthday` | GET | cron-secret, tenant-scoped |  | — | **none** | 4 |
 | `/api/cron/onboarding` | GET | cron-secret, tenant-scoped |  | — | **none** | 2 |
 | `/api/cron/receipts-cleanup` | GET, POST, PUT, PATCH, DELETE | cron-secret |  | — | **none** | 3 |
 | `/api/dev/migrate` | POST | dev-secret, role-check, webhook/service-auth, tenant-scoped |  | — | **none** | 4 |
 | `/api/dev/reset-to-admin` | POST | dev-secret, webhook/service-auth |  | — | **none** | 1 |
 | `/api/dev/seed` | POST | dev-secret, role-check, webhook/service-auth, tenant-scoped |  | 1 | **none** | 5 |
 | `/api/employees/[id]` | GET, PATCH | session, role-check, tenant-scoped |  | 6 | 1 | 8 |
-| `/api/employees/directory` | GET | session, role-check, tenant-scoped |  | 3 | 1 | 1 |
-| `/api/employees/me` | GET, PATCH | session, role-check, tenant-scoped |  | 6 | 1 | 7 |
-| `/api/health` | GET, HEAD | — | **yes** | — | **none** | 1 |
-| `/api/holidays` | GET, POST, DELETE | session, role-check, tenant-scoped |  | 2 | 1 | 2 |
+| `/api/employees/directory` | GET | session, role-check, tenant-scoped |  | 3 | 1 | 3 |
+| `/api/employees/me` | GET, PATCH | session, role-check, tenant-scoped |  | 6 | 1 | 8 |
+| `/api/health` | GET, HEAD | — | **yes** | — | **none** | 4 |
+| `/api/holidays` | GET, POST, DELETE | session, role-check, tenant-scoped |  | 2 | 1 | 4 |
 | `/api/inbox` | GET | session, role-check, tenant-scoped |  | — | 1 | 2 |
 | `/api/inbox/[id]` | GET, PATCH | session, role-check, tenant-scoped |  | 1 | 1 | 2 |
 | `/api/lms` | GET, POST | session, role-check, tenant-scoped |  | 3 | 1 | 8 |
 | `/api/lms/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 3 | 1 | 8 |
 | `/api/lms/[id]/document/[file]` | GET | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 8 |
-| `/api/lms/balance` | GET | session, tenant-scoped |  | 1 | 1 | 3 |
-| `/api/lms/calendar` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
-| `/api/lms/workload` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/lms/balance` | GET | session, tenant-scoped |  | 1 | 1 | 4 |
+| `/api/lms/calendar` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 2 |
+| `/api/lms/workload` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/mail/drafts` | GET, POST | session, tenant-scoped |  | 2 | 1 | 2 |
 | `/api/mail/drafts/[id]` | GET, PATCH, DELETE | session, tenant-scoped |  | 2 | 1 | 2 |
-| `/api/notifications` | GET, POST | session, role-check, tenant-scoped |  | 2 | 1 | 4 |
+| `/api/notifications` | GET, POST | session, role-check, tenant-scoped |  | 2 | 1 | 6 |
 | `/api/org/mail-config` | GET, PUT, DELETE | session, role-check, tenant-scoped |  | — | **none** | 2 |
 | `/api/org/settings` | GET, POST, PUT, PATCH | session, role-check, tenant-scoped |  | 1 | 1 | 8 |
-| `/api/reports` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 1 |
+| `/api/reports` | GET | session, role-check, tenant-scoped |  | 1 | **none** | 2 |
 | `/api/rms` | GET, POST | session, role-check, tenant-scoped |  | 3 | 1 | 8 |
 | `/api/rms/[id]` | GET, PATCH, DELETE | session, role-check, tenant-scoped |  | 4 | 1 | 8 |
 | `/api/rms/[id]/receipt/[file]` | GET | session, role-check, rate-limit, tenant-scoped |  | 1 | **none** | 8 |
 | `/api/rms/ocr` | GET, POST | session, rate-limit, tenant-scoped |  | 1 | 1 | 2 |
-| `/api/search` | GET | session, role-check, tenant-scoped |  | 1 | 1 | 3 |
+| `/api/search` | GET | session, role-check, tenant-scoped |  | 1 | 1 | 4 |
 | `/api/support/chat` | POST | role-check | **yes** | 2 | **none** | 2 |
 | `/api/sync/email` | GET, POST | session, role-check, tenant-scoped |  | — | 1 | 1 |
 | `/api/travel` | GET, POST | session, role-check, tenant-scoped |  | 5 | 1 | 8 |
@@ -215,7 +215,7 @@ Counts: **44** Web pages · **93** API route files / **153** methods · **33** A
 * **MongoDB**: `MONGODB_URI`
 * **Auth/crypto secrets**: `ENCRYPTION_SECRET`, `JWT_SECRET`, `REFRESH_REUSE_GRACE_MS`, `REVIEWER_PASSWORD`, `REVIEWER_STATIC_OTP`, `SETUP_SECRET`
 * **Cron**: `CRON_SECRET`, `RECEIPT_CLEANUP_APPLY`
-* **Dev/test switches**: `ALLOW_DEV_SEED`, `DD_BUILD_SHA`, `DD_CI_DB`, `DD_DEPLOY_CONTEXT`, `DD_DESIGN_SHOWCASE`, `DEV_SEED_SECRET`, `TRAVEL_CONVERSION_WAIT_MS`, `TRAVEL_FAILPOINTS`
+* **Dev/test switches**: `ALLOW_DEV_SEED`, `DD_BUILD_SHA`, `DD_CI_DB`, `DD_DB_SELECTION_TIMEOUT_MS`, `DD_DEPLOY_CONTEXT`, `DD_DESIGN_SHOWCASE`, `DEV_SEED_SECRET`, `TRAVEL_CONVERSION_WAIT_MS`, `TRAVEL_FAILPOINTS`
 
 ## Web link audit
 
