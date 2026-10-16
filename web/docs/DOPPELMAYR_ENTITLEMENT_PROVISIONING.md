@@ -11,3 +11,12 @@
 4. Safe to repeat: when already provisioned nothing is written and no second audit entry appears.
 
 Status: script and tests are FAKE-VERIFIED. **Not run against any shared or production database** — that is an owner action (never share the connection string in chat; the script prints only the database name).
+
+## Reviewed dry-run checklist (operator; all boxes before any `--apply`)
+- [ ] Target identified by the owner in writing: database name `<db>` and organisation id `org_doppelmayr`; the connection string is exported only in the operator's shell (never pasted in chat, a ticket or a commit).
+- [ ] The database is the intended shared database, confirmed against the Atlas project/cluster name (not a restore copy, not a test database).
+- [ ] Dry run executed (no flags): output attached to the ticket; it prints the database name and org id — they equal the written target; `orgFound` is true (the script never creates an organisation); the "would write" list is exactly the documented fields (`plan`, `entitlementSource`, `lifetimeGrant`, `webEnabled`, `androidEnabled`, ...).
+- [ ] A second reviewer compared the dry-run output with the runbook above.
+- [ ] Explicit written approval to apply, with the actor name and reason text to use.
+- [ ] `ALLOW_DEV_SEED`/`DEV_SEED_SECRET` are NOT set in that environment (`check-release-env.js --context=production` must PASS).
+- [ ] After apply: re-run the dry run -> "Already provisioned" (idempotent, no second audit entry); `GET /api/billing/entitlements` as a member shows premium + web/android; a public organisation still has `webEnabled=false`.

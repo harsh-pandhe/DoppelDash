@@ -60,3 +60,24 @@ test('R4. trigger-cron refuses unsafe targets before any request, sends the secr
     assert.ok(seen.some(s => s.auth === 'Bearer not-the-secret') && seen.some(s => s.auth === `Bearer ${SECRET}`))
   } finally { srv.close() }
 })
+
+/* ───────── Netlify scheduled function body (Phase 10): fail closed, header-only secret, counts-only log ───────── */
+test('R5. runCronJob refuses without target/secret or with an unsafe target (no request), sends the secret only as a bearer header, logs status/sent only, and the three function files declare the documented cadences', async () => {
+  const fs = require('node:fs'), http = require('node:http'), path = require('node:path'), { pathToFileURL } = require('node:url')
+  const { runCronJob, JOBS } = await import(pathToFileURL(path.resolve(__dirname, '../netlify/lib/runCronJob.mjs')).href)
+  const SECRET = 'scheduler-fixture-secret-0123456789'; const logs = []; const log = { log: m => logs.push(m), error: m => logs.push(m) }
+  const seen = []; const srv = http.createServer((req, res) => { seen.push({ url: req.url, auth: req.headers.authorization }); res.writeHead(req.headers.authorization === `Bearer ${SECRET}` ? 200 : 401, { 'content-type': 'application/json' }); res.end(JSON.stringify({ sent: 3, contacts: ['Leaky Name'] })) })
+  await new Promise(r => srv.listen(0, '127.0.0.1', r)); const origin = `http://127.0.0.1:${srv.address().port}`
+  try {
+    for (const env of [{}, { CRON_TARGET_URL: origin }, { CRON_SECRET: SECRET }, { CRON_TARGET_URL: 'http://example.org', CRON_SECRET: SECRET }, { CRON_TARGET_URL: origin + '/x', CRON_SECRET: SECRET }, { CRON_TARGET_URL: origin + '/?secret=a', CRON_SECRET: SECRET }, { CRON_TARGET_URL: origin, CRON_SECRET: 'short' }]) assert.equal((await runCronJob('birthday', env, fetch, log)).status, 0)
+    assert.equal(seen.length, 0, 'no request was made for any unsafe configuration')
+    await assert.rejects(() => runCronJob('receipts-cleanup', { CRON_TARGET_URL: origin, CRON_SECRET: SECRET }, fetch, log), /unknown job/)
+    const ok = await runCronJob('announcements', { CRON_TARGET_URL: origin, CRON_SECRET: SECRET }, fetch, log); assert.deepEqual([ok.ok, ok.status, ok.sent], [true, 200, 3])
+    const bad = await runCronJob('announcements', { CRON_TARGET_URL: origin, CRON_SECRET: SECRET + 'x' }, fetch, log); assert.equal(bad.ok, false); assert.equal(bad.status, 401)
+    assert.ok(seen.every(s => s.url === '/api/cron/announcements'), 'secret never in a URL')
+    const all = logs.join('\n'); assert.doesNotMatch(all, new RegExp(SECRET)); assert.doesNotMatch(all, /Leaky Name/); assert.match(all, /\[cron:announcements\] status=200 sent=3/)
+  } finally { srv.close() }
+  assert.deepEqual(Object.keys(JOBS).sort(), ['announcements', 'birthday', 'onboarding'])
+  const sched = j => /schedule: '([^']+)'/.exec(fs.readFileSync(path.resolve(__dirname, `../netlify/functions/cron-${j}.mjs`), 'utf8'))[1]
+  assert.deepEqual([sched('birthday'), sched('announcements'), sched('onboarding')], ['0 7 * * *', '*/5 * * * *', '0 9 * * *'])
+})

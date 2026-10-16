@@ -48,3 +48,22 @@ test('R4. the rehearsal refuses a non-loopback or non-test database', () => {
     const r = run('backup-restore-rehearsal.js', { MONGODB_URI: uri }); assert.notEqual(r.status, 0, uri); assert.match(r.stderr, /LOOPBACK/); assert.doesNotMatch(r.stderr + r.stdout, /prod\.example|cluster\.example|u:p/)
   }
 })
+
+/* ───────── compare-databases.js (Phase 10): read-only reconciliation, DISPOSABLE fixtures ───────── */
+test('R6. compare-databases refuses unsafe invocations, reports MATCH for an identical copy, and flags changed content, missing/extra collections, count and index drift — printing no document content or URI', async () => {
+  const { MongoClient } = require('mongodb'); const base = (process.env.MONGODB_URI || '').replace(/\/[^/?]+(\?.*)?$/, '/')
+  const c = await MongoClient.connect(base + 'dd_cmp_a_test'); const A_ = c.db('dd_cmp_a_test'), B_ = c.db('dd_cmp_b_test')
+  try {
+    await A_.dropDatabase(); await B_.dropDatabase()
+    const docs = [{ _id: 1, secret: 'PRIVATE-MEDICAL-TEXT', n: 1 }, { _id: 2, secret: 'x', n: 2 }]
+    for (const d of [A_, B_]) { await d.collection('claims').insertMany(docs); await d.collection('claims').createIndex({ n: 1 }) }
+    const env = { SOURCE_MONGODB_URI: base + 'dd_cmp_a_test', RESTORED_MONGODB_URI: base + 'dd_cmp_b_test', ATLAS_COMPARE_APPROVAL: '1' }; const ok = ['--confirm-source-db=dd_cmp_a_test', '--confirm-restored-db=dd_cmp_b_test']
+    for (const [label, e, a] of [['no approval', { ATLAS_COMPARE_APPROVAL: '' }, ok], ['same uri', { RESTORED_MONGODB_URI: env.SOURCE_MONGODB_URI }, ok], ['no confirm', {}, []], ['wrong confirm', {}, ['--confirm-source-db=x', '--confirm-restored-db=dd_cmp_b_test']]]) { const r = run('compare-databases.js', { ...env, ...e }, a); assert.equal(r.status, 2, `${label}: ${r.stderr}`); assert.match(r.stderr, /REFUSING TO RUN/) }
+    let r = run('compare-databases.js', env, ok); assert.equal(r.status, 0, r.stdout + r.stderr); assert.match(r.stdout, /ALL COLLECTIONS MATCH/); assert.doesNotMatch(r.stdout + r.stderr, /PRIVATE-MEDICAL-TEXT|mongodb:\/\//)
+    await B_.collection('claims').updateOne({ _id: 2 }, { $set: { secret: 'tampered' } })
+    r = run('compare-databases.js', env, ok); assert.equal(r.status, 1); assert.match(r.stdout, /DIFF\s+claims.*content/); assert.doesNotMatch(r.stdout + r.stderr, /tampered|PRIVATE-MEDICAL-TEXT/)
+    await B_.collection('claims').updateOne({ _id: 2 }, { $set: { secret: 'x' } }); await B_.collection('claims').dropIndex('n_1'); await B_.collection('extra').insertOne({ a: 1 }); await A_.collection('only_src').insertOne({ a: 1 }); await B_.collection('claims').deleteOne({ _id: 1 })
+    r = run('compare-databases.js', env, ok); assert.equal(r.status, 1); assert.match(r.stdout, /claims.*count\+content\+indexes|claims.*count/); assert.match(r.stdout, /extra in restored/); assert.match(r.stdout, /missing in restored/)
+    r = run('compare-databases.js', env, [...ok, '--exclude=extra,only_src,claims']); assert.equal(r.status, 0, r.stdout)
+  } finally { await A_.dropDatabase().catch(() => undefined); await B_.dropDatabase().catch(() => undefined); await c.close() }
+})
