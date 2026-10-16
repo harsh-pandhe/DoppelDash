@@ -37,3 +37,26 @@ test('R3. smoke test: passes against a healthy server (anonymous refusals, heade
   assert.equal(run('smoke-release.js', {}, ['--url=http://127.0.0.1:9']).status, 1, 'an unreachable target fails')
   assert.equal(run('smoke-release.js', {}, []).status, 2)
 })
+
+/* ───────── trigger-cron.js (Phase 9): safe refusal + header-only secret, against a local fixture server ───────── */
+test('R4. trigger-cron refuses unsafe targets before any request, sends the secret only in the Authorization header, prints counts only', async () => {
+  const http = require('node:http'), { spawnSync, spawn } = require('node:child_process'), path = require('node:path')
+  const script = path.resolve(__dirname, '../scripts/trigger-cron.js'); const SECRET = 'staging-fixture-secret-0123456789'
+  const seen = []
+  const srv = http.createServer((req, res) => { seen.push({ url: req.url, auth: req.headers.authorization || '' }); const ok = req.headers.authorization === `Bearer ${SECRET}`; res.writeHead(ok ? 200 : 401, { 'content-type': 'application/json' }); res.end(JSON.stringify(ok ? { sent: 2, contacts: ['Leaky Name'] } : { error: 'Unauthorized' })) })
+  await new Promise(r => srv.listen(0, '127.0.0.1', r)); const port = srv.address().port
+  const run = (env, a = []) => spawnSync(process.execPath, [script, ...a], { env: { PATH: process.env.PATH, ...env }, encoding: 'utf8' })
+  try {
+    const base = { STAGING_APP_URL: `http://127.0.0.1:${port}`, STAGING_CRON_SECRET: SECRET, DD_ALLOW_TARGET: `127.0.0.1:${port}` }
+    for (const [label, env] of [['no url', { ...base, STAGING_APP_URL: '' }], ['plain http non-loopback', { ...base, STAGING_APP_URL: 'http://example.org' }], ['short secret', { ...base, STAGING_CRON_SECRET: 'x' }], ['no allow-target', { ...base, DD_ALLOW_TARGET: '' }], ['wrong allow-target', { ...base, DD_ALLOW_TARGET: 'other:1' }], ['production host', { ...base, PRODUCTION_HOSTS: `127.0.0.1:${port}` }], ['path in url', { ...base, STAGING_APP_URL: `http://127.0.0.1:${port}/x` }], ['query secret', { ...base, STAGING_APP_URL: `http://127.0.0.1:${port}/?secret=a` }]]) {
+      const r = run(env); assert.equal(r.status, 2, `${label} → ${r.status} ${r.stderr}`); assert.match(r.stderr, /REFUSING TO RUN/); assert.doesNotMatch(r.stdout + r.stderr, new RegExp(SECRET))
+    }
+    assert.equal(seen.length, 0, 'refusals made no request')
+    assert.equal(run(base, ['--jobs=receipts-cleanup']).status, 2, 'receipts-cleanup is not triggerable here')
+    const ok = await new Promise(res => { const c = spawn(process.execPath, [script, '--repeat=2', '--parallel'], { env: { PATH: process.env.PATH, ...base } }); let o = ''; c.stdout.on('data', d => o += d); c.stderr.on('data', d => o += d); c.on('close', code => res({ code, o })) })
+    assert.equal(ok.code, 0, ok.o); assert.match(ok.o, /ALL CHECKS PASSED/); assert.match(ok.o, /sent=2/)
+    assert.doesNotMatch(ok.o, new RegExp(SECRET)); assert.doesNotMatch(ok.o, /Leaky Name/, 'response bodies are never echoed')
+    assert.ok(seen.every(s => !s.url.includes('secret') && !s.url.includes('?') && !s.url.includes(SECRET)), 'secret never in a URL')
+    assert.ok(seen.some(s => s.auth === 'Bearer not-the-secret') && seen.some(s => s.auth === `Bearer ${SECRET}`))
+  } finally { srv.close() }
+})

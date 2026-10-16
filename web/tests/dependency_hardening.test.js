@@ -54,3 +54,11 @@ test('V5. @simplewebauthn/server >= 14.0.3 (low advisory fixed in 14.x) and the 
   assert.ok(gte(installed('@simplewebauthn/server'), '14.0.3'), installed('@simplewebauthn/server'))
   assert.equal(installed('@simplewebauthn/browser').split('.')[0], installed('@simplewebauthn/server').split('.')[0])
 })
+
+test('V6. React 19 (the React 18 line is deprecated in Next 16 and removed in Next 17): react/react-dom/@types are on the same major as the Next 16 peer range, with no second React copy in the lockfile', () => {
+  assert.equal(installed('react').split('.')[0], '19'); assert.equal(installed('react-dom'), installed('react'))
+  assert.equal(installed('@types/react').split('.')[0], '19'); assert.equal(installed('@types/react-dom').split('.')[0], '19')
+  const lock = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package-lock.json'), 'utf8'))
+  const copies = Object.entries(lock.packages).filter(([k]) => /(^|\/)node_modules\/react$/.test(k)).map(([k, v]) => `${k}@${v.version}`)
+  assert.deepEqual(copies, [`node_modules/react@${installed('react')}`], 'exactly one react copy')
+})

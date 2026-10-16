@@ -28,7 +28,6 @@ async function GET_handler(req: NextRequest) {
   if (!due.length) return NextResponse.json({ sent: 0 })
 
   let sent = 0
-  const titles: string[] = []
   for (const a of due) {
     // A record without a tenant is never assigned one — skip it.
     if (!a.orgId) continue
@@ -40,13 +39,14 @@ async function GET_handler(req: NextRequest) {
         await emailUrgentAnnouncement({ orgId: a.orgId, emails, title: a.title, body: a.body, senderName: a.authorName || 'Management' })
       }
       await finish(coll, a._id, 'urgentEmail', { urgentEmailSent: true })
-      sent++; titles.push(a.title)
+      sent++
     } catch {
       await release(coll, a._id, 'urgentEmail').catch(() => undefined)
     }
   }
 
-  return NextResponse.json({ sent, titles })
+  // Counts only: the scheduler's run history/logs (often third-party or public) must never carry announcement titles.
+  return NextResponse.json({ sent })
 }
 
 export const GET = dbGuard(GET_handler)

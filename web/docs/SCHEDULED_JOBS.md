@@ -28,3 +28,6 @@ Evidence class when done: LIVE-STAGING. Until then: FAKE-VERIFIED.
 
 ## Claim leases (Phase 6)
 Birthday, announcement and onboarding jobs claim work with a lease (`lib/cron/claim.ts`): an atomic conditional update ensures one runner per item, an overlapping run skips claimed items, an expired lease is reclaimable (crash recovery), and attempts are capped per day. The scheduler itself remains BLOCKED pending owner decision.
+
+## Phase 9: response hygiene and the staging trigger
+Cron responses now return counts only (`{ "sent": n }`); contact names and announcement titles are no longer in the body, so scheduler run history/logs hold no personal data (regression: `cron_idempotency` J2/J3 assert the body holds only `sent` (and the fixed `message` on the empty path)). Staging invocation, recommended scheduler (Netlify Scheduled Functions) and alerting design: `docs/RELEASE_CANDIDATE_RUNBOOK.md` §B; tool: `web/scripts/trigger-cron.js` (`STAGING_APP_URL`, `STAGING_CRON_SECRET`, `DD_ALLOW_TARGET`; refuses production hosts, non-https, header-only secret). The scheduler is still NOT configured anywhere.

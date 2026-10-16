@@ -37,7 +37,6 @@ async function GET_handler(req: NextRequest) {
   }
 
   let sent = 0
-  const names: string[] = []
   for (const contact of todayBirthdays) {
     // A record without a tenant is never assigned one — skip it.
     if (!contact.orgId) continue
@@ -47,13 +46,14 @@ async function GET_handler(req: NextRequest) {
       const managerEmails = await getBirthdayNotificationRecipients(contact.orgId)
       if (managerEmails.length) await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails, orgId: contact.orgId })
       await finish(coll, contact._id, 'birthday', { birthdayGreetingYear: year, birthdayGreetingSent: true })
-      sent++; names.push(contact.name)
+      sent++
     } catch {
       await release(coll, contact._id, 'birthday').catch(() => undefined)   // retried by the next run (bounded per day)
     }
   }
 
-  return NextResponse.json({ sent, contacts: names })
+  // Counts only: the scheduler's run history/logs (often third-party or public) must never carry contact names.
+  return NextResponse.json({ sent })
 }
 
 export const GET = dbGuard(GET_handler)

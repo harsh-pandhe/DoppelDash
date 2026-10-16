@@ -34,21 +34,24 @@ test('J1b. the REAL secret in a query string is refused — checked in-process s
 test('J2. birthday: overlapping runs send ONE reminder per contact per year; a second run the same day sends none; the claim records the year', async () => {
   const d = new Date(); const bday = new Date(Date.UTC(1990, d.getMonth(), d.getDate(), 12))
   const ins = await db.collection('contacts').insertOne({ orgId: A.orgId, createdBy: A.admin.id, name: 'CronBirthday ' + kit.rand(), birthday: bday, tag: 'cron-test', createdAt: new Date(), updatedAt: new Date() })
+  await db.collection('contacts').updateMany({ _id: { $ne: ins.insertedId } }, { $set: { birthdayGreetingYear: d.getFullYear() } })   // isolate: only this contact is due
   const rs = await Promise.all(Array.from({ length: 6 }, () => run('birthday')))
   assert.ok(rs.every(r => r.status === 200), rs.map(r => r.status).join())
-  const mine = rs.filter(r => (r.json.contacts || []).some(n => n.startsWith('CronBirthday'))).length
-  assert.equal(mine, 1, 'exactly one of six overlapping runs sent this contact’s reminder: ' + JSON.stringify(rs.map(r => r.json)))
+  assert.equal(rs.reduce((n, r) => n + r.json.sent, 0), 1, 'exactly one of six overlapping runs sent this contact’s reminder: ' + JSON.stringify(rs.map(r => r.json)))
+  assert.ok(rs.every(r => Object.keys(r.json).every(k => ['sent', 'message'].includes(k))), 'responses carry counts/fixed text only (no contact names): ' + JSON.stringify(rs.map(r => r.json)))
   assert.equal((await db.collection('contacts').findOne({ _id: ins.insertedId })).birthdayGreetingYear, d.getFullYear())
-  assert.ok(!(await run('birthday')).json.contacts?.some(n => n.startsWith('CronBirthday')), 'not again the same day')
+  assert.equal((await run('birthday')).json.sent, 0, 'not again the same day')
 })
 
 test('J3. announcements: a due urgent announcement is emailed once even when runs overlap', async () => {
   const ins = await db.collection('announcements').insertOne({ orgId: A.orgId, title: 'CronUrgent ' + kit.rand(), body: 'b', authorId: A.admin.id, authorName: 'Ada', priority: 'urgent', scheduledFor: new Date(Date.now() - 60e3), urgentEmailSent: false, tag: 'cron-test', createdAt: new Date(), updatedAt: new Date() })
+  await db.collection('announcements').updateMany({ _id: { $ne: ins.insertedId } }, { $set: { urgentEmailSent: true } })   // isolate: only this announcement is due
   const rs = await Promise.all(Array.from({ length: 6 }, () => run('announcements')))
   assert.ok(rs.every(r => r.status === 200), rs.map(r => r.status).join())
-  assert.equal(rs.filter(r => (r.json.titles || []).some(t => t.startsWith('CronUrgent'))).length, 1, JSON.stringify(rs.map(r => r.json)))
+  assert.equal(rs.reduce((n, r) => n + r.json.sent, 0), 1, JSON.stringify(rs.map(r => r.json)))
+  assert.ok(rs.every(r => Object.keys(r.json).join() === 'sent'), 'responses carry counts only (no titles)')
   assert.equal((await db.collection('announcements').findOne({ _id: ins.insertedId })).urgentEmailSent, true)
-  assert.ok(!(await run('announcements')).json.titles?.some(t => t.startsWith('CronUrgent')))
+  assert.equal((await run('announcements')).json.sent, 0)
 })
 
 test('J4. onboarding nudge: one nudge per employee per week under overlapping runs; marker set; a run within the week sends none', async () => {
@@ -67,7 +70,6 @@ test('J4. onboarding nudge: one nudge per employee per week under overlapping ru
 const claimLib = () => kit.load('lib/cron/claim.ts')
 const bdayToday = () => { const d = new Date(); return new Date(Date.UTC(1991, d.getMonth(), d.getDate(), 12)) }
 const mkContact = async (extra = {}) => (await db.collection('contacts').insertOne({ orgId: A.orgId, createdBy: A.admin.id, name: 'CronLease ' + kit.rand(), birthday: bdayToday(), tag: 'cron-test', createdAt: new Date(), updatedAt: new Date(), ...extra })).insertedId
-const ran = (r, prefix) => (r.json.contacts || []).some(n => n.startsWith(prefix))
 
 test('J5. a crashed run is recovered: an EXPIRED lease is retried, a LIVE lease is left alone, success clears the lease and sets the sent marker', async () => {
   const stale = await mkContact({ birthdayClaimUntil: new Date(Date.now() - 60e3), birthdayAttemptDay: new Date().toISOString().slice(0, 10), birthdayAttempts: 1 })
