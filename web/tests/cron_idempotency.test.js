@@ -62,3 +62,41 @@ test('J4. onboarding nudge: one nudge per employee per week under overlapping ru
   const e = await db.collection('employees').findOne({ _id: emp.insertedId }); assert.ok(e.onboardingNudgeSentAt, 'marker set')
   const again = await run('onboarding'); assert.equal(again.json.candidates === 0 || again.json.sent === 0, true, 'nothing due within the week: ' + JSON.stringify(again.json))
 })
+
+/* ───────── leases: crash recovery and bounded retries (Phase 6C) ───────── */
+const claimLib = () => kit.load('lib/cron/claim.ts')
+const bdayToday = () => { const d = new Date(); return new Date(Date.UTC(1991, d.getMonth(), d.getDate(), 12)) }
+const mkContact = async (extra = {}) => (await db.collection('contacts').insertOne({ orgId: A.orgId, createdBy: A.admin.id, name: 'CronLease ' + kit.rand(), birthday: bdayToday(), tag: 'cron-test', createdAt: new Date(), updatedAt: new Date(), ...extra })).insertedId
+const ran = (r, prefix) => (r.json.contacts || []).some(n => n.startsWith(prefix))
+
+test('J5. a crashed run is recovered: an EXPIRED lease is retried, a LIVE lease is left alone, success clears the lease and sets the sent marker', async () => {
+  const stale = await mkContact({ birthdayClaimUntil: new Date(Date.now() - 60e3), birthdayAttemptDay: new Date().toISOString().slice(0, 10), birthdayAttempts: 1 })
+  const live = await mkContact({ birthdayClaimUntil: new Date(Date.now() + 5 * 60e3) })
+  const r = await run('birthday'); assert.equal(r.status, 200)
+  const s = await db.collection('contacts').findOne({ _id: stale }); const l = await db.collection('contacts').findOne({ _id: live })
+  assert.equal(s.birthdayGreetingYear, new Date().getFullYear(), 'the stale lease was taken over and finished'); assert.ok(!s.birthdayClaimUntil, 'lease cleared'); assert.ok(!s.birthdayAttempts, 'attempt counters cleared on success')
+  assert.ok(!l.birthdayGreetingYear && l.birthdayClaimUntil, 'a live lease is not stolen')
+})
+
+test('J6. retries are bounded per day: 5 attempts today → skipped; yesterday’s attempts do not count; the claim increments atomically and a release keeps the count', async () => {
+  const { claim, release, MAX_ATTEMPTS_PER_DAY, dayKey } = claimLib(); const coll = db.collection('zz_claims'); await coll.deleteMany({})
+  const id = (await coll.insertOne({ k: 1 })).insertedId; const now = new Date()
+  for (let i = 1; i <= MAX_ATTEMPTS_PER_DAY; i++) { assert.equal(await claim(coll, id, {}, 'x', now), true, 'attempt ' + i); await release(coll, id, 'x') }
+  assert.equal(await claim(coll, id, {}, 'x', now), false, 'daily cap reached'); assert.equal((await coll.findOne({ _id: id })).xAttempts, MAX_ATTEMPTS_PER_DAY)
+  const tomorrow = new Date(now.getTime() + 24 * 3600e3); assert.notEqual(dayKey(now), dayKey(tomorrow)); assert.equal(await claim(coll, id, {}, 'x', tomorrow), true, 'a new day resets the cap'); assert.equal((await coll.findOne({ _id: id })).xAttempts, 1)
+  await coll.drop()
+})
+
+test('J7. two simultaneous claims: exactly one wins; the loser does not extend or steal the lease', async () => {
+  const { claim } = claimLib(); const coll = db.collection('zz_claims2'); await coll.deleteMany({}); const id = (await coll.insertOne({ k: 1 })).insertedId
+  const rs = await Promise.all(Array.from({ length: 10 }, () => claim(coll, id, {}, 'y'))); assert.equal(rs.filter(Boolean).length, 1)
+  const d = await coll.findOne({ _id: id }); assert.equal(d.yAttempts, 1); await coll.drop()
+})
+
+test('J8. attempts cap through the real job: a contact already at today’s cap is skipped (not stranded for tomorrow), a failed-attempt record from yesterday is eligible', async () => {
+  const today = new Date().toISOString().slice(0, 10), yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10)
+  const capped = await mkContact({ birthdayAttemptDay: today, birthdayAttempts: 5 }); const old = await mkContact({ birthdayAttemptDay: yesterday, birthdayAttempts: 5 })
+  const r = await run('birthday'); assert.equal(r.status, 200)
+  assert.ok(!(await db.collection('contacts').findOne({ _id: capped })).birthdayGreetingYear, 'capped today: not sent again today')
+  assert.equal((await db.collection('contacts').findOne({ _id: old })).birthdayGreetingYear, new Date().getFullYear(), 'yesterday’s cap does not apply')
+})

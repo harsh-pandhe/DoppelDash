@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { isCronAuthorized } from '@/lib/cron/auth'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'
+import { claim, finish, release, claimableFragment } from '@/lib/cron/claim'
 import { sendBirthdayEmail } from '@/lib/email'
 import { getBirthdayNotificationRecipients } from '@/lib/cron-recipients'
 
 // Called by system cron: 0 8 * * * curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/birthday
-export async function GET(req: NextRequest) {
+async function GET_handler(req: NextRequest) {
   if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -17,10 +19,12 @@ export async function GET(req: NextRequest) {
   const day   = today.getDate()
   const year  = today.getFullYear()
 
-  // Candidates: birthday today and not yet claimed THIS YEAR (the old boolean + Jan-1 reset could re-send on a second Jan-1 run).
+  // Candidates: birthday today, not yet sent THIS YEAR, lease free/expired, under today's attempt cap (lib/cron/claim.ts).
+  const coll = Contact.collection as unknown as import('mongodb').Collection<import('mongodb').Document>
   const contacts = await Contact.find({
     birthday: { $exists: true },
     birthdayGreetingYear: { $ne: year },
+    ...claimableFragment('birthday', today),
   }).lean()
 
   const todayBirthdays = contacts.filter(c => {
@@ -37,22 +41,19 @@ export async function GET(req: NextRequest) {
   for (const contact of todayBirthdays) {
     // A record without a tenant is never assigned one — skip it.
     if (!contact.orgId) continue
-    // ATOMIC CLAIM before sending: two overlapping runs (a retried trigger, two schedulers) cannot both win, so a reminder goes out once.
-    const claimed = await Contact.findOneAndUpdate(
-      { _id: contact._id, birthdayGreetingYear: { $ne: year } },
-      { $set: { birthdayGreetingYear: year, birthdayGreetingSent: true } },
-      { projection: { _id: 1 } },
-    )
-    if (!claimed) continue
+    // ATOMIC LEASE before sending: overlapping runs cannot both win; a crashed run's lease expires and the contact is retried.
+    if (!(await claim(coll, contact._id, { birthdayGreetingYear: { $ne: year } }, 'birthday', today))) continue
     try {
       const managerEmails = await getBirthdayNotificationRecipients(contact.orgId)
       if (managerEmails.length) await sendBirthdayEmail({ contactName: contact.name, emails: managerEmails, orgId: contact.orgId })
+      await finish(coll, contact._id, 'birthday', { birthdayGreetingYear: year, birthdayGreetingSent: true })
       sent++; names.push(contact.name)
     } catch {
-      // Could not even attempt delivery: release the claim so the next run retries (at-least-once, never silently dropped).
-      await Contact.updateOne({ _id: contact._id, birthdayGreetingYear: year }, { $unset: { birthdayGreetingYear: 1 }, $set: { birthdayGreetingSent: false } }).catch(() => undefined)
+      await release(coll, contact._id, 'birthday').catch(() => undefined)   // retried by the next run (bounded per day)
     }
   }
 
   return NextResponse.json({ sent, contacts: names })
 }
+
+export const GET = dbGuard(GET_handler)

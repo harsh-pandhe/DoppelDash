@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { dbGuard } from '@/lib/http/dbGuard'
 import { isCronAuthorized } from '@/lib/cron/auth'
 import { connectDB } from '@/lib/db'
 import { DEFAULT_LIMIT, MAX_LIMIT, runReceiptCleanup } from '@/lib/uploads/receiptCleanup'
@@ -32,7 +33,7 @@ export const DELETE = methodNotAllowed
 
 const MAX_BODY_BYTES = 2048
 
-export async function POST(req: NextRequest) {
+async function POST_handler(req: NextRequest) {
   if (!isCronAuthorized(req)) return reply(401, { error: 'Unauthorized', code: 'unauthorized' }, { 'WWW-Authenticate': 'Bearer' })
 
   // ── parse & validate the body (everything fails closed to "do nothing") ──
@@ -75,3 +76,5 @@ export async function POST(req: NextRequest) {
     return reply(500, { error: 'Cleanup failed', code: 'cleanup_failed' })
   }
 }
+
+export const POST = dbGuard(POST_handler)

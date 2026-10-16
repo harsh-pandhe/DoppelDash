@@ -24,7 +24,8 @@ export async function connectDB() {
         // in "blocked"/"wait" doing connection + server selection per request.
         maxPoolSize: 10,
         minPoolSize: 0,
-        serverSelectionTimeoutMS: 8000,
+        // Overridable (bounded) so an outage drill / test does not wait 8 s per request.
+        serverSelectionTimeoutMS: Math.min(30_000, Math.max(500, Number(process.env.DD_DB_SELECTION_TIMEOUT_MS) || 8000)),
         socketTimeoutMS: 20000,
         connectTimeoutMS: 8000,
         maxIdleTimeMS: 60000,
