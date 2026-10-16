@@ -1,9 +1,13 @@
 import mongoose from 'mongoose'
 import { assertDataAccessAllowed } from '@/lib/deployContext'
 
-const MONGODB_URI = process.env.MONGODB_URI!
-
-if (!MONGODB_URI) throw new Error('MONGODB_URI is not defined')
+// Read at connect time, not at import: `next build` imports every route module to collect page data, and a build environment that does not expose the
+// database secret must still build. At runtime a missing URI still fails closed (connectDB rejects before any connection is attempted).
+function mongoUri(): string {
+  const uri = process.env.MONGODB_URI
+  if (!uri) throw new Error('MONGODB_URI is not defined')
+  return uri
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -14,6 +18,7 @@ let cached = global.mongoose
 if (!cached) cached = global.mongoose = { conn: null, promise: null }
 
 export async function connectDB() {
+  const MONGODB_URI = mongoUri()
   assertDataAccessAllowed()   // hosted deploys must declare DD_DEPLOY_CONTEXT=production|staging (previews fail closed)
   if (cached.conn) return cached.conn
   if (!cached.promise) {

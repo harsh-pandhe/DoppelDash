@@ -81,3 +81,10 @@ test('R5. runCronJob refuses without target/secret or with an unsafe target (no 
   const sched = j => /schedule: '([^']+)'/.exec(fs.readFileSync(path.resolve(__dirname, `../netlify/functions/cron-${j}.mjs`), 'utf8'))[1]
   assert.deepEqual([sched('birthday'), sched('announcements'), sched('onboarding')], ['0 7 * * *', '*/5 * * * *', '0 9 * * *'])
 })
+
+test('R7. lib/db can be imported without MONGODB_URI (a build environment may not expose the secret: next build imports every route module), and connectDB still fails closed at runtime with no connection attempt', () => {
+  const { spawnSync } = require('node:child_process'), path = require('node:path'); const root = path.resolve(__dirname, '..')
+  const code = `const jiti=require('jiti')(process.cwd()+'/x.js',{alias:{'@':process.cwd()}});const m=jiti('./lib/db.ts');(async()=>{let msg='';try{await m.connectDB()}catch(e){msg=e.message}console.log(typeof m.connectDB+'|'+msg);process.exit(0)})()`
+  const r = spawnSync(process.execPath, ['-e', code], { cwd: root, env: { PATH: process.env.PATH }, encoding: 'utf8', timeout: 60000 })
+  assert.equal(r.status, 0, r.stderr); assert.equal(r.stdout.trim(), 'function|MONGODB_URI is not defined')
+})
