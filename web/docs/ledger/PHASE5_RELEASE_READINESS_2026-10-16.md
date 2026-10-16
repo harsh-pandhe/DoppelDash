@@ -45,3 +45,16 @@ Found: `travel_attachments` E3 read a fire-and-forget audit row (CI failure, fix
 
 ## Measured coverage (regenerated, not carried over)
 Inventory: 44 web pages, 93 API route files, 153 method handlers, 33 Android routes, 4 cron jobs (previously 92 / 151; +`/api/health`). Security matrix: 20 public, 119 session, 14 service handlers; **heuristic** coverage = a test file names the route *and* the HTTP method within 160 characters (dynamic segments matched): 153 / 153 handlers have such evidence, 0 flagged P0/P1 gaps except the public RTDN handler (kept as the single P0 marker: live verification open). This is **not** proof of adequate coverage — it cannot tell a one-line smoke call from an access matrix. The reviewed depth is in the tables above; the weakest areas remain: systematic database-outage behaviour per route, mobile-screen inventory (screens are listed, not individually tested), Outlook/IMAP against real providers, and anything provider-backed.
+
+## CI on the final code commit (append)
+Web `d8722e1` — workflow run [38826510693](https://github.com/harsh-pandhe/DoppelDash/actions/runs/38826510693): **success**, 76 files / 967 tests, 966 pass, 0 fail, **1 skip** (`ds_tokens` T8, the documented interim exception: `MOBILE_REPO_DEPLOY_KEY` is not configured). Flutter `6d8bb3ff` unchanged (analyze clean, 594 pass / 20 skipped — the live-backend tests need `DD_E2E_URL`). This appended note is a docs-only commit on top of `d8722e1`; CI was not re-run for it.
+
+## Owner actions that unblock the remaining items (smallest next step each)
+1. **Set `IMAP_OWNER_ORG_ID`** (the organisation that owns the shared mailbox) in production — without it the shared inbox/sync is disabled by design; legacy `inboxmessages` rows without `orgId` will not appear until backfilled (owner decision).
+2. Netlify login (or export of site settings/env-var names/build logs) → `PROVIDER_VERIFICATION_RUNBOOKS.md` §1.
+3. Choose and configure the scheduler + `CRON_SECRET` → `SCHEDULED_JOBS.md`.
+4. SMTP credentials + a mailbox you own; Cloudinary staging cloud; Gemini staging key; Play Console/licence testers/Pub/Sub push → runbooks §2, §4–§6.
+5. Approve/amend `RETENTION_DECISIONS.md` (8 items).
+6. Approve gate A of `LEGACY_MEDICAL_MIGRATION.md` (production read-only inventory) after a verified Atlas backup + restore rehearsal.
+7. Approve dependency work: nodemailer ≥10.1.1 first, then Next (critical advisories), xlsx replacement (`RELEASE_OPERATIONS.md` §3).
+8. Decide whether Outlook OAuth (no UI caller) ships; protect `main` (needs GitHub Pro/public repo).
