@@ -37,3 +37,22 @@ All depend on a signed-in Admin session (password and OTP are entered by the own
 
 ## CI flake found and fixed (AUTO)
 CI run 39021534732 on `001f10a` failed 1 test (`release_ops_scripts` R3: `authreplayclaims: count 3 != 6`) although the same tree passed 1007/1007 locally. Cause (from the CI log artifact): R3 ran the backup→restore rehearsal on the **shared CI database while the dev server was still writing background auth-replay claims**, so counts changed between dump and verification. This was a pre-existing race in the test, not in the product or the rehearsal script. Fix: R3 now rehearses on a quiet dedicated database (`dd_rehearsal_src_test`) seeded with synthetic data and asserts exact counts (5 collections / 58 documents); 5 consecutive local runs green. Final CI for the fixed commit is recorded in the closure checklist.
+
+## Execution pass 2 (2026-10-17, authenticated Chrome session to Netlify; LIVE-STAGING / BROWSER)
+Release re-verified first: branch head = origin = staging deployed SHA `a23a1f08e3806071708cee0a1374a9a20213c4e2`, CI green on it (run 39022735935), smoke 25/25, PR #1 draft/open, tree clean.
+
+**Netlify (staging project `doppeldash-staging` only; production not modified):**
+- *Powered by Netlify badge:* was shown; **disabled** in Project → General (setting now reads "The badge is not shown on this project"). Verified live: the badge and `/.netlify/scripts/hud` script are gone from the served HTML and the DOM (13 scripts, same as a local build); sign-in at desktop width has no overlay or overflow. PASS (LIVE-STAGING).
+- *Hydration error #418:* **still present** after the badge/script were removed. Controlled experiment (BROWSER): the same production build served locally is clean (no console errors); serving it through a proxy that adds only the Netlify HTML comment (`<!-- This site is hosted on Netlify … -->` inserted after the charset meta in `<head>`) reproduces #418 exactly. The comment is injected by the platform on every Netlify site (the older production site's HTML contains it too), has no setting in the UI, and is not application code. **Classified: platform limitation** (page renders and works; React falls back to client rendering). No speculative workaround applied. FAIL as a console-clean gate, documented as a platform artifact.
+- *Environment variables (names, scopes only):* all 18 expected variables present; secrets scoped Builds+Functions+Runtime; SMTP_* / URLs / `DD_DEPLOY_CONTEXT` all scopes. Absent as intended: `ALLOW_DEV_SEED`, `DEV_SEED_SECRET`, unsigned-upload and SMTP-policy overrides, upload presets. PASS. Secret values are not readable (Netlify hides them) and were not revealed.
+- *SMTP sender discovered from the non-secret `SMTP_FROM` variable:* `DoppelDash Staging <supportdoppeldash@gmail.com>` (the SupportDash sender). No credential revealed. No mail has been sent in this phase.
+
+**Scheduler (three distinct results):**
+1. Registration: PASS — three Scheduled functions on the published deploy; cron-announcements `*/5 * * * *`, cron-birthday next Oct 18 12:30 IST (07:00 UTC), cron-onboarding next Oct 18 14:30 IST (09:00 UTC).
+2. Manual invocation (`trigger-cron.js`): BLOCKED — `STAGING_CRON_SECRET` not in this shell (secret locked in Netlify).
+3. **Actual scheduled execution: PASS (LIVE-STAGING).** Netlify function log for cron-announcements shows two consecutive scheduler runs: `03:45:29 PM [cron:announcements] status=200 sent=0` (1709 ms) and `03:50:24 PM … status=200 sent=0` (2537 ms) — five-minute cadence, counts-only output, no secret or data in the log. This also proves the staging `CRON_SECRET`/`CRON_TARGET_URL` match the app and the cron path reached the database. cron-birthday and cron-onboarding have not run yet (first scheduled runs are tomorrow). No mail was produced (`sent=0`).
+
+**Still blocked (irreducible):**
+- Staging `MONGODB_URI` (secret-locked; the local `web/.env.local` is a legacy file pointing at `localhost` with Clerk/Resend keys — not staging, not used) -> workspace/Admin bootstrap, and the Atlas isolation check by cluster identity.
+- Password entry and OTP entry for the Admin/Manager/Employee (typed by the owner; not by this agent).
+- Staging provider secrets for the Cloudinary verifier (it runs locally against a throwaway local app/database) and the single Gemini call (key + `GEMINI_OCR_APPROVED=1` + `GEMINI_STAGING_CONFIRM=1`): a private template `~/.doppeldash-staging.env` (mode 600, outside the repo, empty values) was created for the owner to fill; nothing from it has been read.
