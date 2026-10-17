@@ -56,3 +56,14 @@ test('G5. egress guard: while running, a request to any other host is blocked', 
   try { await globalThis.fetch('https://example.com/') } catch (e) { blocked = e.message }
   await p; assert.match(blocked || '', /egress guard/)
 })
+
+test('G-model. the Gemini model is the retirement-proof alias by default (a hard-coded gemini-2.5-flash returned HTTP 404 "no longer available to new users" on the live staging OCR check with a new key), is overridable by a safe GEMINI_MODEL, and no source hard-codes a versioned model', () => {
+  const fs = require('node:fs'), path = require('node:path'); const { geminiModel } = require('./helpers/authTestKit').load('lib/gemini.ts')
+  assert.equal(geminiModel({}), 'gemini-flash-latest'); assert.equal(geminiModel({ GEMINI_MODEL: '' }), 'gemini-flash-latest')
+  assert.equal(geminiModel({ GEMINI_MODEL: 'gemini-3.5-flash' }), 'gemini-3.5-flash')
+  for (const bad of ['../evil', 'a/b', 'x'.repeat(80), 'UPPER', ' ', 'm?key=1', 'gemini-2.5-flash:generateContent#']) assert.equal(geminiModel({ GEMINI_MODEL: bad }), 'gemini-flash-latest', JSON.stringify(bad))
+  const root = path.resolve(__dirname, '..'); const hits = []
+  const walk = d => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { if (['node_modules', '.next', 'tests', 'docs'].includes(e.name) || e.name.startsWith('.')) continue; const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (/\.(ts|tsx|js|mjs)$/.test(e.name) && /gemini-\d/.test(fs.readFileSync(p, 'utf8'))) hits.push(path.relative(root, p)) } }
+  walk(path.join(root, 'app')); walk(path.join(root, 'lib'))
+  assert.deepEqual(hits, [], 'no versioned Gemini model name in application code')
+})

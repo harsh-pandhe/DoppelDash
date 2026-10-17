@@ -5,7 +5,13 @@ export function geminiBase() {
   const override = process.env.NODE_ENV !== 'production' ? process.env.GEMINI_API_BASE : ''
   return (override || 'https://generativelanguage.googleapis.com').replace(/\/+$/, '') + '/v1beta/models'
 }
-const MODEL_FLASH = 'gemini-2.5-flash'
+// Google retires model versions for NEW keys ("no longer available to new users" -> HTTP 404, found by the live staging OCR check with a newly created key),
+// so the default is the stable alias that Google keeps pointing at the current Flash model. A specific model can be pinned with GEMINI_MODEL
+// (restricted to a safe name shape, so the environment can never inject path segments or another host).
+export function geminiModel(env: NodeJS.ProcessEnv = process.env): string {
+  const m = (env.GEMINI_MODEL || '').trim()
+  return /^[a-z0-9][a-z0-9.\-]{2,60}$/.test(m) ? m : 'gemini-flash-latest'
+}
 
 function key() {
   const k = process.env.GEMINI_API_KEY
@@ -20,7 +26,7 @@ interface GeminiPart {
 
 async function generate(parts: GeminiPart[], timeoutMs = 30_000): Promise<string> {
   const res = await fetch(
-    `${geminiBase()}/${MODEL_FLASH}:generateContent?key=${key()}`,
+    `${geminiBase()}/${geminiModel()}:generateContent?key=${key()}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,7 +56,7 @@ export async function geminiText(prompt: string): Promise<string> {
 /** Streaming text — yields tokens as they arrive */
 export async function geminiStream(prompt: string): Promise<Response> {
   const res = await fetch(
-    `${geminiBase()}/${MODEL_FLASH}:streamGenerateContent?alt=sse&key=${key()}`,
+    `${geminiBase()}/${geminiModel()}:streamGenerateContent?alt=sse&key=${key()}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
