@@ -10,6 +10,7 @@ import LeaveBalance from '@/models/LeaveBalance'
 import { getMailService } from '@/lib/mail'
 import { devOnly } from '@/lib/auth/devShortcuts'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
+import { appBaseUrl } from '@/lib/appUrl'
 
 async function GET_handler() {
   const { userId, user, orgId } = await getUser()
@@ -166,7 +167,7 @@ async function POST_handler(req: NextRequest) {
       orgId,
       firstName,
       tempPassword,
-      signInUrl: `${process.env.NEXT_PUBLIC_APP_URL || ''}/sign-in`,
+      signInUrl: `${appBaseUrl(process.env, '')}/sign-in`,
     })
     emailSent = result.delivered
   }

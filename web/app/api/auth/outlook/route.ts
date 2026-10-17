@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
 import { signOAuthState } from '@/lib/auth/oauthState'
+import { appBaseUrl } from '@/lib/appUrl'
 
 async function GET_handler() {
   const { userId, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const clientId    = process.env.OUTLOOK_CLIENT_ID
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/outlook/callback`
+  const redirectUri = `${appBaseUrl(process.env, '')}/api/auth/outlook/callback`
 
   if (!clientId) return NextResponse.json({ error: 'Outlook not configured' }, { status: 503 })
 

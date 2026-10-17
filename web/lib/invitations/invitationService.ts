@@ -7,6 +7,7 @@ import { writeAudit } from '@/lib/audit'
 import { getMailService } from '@/lib/mail'
 import { signToken } from '@/lib/auth/jwt'
 import { signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth/mobileTokens'
+import { appBaseUrl } from '@/lib/appUrl'
 
 export class HttpError extends Error {
   statusCode: number
@@ -136,7 +137,7 @@ export async function createInvitation(input: CreateInvitationInput): Promise<In
   })
 
   // 7. Format invitation link
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = appBaseUrl()
   // Token in the URL FRAGMENT: browsers never send it to the server, so it cannot reach access logs,
   // proxies or Referer headers. The invite page reads it client-side and POSTs it in a request body.
   const inviteUrl = `${appUrl}/invite#token=${rawToken}`
@@ -478,7 +479,7 @@ export async function resendInvitation(opts: {
     metadata: { email: invitation.email, expiresAt },
   })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = appBaseUrl()
   // Token in the URL FRAGMENT: browsers never send it to the server, so it cannot reach access logs,
   // proxies or Referer headers. The invite page reads it client-side and POSTs it in a request body.
   const inviteUrl = `${appUrl}/invite#token=${rawToken}`

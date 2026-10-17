@@ -1,6 +1,7 @@
 import { getUserById } from '@/lib/auth/userService'
 import { getMailService, resolveMailBrand, PLATFORM_BRAND, type MailBrand } from '@/lib/mail'
 import { sendMail, getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics } from '@/lib/mailer'
+import { appBaseUrl } from '@/lib/appUrl'
 
 export { getMailerDiagnostics, canDeliverAuthEmails, type MailerDiagnostics }
 
@@ -199,7 +200,7 @@ async function notify(orgId: string | undefined, to: string | string[], built: {
 }
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || ''
+  return appBaseUrl(process.env, '')
 }
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {

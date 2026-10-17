@@ -8,6 +8,7 @@ import PasswordResetToken from '@/models/PasswordResetToken'
 import { rateLimit } from '@/lib/ratelimit'
 import { getMailService } from '@/lib/mail'
 import { devOnly } from '@/lib/auth/devShortcuts'
+import { appBaseUrl } from '@/lib/appUrl'
 
 async function POST_handler(req: NextRequest) {
   const ip = (req.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
@@ -65,7 +66,7 @@ async function POST_handler(req: NextRequest) {
     expiresAt,
   })
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = appBaseUrl()
   // The token rides in the URL FRAGMENT: browsers never send it to the server, so it cannot reach
   // access logs, proxies or Referer headers. The reset page reads it client-side and POSTs it in a body.
   const resetUrl = `${appUrl}/reset-password#token=${rawToken}`

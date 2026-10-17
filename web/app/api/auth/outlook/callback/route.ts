@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import OutlookToken from '@/models/OutlookToken'
 import { getUser } from '@/lib/auth'
 import { verifyOAuthState } from '@/lib/auth/oauthState'
+import { appBaseUrl } from '@/lib/appUrl'
 
 async function createGraphSubscription(accessToken: string, appUrl: string): Promise<{ id: string; expirationDateTime: string } | null> {
   if (!process.env.OUTLOOK_WEBHOOK_SECRET) return null   // never subscribe with a guessable clientState
@@ -30,7 +31,7 @@ async function createGraphSubscription(accessToken: string, appUrl: string): Pro
 async function GET_handler(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code   = searchParams.get('code')
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+  const appUrl = appBaseUrl(process.env, '')
 
   if (!code) return NextResponse.redirect(`${appUrl}/settings?outlook=error`)
   // The state must be OUR signed, unexpired state, and the browser session must be the user it was issued to (before any provider call).
