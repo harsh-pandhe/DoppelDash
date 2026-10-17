@@ -34,3 +34,6 @@ All depend on a signed-in Admin session (password and OTP are entered by the own
 | SMTP, Cloudinary, Gemini (0 calls), IMAP/Outlook, RTDN, scheduler execution | BLOCKED / NOT RUN — secrets and approvals not in this shell |
 | Console errors on sign-in | FAIL — platform-injected script causes #418; owner setting |
 | Narrow-viewport sign-in | PASS (no overflow; badge overlap noted) |
+
+## CI flake found and fixed (AUTO)
+CI run 39021534732 on `001f10a` failed 1 test (`release_ops_scripts` R3: `authreplayclaims: count 3 != 6`) although the same tree passed 1007/1007 locally. Cause (from the CI log artifact): R3 ran the backup→restore rehearsal on the **shared CI database while the dev server was still writing background auth-replay claims**, so counts changed between dump and verification. This was a pre-existing race in the test, not in the product or the rehearsal script. Fix: R3 now rehearses on a quiet dedicated database (`dd_rehearsal_src_test`) seeded with synthetic data and asserts exact counts (5 collections / 58 documents); 5 consecutive local runs green. Final CI for the fixed commit is recorded in the closure checklist.

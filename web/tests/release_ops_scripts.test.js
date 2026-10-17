@@ -34,13 +34,19 @@ test('R2. the index pre-flight is read-only, reports per model, exits 0 on a cle
 })
 
 test('R3. logical backup → restore rehearsal: every collection restored with identical counts, content hashes and indexes; the restored database and the dump directory are removed', async () => {
-  await db.collection('zz_rehearsal').deleteMany({}); await db.collection('zz_rehearsal').createIndex({ k: 1 }, { unique: true, name: 'k_unique' })
-  await db.collection('zz_rehearsal').insertMany(Array.from({ length: 50 }, (_, i) => ({ k: 'k' + i, when: new Date(1e12 + i), n: i, nested: { a: [1, 2, { b: i }] } })))
-  const r = run('backup-restore-rehearsal.js'); assert.equal(r.status, 0, r.stderr + r.stdout)
-  const rep = JSON.parse(r.stdout); assert.equal(rep.verified, true, JSON.stringify(rep.problems)); assert.ok(rep.collections >= 5 && rep.documents >= 50, JSON.stringify(rep))
-  const name = rep.target; const client = db.client || null; void client
-  const dbs = await db.admin().listDatabases(); assert.ok(!dbs.databases.some(d => d.name === name), 'the restored database was dropped')
-  await db.collection('zz_rehearsal').drop()
+  // Rehearse on a QUIET dedicated database seeded with synthetic data. Running it on the shared CI database raced with the live dev server's background writes
+  // (e.g. auth replay claims written between the dump and the verification) and failed intermittently in CI.
+  const { MongoClient } = require('mongodb'); const base = (process.env.MONGODB_URI || '').replace(/\/[^/?]+(\?.*)?$/, '/'); const NAME = 'dd_rehearsal_src_test'
+  const client = await MongoClient.connect(base + NAME); const src = client.db(NAME)
+  try {
+    await src.dropDatabase()
+    await src.collection('zz_rehearsal').createIndex({ k: 1 }, { unique: true, name: 'k_unique' })
+    await src.collection('zz_rehearsal').insertMany(Array.from({ length: 50 }, (_, i) => ({ k: 'k' + i, when: new Date(1e12 + i), n: i, nested: { a: [1, 2, { b: i }] } })))
+    for (const c of ['zz_a', 'zz_b', 'zz_c', 'zz_d']) await src.collection(c).insertMany([{ x: c, n: 1 }, { x: c, n: 2 }])
+    const r = run('backup-restore-rehearsal.js', { MONGODB_URI: base + NAME }); assert.equal(r.status, 0, r.stderr + r.stdout)
+    const rep = JSON.parse(r.stdout); assert.equal(rep.verified, true, JSON.stringify(rep.problems)); assert.equal(rep.collections, 5); assert.equal(rep.documents, 58, JSON.stringify(rep))
+    const dbs = await client.db().admin().listDatabases(); assert.ok(!dbs.databases.some(d => d.name === rep.target), 'the restored database was dropped')
+  } finally { await src.dropDatabase().catch(() => undefined); await client.close() }
 })
 
 test('R4. the rehearsal refuses a non-loopback or non-test database', () => {
