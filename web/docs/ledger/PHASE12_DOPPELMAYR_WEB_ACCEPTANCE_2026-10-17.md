@@ -76,3 +76,25 @@ Secrets were loaded literally by a redacting wrapper kept outside the repository
 
 **Environment variable check (names/scopes) and platform findings:** see pass 2 (unchanged).
 **Open:** owner password reset + OTP sign-in; invitations/role matrix/modules in the browser; Cloudinary isolation; second Gemini call; Atlas password rotation.
+
+## Execution pass 4 (2026-10-17, Admin session in Chrome; LIVE-STAGING + BROWSER)
+**Release state:** staging serves `e12378d62f2aa73479a70d8500f33e3f28aaa3b4` (`/api/health` status ok, context staging); CI run 39032828474 on that SHA: success, 83 files / 1010 tests, 1009 pass, 0 fail, 1 skip (T8); smoke 25/25. The reset/invitation link fix is therefore deployed and verified.
+
+**Admin authentication (PASS, BROWSER + API):** the owner set the Admin password on the recovered reset page and signed in with the e-mailed OTP (typed by the owner). Authenticated `/api/auth/me`: role `admin`, `org_doppelmayr`; `/api/billing/entitlements`: premium / `lifetime_grant` / webEnabled true. Executive dashboard renders; bootstrap audit entries visible. Forced-password-change flow and logout/re-login: NOT RUN (owner-driven; the owner's reset replaced the one-time password).
+
+**Link fix on live e-mail (PASS):** the Employee invitation received in the Employee mailbox has host = staging, path `/invite` (single slash). Before the fix the reset link path was `//reset-password`. Manager invitation delivered to the Manager mailbox Inbox (not Spam). Reset e-mail authentication results (headers read): SPF PASS, DKIM PASS (gmail.com), DMARC PASS — the earlier Spam placement is Gmail's reputation heuristic, not an authentication failure.
+
+**Invitations (PASS for send, NOT RUN for acceptance):** Admin UI "Invite Member": Manager (`harshpandhepcs@…`, role manager) and Employee (`harshpandhe832005@…`, role employee, type **contractor**) -> "Invitation Email Delivered"; Invitations tab lists both Pending with correct roles; audit shows two `invitation_created`. Acceptance, password setup and OTP for these two accounts require the invitees' own typed credentials and were **not performed by the agent** (BLOCKED on the owner).
+
+**Admin module sweep (PASS, LIVE-STAGING API through the Admin session):** 20 endpoints 200 with expected shapes (auth/me, employees me/directory, admin users/invitations/audit/settings, org settings, crm, lms, rms, travel, announcements, notifications, holidays (21 seeded), analytics, entitlements, org mail-config, user email-config, mail drafts).
+- **CRM (PASS):** created `ZZ-TEST Contact Alpha` via UI; visible as a card (visibility "Only me"/private); persists after reload; missing required field -> 400; malformed JSON -> 400. Edit/delete and Manager/Employee privacy checks: NOT RUN (other roles inactive). Contact kept for the cross-role check.
+- **Expenses (BLOCKED):** the Log Expense form validates (submit with no dates -> "Fill title, reason, and start date.", 0 expenses created) and then requires at least one receipt; receipts upload to Cloudinary, which on staging is the **production** cloud. No upload was attempted; no expense created.
+- **Leave (PASS with findings):** UI request (Casual, 2–3 Nov, synthetic reason) -> toast "Leave request submitted"; API holds 1 pending leave (2 days); visible after "show all months"; calendar highlights the dates. **Finding (UX, not fixed):** the list stays filtered to the current month, so the new leave looks absent right after submitting. **Defect 1 (fixed):** leave submission wrote no audit entry. **Defect 2 (fixed):** a leave POST with a missing/invalid date, non-numeric or absurd `days`, or no reason returned a bare **500**.
+- **Travel (PASS):** UI request (Pune->Mumbai, 1 leg) -> redirected to the list; API: 1 request `pending_manager`. Review/approval needs the Manager: NOT RUN.
+- **Audit trail (PASS with the fixed gap):** entries for `travel.submitted`, `contact_created`, 2x `invitation_created`, and the three bootstrap events; no token/password material in the returned logs; `leave.submitted` was missing (Defect 1).
+
+**Defects fixed (regression tests):**
+1. `POST /api/lms` now writes an awaited `leave.submitted` audit entry (non-sensitive metadata only: type, days, dates, document count; no reason text or document references) — `leave_submission_audit` L-audit: exactly one entry, correct tenant, visible to that tenant's admin only, absent for a rejected submission.
+2. `POST /api/lms` validates dates/days/reason and answers 400 with the field names (was a 500 from an Invalid Date reaching the balance aggregation) — L-audit covers 7 malformed bodies (none, bad start/end date, non-numeric/negative/absurd days, no reason).
+
+**Not done (precise blockers):** Manager and Employee activation + role matrix (typed passwords/OTPs); Atlas credential rotation (a credential-entry/security change the agent does not perform; the exposed password remains **unrotated** as far as this record knows); separate Cloudinary staging cloud (account creation); second live Gemini call (needs renewed approval).

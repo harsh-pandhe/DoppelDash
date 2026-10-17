@@ -9,6 +9,7 @@ import { notifyTargetsFor } from '@/lib/notify-targets'
 import { pick } from '@/lib/pick'
 import { LEAVE_CREATE_FIELDS } from '@/lib/apiFields'
 import mongoose from 'mongoose'
+import { writeAudit } from '@/lib/audit'
 import { claimMedicalDocs, parseMedicalDocsInput, presentLeave, releaseUnreferencedClaims, resolveMedicalDocs } from '@/lib/leave/attachments'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
@@ -57,6 +58,14 @@ async function POST_handler(req: NextRequest) {
   if (body.type in DEFAULTS) {
     const type = body.type as keyof typeof DEFAULTS
     const startDate = new Date(body.startDate)
+    // An invalid date or non-numeric day count used to reach the balance aggregation and surface as a bare 500 (found by the live acceptance run).
+    const badFields = [
+      ...(Number.isNaN(startDate.getTime()) ? ['startDate'] : []),
+      ...(Number.isNaN(new Date(body.endDate).getTime()) ? ['endDate'] : []),
+      ...(!Number.isFinite(Number(body.days)) || Number(body.days) <= 0 || Number(body.days) > 366 ? ['days'] : []),
+      ...(typeof body.reason !== 'string' || !body.reason.trim() ? ['reason'] : []),
+    ]
+    if (badFields.length) return NextResponse.json({ error: 'Invalid leave request', fields: badFields }, { status: 400 })
     const year = startDate.getFullYear()
     const yearStart = new Date(year, 0, 1)
     const yearEnd   = new Date(year + 1, 0, 1)
@@ -110,6 +119,18 @@ async function POST_handler(req: NextRequest) {
     if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) return NextResponse.json({ error: 'Invalid leave request' }, { status: 400 })
     throw err
   }
+
+  // Same contract as expense.submitted / travel.submitted (and the audited leave decisions): the submission itself is recorded, awaited.
+  // Metadata is deliberately limited to non-sensitive facts: no reason text and no document references.
+  await writeAudit({
+    action: 'leave.submitted',
+    performedBy: userId,
+    performedByName: user?.fullName || user?.firstName || user?.email || userId,
+    targetId: String(leave._id),
+    targetType: 'leave',
+    metadata: { type: leave.type, days: leave.days, startDate: leave.startDate, endDate: leave.endDate, medicalDocCount: refs.length },
+    orgId: effectiveOrgId,
+  })
 
   // Notify reporting manager (+ boss); fallback to all managers if no chain set
   ;(async () => {
