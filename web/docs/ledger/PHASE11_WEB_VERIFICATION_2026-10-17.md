@@ -53,3 +53,13 @@ Smoke script: retries only network exceptions (3x), reports retries, never retri
 3. Create staging accounts yourself (admin + invited manager + employee) with plus-addressed staging mailbox; then the live auth/invitation/journey checks can proceed.
 4. Provide the Cloudinary staging confirmations to run the storage script; `GEMINI_OCR_APPROVED=1` only if you approve one billable call.
 5. T8 deploy key, branch rulesets, Atlas restore approval, D-02/D-03 answers (unchanged).
+
+## Follow-up — final smoke retry commit 61ba17b (2026-10-17)
+
+This addendum supplements the timestamped original entry above; it does not rewrite the original test record.
+
+- Commit: `61ba17b7e5f7473890bf64c5947c25c2cdce32d1` ([commit](https://github.com/harsh-pandhe/DoppelDash/commit/61ba17b7e5f7473890bf64c5947c25c2cdce32d1)). Owner-reported Netlify `/api/health` on `https://doppeldash-staging.netlify.app` returns `context: staging` and commit prefix `61ba17b`, matching the reported branch head at test time.
+- Updated smoke harness retries only network-level fetch exceptions (up to three attempts), emits a retry count, and never retries or masks an HTTP status. Owner reports final smoke result **25/25 PASS**, one transient network timeout retried and logged; the harness has a negative control proving a dead localhost target still exits non-zero.
+- GitHub Actions [run 38973877598](https://github.com/harsh-pandhe/DoppelDash/actions/runs/38973877598): Web job success; 81 files / 1003 tests, 1002 passed, 0 failed, one T8 skip because private Flutter checkout key is absent. T8 skipped steps verified through the Actions job record. Local report on the identical tree states T8 runs locally when the mobile checkout is present (1003/1003).
+- PR #1 remains open, draft, and unmerged; no production deploy or mutation was performed.
+- Remaining gates do not change: scheduled function execution logs/manual authorized scheduler harness are BLOCKED/NOT RUN; live authenticated Web journeys and SMTP, Cloudinary, Gemini, Google Play/RTDN, IMAP/Outlook are NOT RUN/BLOCKED; Atlas restore and D-02/D-03 retention choices remain owner-gated. The three Netlify Scheduled labels prove registration only, not a successful invocation.
