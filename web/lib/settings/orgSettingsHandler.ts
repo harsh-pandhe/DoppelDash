@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import { NextRequest, NextResponse } from 'next/server'
 import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
@@ -50,6 +51,29 @@ export async function handleGetOrgSettings() {
   })
 }
 
+const SETTINGS_MAX: Record<string, number> = {
+  name: 200, companyName: 200, timezone: 64, currency: 8, address: 1000,
+  website: 300, phone: 50, email: 254, logo: 2000, fiscalYearStart: 20,
+}
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
+
+/** Names of settings fields that are wrongly typed, oversized or malformed. */
+export function invalidSettingsFields(body: Record<string, unknown>): string[] {
+  const bad: string[] = []
+  for (const [k, max] of Object.entries(SETTINGS_MAX)) {
+    const v = body[k]
+    if (v === undefined) continue
+    if (typeof v !== 'string' || v.length > max) bad.push(k)
+  }
+  if (typeof body.email === 'string' && body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email)) bad.push('email')
+  const wh = body.workHours
+  if (wh !== undefined) {
+    const o = wh as Record<string, unknown>
+    if (!wh || typeof wh !== 'object' || Array.isArray(wh) || typeof o.start !== 'string' || typeof o.end !== 'string' || !HHMM.test(o.start) || !HHMM.test(o.end)) bad.push('workHours')
+  }
+  return bad
+}
+
 /**
  * Handle POST / PATCH / PUT mutations for organization settings.
  * Enforces admin role and scopes updates strictly to user.orgId.
@@ -71,8 +95,16 @@ export async function handleMutateOrgSettings(req: NextRequest) {
   const body = await readJsonObject(req)
   if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
+  const picked = pick(body as Record<string, string>, ORG_SETTINGS_FIELDS) as Record<string, unknown>
+  const badFields = invalidSettingsFields(picked)
+  if (badFields.length) return NextResponse.json({ error: 'Invalid settings', fields: badFields }, { status: 400 })
+
   // Filter strictly against allowed fields; orgId cannot be supplied by client
-  const payload: Record<string, unknown> = { ...pick(body as Record<string, string>, ORG_SETTINGS_FIELDS) }
+  const payload: Record<string, unknown> = { ...picked }
+  if (payload.workHours) {
+    const w = payload.workHours as { start: string; end: string }
+    payload.workHours = { start: w.start, end: w.end }
+  }
 
   // Synchronize name and companyName
   if (body.companyName && !payload.name) {
@@ -86,11 +118,19 @@ export async function handleMutateOrgSettings(req: NextRequest) {
   payload.orgId = orgId
   payload.updatedBy = userId
 
-  const settings = await OrgSettings.findOneAndUpdate(
-    { orgId },
-    { $set: payload },
-    { upsert: true, returnDocument: 'after' }
-  ).lean()
+  let settings
+  try {
+    settings = await OrgSettings.findOneAndUpdate(
+      { orgId },
+      { $set: payload },
+      { upsert: true, returnDocument: 'after', runValidators: true }
+    ).lean()
+  } catch (e) {
+    if (e instanceof mongoose.Error.ValidationError || e instanceof mongoose.Error.CastError) {
+      return NextResponse.json({ error: 'Invalid settings' }, { status: 400 })
+    }
+    throw e
+  }
 
   // First-run setup finished (admin-only route, tenant from the session): clear the
   // server-side flag that /api/auth/me reports as onboarding.orgSetupRequired.
