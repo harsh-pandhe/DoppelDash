@@ -24,3 +24,14 @@ test('C-email. create and edit reject a malformed e-mail with 400 {fields:["emai
   const row = await db.collection('contacts').findOne({ _id: new (require('mongodb').ObjectId)(id) }); assert.equal(row.email, 'good.person+tag@example.test', 'a rejected edit leaves the stored value untouched')
   const fine = await kit.api('/api/crm/' + id, { method: 'PATCH', token: tok, body: { email: 'new.address@example.test', company: 'Co' } }); assert.equal(fine.status, 200, fine.text)
 })
+
+test('C-size. over-long text fields are rejected with 400 naming the field (a 5,000-character name used to be stored); limits sit at the documented maximum', async () => {
+  for (const [field, over, atMax] of [['name', 201, 200], ['company', 201, 200], ['designation', 201, 200], ['phone', 51, 50], ['notes', 10001, 10000]]) {
+    const r = await kit.api('/api/crm', { method: 'POST', token: tok, body: { name: 'ZZ size', [field]: 'x'.repeat(over) } }); assert.equal(r.status, 400, `${field} ${over} -> ${r.status}`); assert.ok(r.json.fields.includes(field), field)
+    const ok = await kit.api('/api/crm', { method: 'POST', token: tok, body: { name: 'ZZ size ok', [field]: 'x'.repeat(atMax) } }); assert.equal(ok.status, 201, `${field} ${atMax} -> ${ok.status} ${ok.text.slice(0, 80)}`)
+  }
+  const bad = await kit.api('/api/crm', { method: 'POST', token: tok, body: { name: ['not', 'a string'] } }); assert.equal(bad.status, 400)
+  assert.equal(await db.collection('contacts').countDocuments({ orgId: A.orgId, name: 'ZZ size' }), 0, 'nothing stored by the rejected creates')
+  const made = await kit.api('/api/crm', { method: 'POST', token: tok, body: { name: 'ZZ edit target' } }); const id = made.json._id || made.json.id
+  const p = await kit.api('/api/crm/' + id, { method: 'PATCH', token: tok, body: { company: 'y'.repeat(5000) } }); assert.equal(p.status, 400); assert.ok(p.json.fields.includes('company'))
+})

@@ -7,7 +7,7 @@ import { sanitize } from '@/lib/sanitize'
 import { encryptContact, decryptContact } from '@/lib/encrypt'
 import { getUser } from '@/lib/auth'
 import { pick } from '@/lib/pick'
-import { CONTACT_WRITE_FIELDS, visibilityClauses, canManageContact, canShareContact, sanitizeSharedWith, validationProblem, escapeRegex, invalidContactEmail } from '@/lib/crm/contactAccess'
+import { CONTACT_WRITE_FIELDS, visibilityClauses, canManageContact, canShareContact, sanitizeSharedWith, validationProblem, escapeRegex, invalidContactFields } from '@/lib/crm/contactAccess'
 import { writeAudit } from '@/lib/audit'
 import { getOrganizationLimit, getOrganizationUsage } from '@/lib/entitlements/entitlementService'
 
@@ -71,8 +71,8 @@ async function POST_handler(req: NextRequest) {
   if (typeof picked.name !== 'string' || !picked.name.trim()) {
     return NextResponse.json({ error: 'Invalid contact', fields: ['name'] }, { status: 400 })
   }
-  const emailProblem = invalidContactEmail(picked.email)
-  if (emailProblem) return NextResponse.json(emailProblem, { status: 400 })
+  const fieldProblem = invalidContactFields(picked)
+  if (fieldProblem) return NextResponse.json(fieldProblem, { status: 400 })
   if ('sharedWith' in picked) picked.sharedWith = await sanitizeSharedWith(orgId, picked.sharedWith)
   const body = encryptContact(picked)
   let contact

@@ -59,3 +59,19 @@ export function invalidContactEmail(value: unknown): { error: string; fields: st
   if (typeof value !== 'string' || value.length > 254 || !PLAUSIBLE_EMAIL.test(value.trim())) return { error: 'Invalid contact', fields: ['email'] }
   return null
 }
+
+const FIELD_MAX: Record<string, number> = { name: 200, company: 200, designation: 200, phone: 50, gender: 50, caste: 50, religion: 50, notes: 10_000, reminderNote: 1_000 }
+/**
+ * Contact write validation shared by create and edit: a plausible e-mail (see above) and bounded text fields. A 5,000-character name used to be stored
+ * (201) — found by the live acceptance run. `photo`, `timeline`, `sharedWith`, `projects` and `tags` have their own handling and are not limited here.
+ */
+export function invalidContactFields(picked: Record<string, unknown>): { error: string; fields: string[] } | null {
+  const fields: string[] = []
+  if (invalidContactEmail(picked.email)) fields.push('email')
+  for (const [k, max] of Object.entries(FIELD_MAX)) {
+    const v = picked[k]
+    if (v === undefined || v === null) continue
+    if (typeof v !== 'string' || v.length > max) fields.push(k)
+  }
+  return fields.length ? { error: 'Invalid contact', fields } : null
+}

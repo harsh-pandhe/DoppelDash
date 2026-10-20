@@ -66,12 +66,26 @@ async function POST_handler(req: NextRequest) {
   const { name, date, type, description } = body
   if (!name || !date) return NextResponse.json({ error: 'name and date required' }, { status: 400 })
 
-  const d = new Date(date)
-  const holiday = await PublicHoliday.create({
-    name, date: d, type: type || 'optional', description,
-    year: d.getFullYear(), isRecurringYearly: false, createdBy: userId,
-    orgId: effectiveOrgId,
-  })
+  // Explicit validation (found by the live acceptance run): an invalid date was a bare 500 (the Mongoose CastError escaped) and a 5,000-character name was stored.
+  const d = new Date(date as string)
+  const badFields = [
+    ...(typeof name !== 'string' || !name.trim() || name.trim().length > 200 ? ['name'] : []),
+    ...(typeof date !== 'string' && typeof date !== 'number' || Number.isNaN(d.getTime()) ? ['date'] : []),
+    ...(type !== undefined && !['national', 'regional', 'restricted', 'optional'].includes(type as string) ? ['type'] : []),
+    ...(description !== undefined && description !== null && (typeof description !== 'string' || description.length > 2000) ? ['description'] : []),
+  ]
+  if (badFields.length) return NextResponse.json({ error: 'Invalid holiday', fields: badFields }, { status: 400 })
+  let holiday
+  try {
+    holiday = await PublicHoliday.create({
+      name: (name as string).trim(), date: d, type: type || 'optional', description,
+      year: d.getFullYear(), isRecurringYearly: false, createdBy: userId,
+      orgId: effectiveOrgId,
+    })
+  } catch (err) {
+    if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) return NextResponse.json({ error: 'Invalid holiday' }, { status: 400 })
+    throw err
+  }
   return NextResponse.json(holiday)
 }
 
