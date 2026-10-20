@@ -9,7 +9,7 @@ import mongoose from 'mongoose'
 import { getUser } from '@/lib/auth'
 import { writeAudit } from '@/lib/audit'
 import { pick } from '@/lib/pick'
-import { CONTACT_WRITE_FIELDS, TIMELINE_TYPES, visibilityClauses, canManageContact, canShareContact, sanitizeSharedWith, validationProblem } from '@/lib/crm/contactAccess'
+import { CONTACT_WRITE_FIELDS, TIMELINE_TYPES, visibilityClauses, canManageContact, canShareContact, sanitizeSharedWith, validationProblem, invalidContactEmail } from '@/lib/crm/contactAccess'
 
 async function GET_handler(_: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise
@@ -62,6 +62,8 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
 
   // Whitelist: ownership, share tokens, directory flags and greeting/reminder bookkeeping are server-owned.
   const rest = pick(body, CONTACT_WRITE_FIELDS) as Record<string, unknown>
+  const emailProblem = invalidContactEmail(rest.email)
+  if (emailProblem) return NextResponse.json(emailProblem, { status: 400 })
   if ('sharedWith' in rest) rest.sharedWith = await sanitizeSharedWith(orgId, rest.sharedWith)
   const encrypted = encryptContact(rest)
   let contact

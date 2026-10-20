@@ -84,6 +84,16 @@ async function POST_handler(req: NextRequest) {
     }
   }
 
+  // Date-range sanity (found by the live acceptance run: an end date before the start date was accepted with 201).
+  // Overlap with the same user's pending/approved leave is deliberately NOT enforced here: that is a product decision (docs/OWNER_APPROVAL_SHEET.md, open item)
+  // that would also change the Android client's behaviour; the balance check above already counts pending + approved days.
+  {
+    const start = new Date(body.startDate), end = new Date(body.endDate)
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end.getTime() < start.getTime()) {
+      return NextResponse.json({ error: 'Invalid leave request', fields: ['endDate'] }, { status: 400 })
+    }
+  }
+
   const effectiveOrgId = orgId
 
   // Medical documents are PRIVATE, purpose-bound files (see lib/leave/attachments.ts). Only sick leave carries them; for any other type the

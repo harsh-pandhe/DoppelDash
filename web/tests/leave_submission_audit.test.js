@@ -28,3 +28,12 @@ test('L-audit. a submitted leave request writes exactly one awaited audit entry 
   }
   assert.equal(await db.collection('auditlogs').countDocuments({ orgId: A.orgId, action: 'leave.submitted' }), 1, 'a rejected submission leaves no audit entry')
 })
+
+test('L-range. an end date before the start date is 400 (fields endDate) and stores nothing; a same-day or later end date is accepted', async () => {
+  const post = b => kit.api('/api/lms', { method: 'POST', token: tok.emp, body: { type: 'casual', reason: 'range test', ...b } })
+  const before = await db.collection('leaves').countDocuments({ orgId: A.orgId })
+  const bad = await post({ startDate: '2027-03-10', endDate: '2027-03-09', days: 1 }); assert.equal(bad.status, 400); assert.deepEqual(bad.json.fields, ['endDate'])
+  assert.equal(await db.collection('leaves').countDocuments({ orgId: A.orgId }), before, 'nothing stored by the rejected request')
+  assert.equal((await post({ startDate: '2027-03-10', endDate: '2027-03-10', days: 1 })).status, 201, 'same-day range')
+  assert.equal((await post({ startDate: '2027-05-03', endDate: '2027-05-04', days: 2 })).status, 201, 'two-day range')
+})

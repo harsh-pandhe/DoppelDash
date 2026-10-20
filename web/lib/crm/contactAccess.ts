@@ -48,3 +48,14 @@ export function validationProblem(err: unknown): { error: string; fields: string
 export function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
+
+/**
+ * A contact's e-mail is optional, but when present it must look like an address. The CRM API used to store any string ("not-an-email") on create (201)
+ * and edit (200) because only the web form's browser check stopped it — found by the live staging acceptance run. Returns the offending field list or null.
+ */
+const PLAUSIBLE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+export function invalidContactEmail(value: unknown): { error: string; fields: string[] } | null {
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'string' || value.length > 254 || !PLAUSIBLE_EMAIL.test(value.trim())) return { error: 'Invalid contact', fields: ['email'] }
+  return null
+}

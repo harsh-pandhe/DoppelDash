@@ -133,7 +133,7 @@ For Google Play App Review:
   Email: doppeldash.playreview@gmail.com
   Password: <PASSWORD>
 
-  If prompted for 2-factor / verification code on the second screen, enter: 112022.
+  If prompted for 2-factor / verification code on the second screen, enter: <REVIEWER_OTP: supplied privately in the Play Console App-access field, never committed>.
   (Email OTP delivery is automatically bypassed for this account so the review process is completely self-contained).
 
   This dedicated review account belongs to the "DoppelDash Demo" organization and has:

@@ -21,3 +21,8 @@ Recommendations are engineering defaults, not legal advice: confirm retention pe
 | Atlas restore rehearsal | Owner names: backup source, isolated target cluster, access list, change window; restore from snapshot/PITR; record duration, counts, hashes | |
 | Legacy medical-document inventory (read-only) | Successful Atlas restore rehearsal + owner approval; run against the **restored copy**, never production first | |
 | Legacy medical-document migration | Separate approval; inventory report reviewed; rollback plan; post-migration authorisation checks | |
+
+## Additional open product item (found by the live acceptance run, 2026-10-20; unrelated to D-02/D-03)
+| # | Decision | Current behaviour (verified live on staging) | Recommended choice | Risk if delayed | Implementation consequence | Approve / Amend / Reject · owner · date |
+|---|---|---|---|---|---|---|
+| P-01 | Overlapping leave for the same user | The API accepts an **identical or overlapping** leave for the same dates (201) while the earlier one is pending/approved; only the balance check (pending + approved days) limits it. An end date before the start date is now rejected (400, fixed). | Reject overlaps with 409 `leave_overlap` against the user's pending/approved leave, allowing a morning + afternoon half-day pair; rejected/withdrawn leave does not block | Employees can double-book leave; calendars and approval queues show duplicates; balances are consumed twice until cancelled | Small check in `POST /api/lms` (written and tested, then deliberately reverted pending approval); 23 existing leave fixtures that reuse the same dates must be given distinct dates; the Android client must show the 409 message; residual: check-then-insert is not atomic | |
