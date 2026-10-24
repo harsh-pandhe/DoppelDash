@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { getUser } from '@/lib/auth'
@@ -71,8 +72,8 @@ async function PUT_handler(req: NextRequest) {
     return NextResponse.json({ error: SAFE_FAILURE_MESSAGES.feature_unavailable, code: 'feature_unavailable' }, { status: 403 })
   }
 
-  let body: Record<string, unknown>
-  try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }) }
+  const body = await readJsonObject(req)
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
 
   const host = singleLine(String(body.host ?? '')).toLowerCase()
   const port = Number(body.port)

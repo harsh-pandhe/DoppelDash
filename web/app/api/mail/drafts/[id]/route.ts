@@ -4,6 +4,7 @@ import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import MailDraft from '@/models/MailDraft'
 import { getUser } from '@/lib/auth'
+import { invalidDraftFields, cleanRecipients } from '@/lib/mail/draftValidation'
 
 const MAX_VERSIONS = 20
 
@@ -31,6 +32,8 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
 
   const body = await readJsonObject<{ subject?: string; bodyHtml?: string; recipients?: unknown[] }>(req)
   if (!body) return badBody()
+  const bad = invalidDraftFields(body)
+  if (bad.length) return NextResponse.json({ error: 'Invalid draft', fields: bad }, { status: 400 })
 
   // Auto-snapshot the outgoing content if it actually changed
   const contentChanged =
@@ -43,7 +46,7 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
 
   if (body.subject !== undefined)    draft.subject = body.subject
   if (body.bodyHtml !== undefined)   draft.bodyHtml = body.bodyHtml
-  if (body.recipients !== undefined) draft.recipients = body.recipients as typeof draft.recipients
+  if (body.recipients !== undefined) draft.recipients = cleanRecipients(body.recipients as unknown[]) as typeof draft.recipients
   await draft.save()
 
   return NextResponse.json(draft)

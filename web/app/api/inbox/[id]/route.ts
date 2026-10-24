@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
@@ -36,7 +37,7 @@ async function PATCH_handler(req: NextRequest, { params }: { params: Promise<{ i
   if (!canAccessMail(user)) return NextResponse.json({ error: 'Mail access not granted' }, { status: 403 })
 
   const { id } = await params
-  const body = await req.json().catch(() => ({})) as { readByApp?: boolean }
+  const body = ((await readJsonObject(req)) ?? {}) as { readByApp?: boolean }
   await connectDB()
 
   const updated = await InboxMessage.findOneAndUpdate(

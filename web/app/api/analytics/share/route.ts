@@ -4,6 +4,7 @@ import { randomBytes } from 'crypto'
 import { connectDB } from '@/lib/db'
 import SharedDashboard from '@/models/SharedDashboard'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
 
 const EXPIRY_MS: Record<string, number | null> = {
@@ -111,7 +112,7 @@ async function POST_handler(req: NextRequest) {
   const token = randomBytes(16).toString('hex') // 32 hex chars
 
   await connectDB()
-  await SharedDashboard.create({
+  const created = await SharedDashboard.create({
     orgId,
     token,
     ownerId:   userId,
@@ -122,6 +123,11 @@ async function POST_handler(req: NextRequest) {
     expiresAt: ms === null ? null : new Date(Date.now() + ms),
   })
 
+  // The token is a bearer secret: it is never written to the log (the record id identifies the share).
+  await writeAudit({
+    action: 'analytics.share_created', performedBy: userId, performedByName: user.fullName || 'User',
+    targetId: String(created._id), targetType: 'share', orgId, metadata: { expiry: typeof expiry === 'string' && expiry in EXPIRY_MS ? expiry : '7d', tiles: sanitizedLayout.length },
+  })
   return NextResponse.json({ token, url: `/shared/${token}` })
 }
 

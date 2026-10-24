@@ -8,6 +8,7 @@ import { buildAnnouncementEmail } from '@/lib/email'
 import { resolveMailBrand } from '@/lib/mail'
 import { getUser, listUsers } from '@/lib/auth'
 import { getMailService } from '@/lib/mail'
+import { writeAudit } from '@/lib/audit'
 
 async function POST_handler(req: NextRequest) {
   const { userId, user, orgId } = await getUser()
@@ -57,6 +58,10 @@ async function POST_handler(req: NextRequest) {
   })
   await Promise.allSettled(emails.map(to => sender.send({ to, subject, html, text, fromName: brand.isPlatform ? undefined : brand.name })))
 
+  await writeAudit({
+    action: 'announcement.broadcast', performedBy: userId, performedByName: senderName,
+    targetId: String(announcementId), targetType: 'announcement', orgId: effectiveOrgId, metadata: { recipients: emails.length, channel },
+  })
   return NextResponse.json({ sent: emails.length, channel })
 }
 

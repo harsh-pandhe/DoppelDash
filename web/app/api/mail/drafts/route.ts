@@ -4,6 +4,7 @@ import { readJsonObject, badBody } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import MailDraft, { IMailRecipient } from '@/models/MailDraft'
 import { getUser } from '@/lib/auth'
+import { invalidDraftFields, cleanRecipients } from '@/lib/mail/draftValidation'
 
 // GET — list the caller's drafts (no bodies, keep payload light)
 async function GET_handler() {
@@ -34,12 +35,14 @@ async function POST_handler(req: NextRequest) {
   await connectDB()
   const body = await readJsonObject<{ subject?: string; bodyHtml?: string; recipients?: IMailRecipient[] }>(req)
   if (!body) return badBody()
+  const bad = invalidDraftFields(body)
+  if (bad.length) return NextResponse.json({ error: 'Invalid draft', fields: bad }, { status: 400 })
   const draft = await MailDraft.create({
     ownerId:    userId,
     orgId,
     subject:    body.subject || '',
     bodyHtml:   body.bodyHtml || '',
-    recipients: body.recipients || [],
+    recipients: body.recipients ? cleanRecipients(body.recipients) : [],
   })
   return NextResponse.json(draft, { status: 201 })
 }

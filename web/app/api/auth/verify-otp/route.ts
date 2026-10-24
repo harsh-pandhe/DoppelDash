@@ -4,6 +4,7 @@ import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { verifyOTP, verifyTotp, signToken, verifyPreAuthToken, isWebAccessAllowed, setWebSessionCookie, signMobileAccessToken, issueMobileRefreshToken } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
+import { writeAudit } from '@/lib/audit'
 
 async function POST_handler(req: NextRequest) {
   const raw = await req.text().catch(() => '')
@@ -68,6 +69,10 @@ async function POST_handler(req: NextRequest) {
 
   // The web cookie is minted only for organisations whose persisted entitlement enables the web client.
   const webAccess = await isWebAccessAllowed(pub.orgId)
+  await writeAudit({
+    action: 'auth.login_succeeded', performedBy: pub.id, performedByName: `${user.firstName} ${user.lastName}`.trim() || 'User',
+    targetId: pub.id, targetType: 'auth', orgId: pub.orgId, metadata: { method: 'otp', web: webAccess },
+  })
   const res = NextResponse.json({
     user: pub,
     mustChangePassword: user.mustChangePassword,

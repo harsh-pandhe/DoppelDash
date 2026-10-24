@@ -30,13 +30,36 @@ export const unavailableResponse = () => NextResponse.json(
   { status: 503, headers: { 'Retry-After': '5', 'Cache-Control': 'no-store, max-age=0' } },
 )
 
+/**
+ * Client-input contract (Phase 12): a Mongoose CastError (malformed id / wrongly typed value reaching a query or update) or ValidationError is the
+ * caller's mistake, not a server fault. CastError on `_id` means "no such record" -> 404; any other CastError / ValidationError -> 400 with field
+ * NAMES only (never the driver message, which can echo the offending value). Everything else is still re-thrown unchanged.
+ */
+export function clientInputResponse(err: unknown): NextResponse | null {
+  if (!err || typeof err !== 'object') return null
+  const e = err as { name?: string; path?: string; errors?: Record<string, unknown> }
+  if (e.name === 'CastError') {
+    if (e.path === '_id' || e.path === 'id') return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Invalid request', code: 'invalid_input', fields: e.path ? [e.path.split('.')[0]] : [] }, { status: 400 })
+  }
+  if (e.name === 'ValidationError') {
+    const fields = Array.from(new Set(Object.keys(e.errors || {}).map(k => k.split('.')[0]))).slice(0, 20)
+    return NextResponse.json({ error: 'Invalid request', code: 'invalid_input', fields }, { status: 400 })
+  }
+  return null
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function dbGuard<T extends (...args: any[]) => Promise<Response>>(handler: T): T {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const guarded = async (...args: any[]) => {
     try { return await handler(...args) }
     catch (err) {
-      if (!isDbUnavailable(err)) throw err
+      if (!isDbUnavailable(err)) {
+        const bad = clientInputResponse(err)
+        if (bad) { console.error('[input]', (err as Error)?.name); return bad }
+        throw err
+      }
       console.error('[db] unavailable', (err as Error)?.name)
       return unavailableResponse()
     }

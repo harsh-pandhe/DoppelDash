@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
@@ -184,7 +185,7 @@ async function POST_handler(req: NextRequest) {
   const isBoss = role === 'admin'
   const effectiveOrgId = orgId
 
-  const body = await req.json().catch(() => ({}))
+  const body = (await readJsonObject(req)) ?? {}
   const rawIds: string[] = Array.isArray(body.expenseIds) ? body.expenseIds : []
   const ids = rawIds.filter(id => typeof id === 'string' && mongoose.isValidObjectId(id))
   if (ids.length === 0) return NextResponse.json({ error: 'No valid expense IDs' }, { status: 400 })

@@ -9,6 +9,7 @@ import { isValidPlayProduct } from '@/lib/billing/playConfig'
 import { verifySubscriptionPurchase } from '@/lib/billing/googlePlayService'
 import { getOrganizationEntitlements } from '@/lib/entitlements/entitlementService'
 import { rateLimit } from '@/lib/ratelimit'
+import { writeAudit } from '@/lib/audit'
 
 /**
  * POST /api/billing/play/verify
@@ -104,6 +105,10 @@ async function POST_handler(req: NextRequest) {
 
   // Update the Organization through the shared mapper (never rewrites a lifetime-granted organisation's plan; webEnabled untouched)
   await applySubscriptionToOrg(orgId, subDoc)
+  await writeAudit({
+    action: 'billing.subscription_verified', performedBy: userId, performedByName: user?.fullName || 'User',
+    targetId: orgId, targetType: 'organization', orgId, metadata: { provider: 'google_play', status: effectiveStatus },
+  })
 
   // Return authoritative entitlement state
   const entitlements = await getOrganizationEntitlements(orgId)

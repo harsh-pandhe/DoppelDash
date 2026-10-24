@@ -3,6 +3,7 @@ import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
+import { writeAudit } from '@/lib/audit'
 import User from '@/models/User'
 import PasswordResetToken from '@/models/PasswordResetToken'
 import { rateLimit } from '@/lib/ratelimit'
@@ -64,6 +65,11 @@ async function POST_handler(req: NextRequest) {
     orgId: user.orgId,
     tokenHash,
     expiresAt,
+  })
+
+  await writeAudit({
+    action: 'auth.password_reset_requested', performedBy: user._id.toString(), performedByName: `${user.firstName} ${user.lastName}`.trim() || 'User',
+    targetId: user._id.toString(), targetType: 'auth', orgId: user.orgId, metadata: {},
   })
 
   const appUrl = appBaseUrl()

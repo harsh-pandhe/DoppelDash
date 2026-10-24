@@ -539,7 +539,8 @@ test('30. Data Minimization: Public response sanitizes audit log metadata (strip
   const audits = pubRes.json.data.recentAudits || []
   assert.ok(audits.length > 0, 'Recent audits should be present for manager share')
 
-  const audit = audits[0]
+  // Phase 12: creating the share itself now writes an `analytics.share_created` event that is the newest entry, so pick the seeded event (share/auth/mailbox events are excluded from the dashboard feed).
+  const audit = audits.find(a => a.metadata && a.metadata.destination === 'Zurich Alpha') || audits[0]
   assert.ok(audit.performedByName)
   assert.ok(audit.metadata)
   assert.equal(audit.metadata.employeeName, 'Eve Emp A')

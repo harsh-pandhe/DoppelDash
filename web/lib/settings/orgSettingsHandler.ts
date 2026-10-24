@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db'
 import OrgSettings from '@/models/OrgSettings'
 import Organization from '@/models/Organization'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 import { pick } from '@/lib/pick'
 import { ORG_SETTINGS_FIELDS } from '@/lib/apiFields'
 
@@ -131,6 +132,13 @@ export async function handleMutateOrgSettings(req: NextRequest) {
     }
     throw e
   }
+
+  // Field NAMES only (values such as address/phone/e-mail are not copied into the log).
+  await writeAudit({
+    action: 'organization.settings_changed', performedBy: userId, performedByName: user?.fullName || 'Admin',
+    targetId: orgId, targetType: 'organization', orgId,
+    metadata: { fields: Object.keys(payload).filter(k => k !== 'orgId' && k !== 'updatedBy') },
+  })
 
   // First-run setup finished (admin-only route, tenant from the session): clear the
   // server-side flag that /api/auth/me reports as onboarding.orgSetupRequired.

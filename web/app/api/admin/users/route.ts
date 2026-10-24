@@ -3,6 +3,7 @@ import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject, badBody } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Employee from '@/models/Employee'
@@ -85,6 +86,19 @@ async function POST_handler(req: NextRequest) {
   if (!firstName || !lastName || !email || !newRole) {
     return NextResponse.json({ error: 'firstName, lastName, email, newRole required' }, { status: 400 })
   }
+  // Phase 12: wrong-typed or oversized values used to reach `email.toLowerCase()` / Mongoose and surface as 500 or store unbounded text.
+  const str = (v: unknown, max: number) => typeof v === 'string' && v.trim().length > 0 && v.length <= max
+  const badFields = [
+    ...(!str(firstName, 100) ? ['firstName'] : []), ...(!str(lastName, 100) ? ['lastName'] : []),
+    ...(!(str(email, 254) && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email as string)) ? ['email'] : []),
+    ...(!['admin', 'manager', 'employee'].includes(newRole as string) ? ['newRole'] : []),
+    ...(department !== undefined && department !== null && !(typeof department === 'string' && department.length <= 100) ? ['department'] : []),
+    ...(designation !== undefined && designation !== null && !(typeof designation === 'string' && designation.length <= 100) ? ['designation'] : []),
+    ...(employeeType !== undefined && employeeType !== null && !['full_time', 'part_time', 'contract', 'intern'].includes(employeeType as string) ? ['employeeType'] : []),
+    ...(joiningDate !== undefined && joiningDate !== null && (typeof joiningDate !== 'string' || Number.isNaN(new Date(joiningDate).getTime())) ? ['joiningDate'] : []),
+    ...(privileges !== undefined && privileges !== null && (typeof privileges !== 'object' || Array.isArray(privileges)) ? ['privileges'] : []),
+  ]
+  if (badFields.length) return NextResponse.json({ error: 'Invalid user', fields: badFields }, { status: 400 })
   if (role === 'manager' && newRole !== 'employee') {
     return NextResponse.json({ error: 'Managers can only create employees' }, { status: 403 })
   }
@@ -157,6 +171,11 @@ async function POST_handler(req: NextRequest) {
     await User.findByIdAndDelete(newUid)
     throw err
   }
+
+  await writeAudit({
+    action: 'user.created', performedBy: userId, performedByName: user?.fullName || 'Unknown',
+    targetId: newUid, targetType: 'user', orgId, metadata: { role: newRole, via: 'admin_direct' },
+  })
 
   // Welcome e-mail with the temporary password — unless silent add was requested.
   // Rendered by the mail service (every value escaped); provider failures never throw.
