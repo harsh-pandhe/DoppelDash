@@ -43,6 +43,7 @@ const STATUS_MAP: Record<string, { label: string; variant: 'warning' | 'default'
   paid:            { label: 'Paid',            variant: 'success',    icon: CheckCircle2, pipeline: 3 },
   rejected:        { label: 'Rejected',        variant: 'destructive',icon: XCircle,      pipeline: 0 },
   returned:        { label: 'Needs Revision',  variant: 'secondary',  icon: RotateCcw,    pipeline: 0 },
+  void:            { label: 'Void',            variant: 'secondary',  icon: XCircle,      pipeline: 0 },
 }
 
 /* ─── Compress image for OCR ──────────────────────────────────────────────── */
@@ -765,7 +766,8 @@ function RejectDialog({ onConfirm }: { onConfirm: (note: string) => void }) {
   )
 }
 
-function exportCSV(expenses: Expense[]) {
+function exportCSV(all: Expense[]) {
+  const expenses = all.filter(e => e.status !== 'void')     // D-03.2: voided claims are not exported
   brandedCSV({
     title: 'Reimbursements',
     subtitle: `${expenses.length} expenses`,

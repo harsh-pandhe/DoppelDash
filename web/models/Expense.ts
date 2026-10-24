@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose'
 
-export type ExpenseStatus = 'pending_manager' | 'pending_admin' | 'paid' | 'rejected' | 'returned'
+export type ExpenseStatus = 'pending_manager' | 'pending_admin' | 'paid' | 'rejected' | 'returned' | 'void'
 export type PaymentMethod = 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance_adjusted' | 'na'
 
 export interface IExpenseLineItem {
@@ -48,6 +48,12 @@ export interface IExpense extends Document {
   paymentNote?: string
   paidAt?: Date
 
+  /** Owner decision D-03.2: a settled (paid) claim is never deleted; an admin voids it with a reason. The amount, line items and receipts are KEPT (retention). */
+  voidedAt?: Date
+  voidedBy?: string
+  /** Optional pointer from a replacement claim to the voided claim it corrects. */
+  correctionOf?: string
+
   approvedBy?: string
   paidBy?: string
   createdAt: Date
@@ -85,7 +91,7 @@ const ExpenseSchema = new Schema<IExpense>(
     clientRequestId: { type: String },
 
     receipts:     [{ type: String }],
-    status:       { type: String, enum: ['pending_manager','pending_admin','paid','rejected','returned'], default: 'pending_manager' },
+    status:       { type: String, enum: ['pending_manager','pending_admin','paid','rejected','returned','void'], default: 'pending_manager' },
     managerNote:  { type: String },
     adminNote:     { type: String },
 
@@ -93,6 +99,9 @@ const ExpenseSchema = new Schema<IExpense>(
     paymentProof:  { type: String },
     paymentNote:   { type: String },
     paidAt:        { type: Date },
+    voidedAt:      { type: Date },
+    voidedBy:      { type: String },
+    correctionOf:  { type: String },
 
     approvedBy:   { type: String },
     paidBy:       { type: String },

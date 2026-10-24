@@ -48,7 +48,7 @@ async function GET_handler(req: NextRequest) {
       { $sort: { totalDays: -1 } },
     ]),
     Expense.aggregate([
-      { $match: match },
+      { $match: { ...match, status: { $ne: 'void' } } },     // D-03.2: voided claims are kept on record but excluded from totals
       { $group: {
           _id: { userId: '$userId', userName: '$userName' },
           totalRequests: { $sum: 1 },
@@ -73,7 +73,7 @@ async function GET_handler(req: NextRequest) {
       { $group: { _id: '$type', count: { $sum: 1 }, days: { $sum: '$days' } } },
     ]),
     Expense.aggregate([
-      { $match: match },
+      { $match: { ...match, status: { $ne: 'void' } } },
       { $group: { _id: '$status', count: { $sum: 1 }, amount: { $sum: '$amount' } } },
     ]),
     TravelRequest.aggregate([

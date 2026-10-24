@@ -11,7 +11,7 @@ export const MAX_EXPENSE_AMOUNT = 100_000_000 // ₹10 crore: far above any real
 export const MAX_LINE_ITEMS = 50
 export const MAX_RECEIPTS = 10
 
-export const EXPENSE_STATUSES = ['pending_manager', 'pending_admin', 'paid', 'rejected', 'returned'] as const
+export const EXPENSE_STATUSES = ['pending_manager', 'pending_admin', 'paid', 'rejected', 'returned', 'void'] as const
 export const PAYMENT_METHODS = ['cash', 'card', 'upi', 'bank_transfer', 'advance_adjusted', 'na'] as const
 
 export interface Problems { error: string; fields: string[] }

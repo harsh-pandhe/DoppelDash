@@ -29,7 +29,7 @@ const env = {
   JWT_SECRET: process.env.JWT_SECRET || rnd(32), ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET || rnd(32), CRON_SECRET: process.env.CRON_SECRET || rnd(24),
   DEV_SEED_SECRET: process.env.DEV_SEED_SECRET || rnd(24), SETUP_SECRET: process.env.SETUP_SECRET || rnd(24), ALLOW_DEV_SEED: 'true',
   SMTP_HOST: '127.0.0.1', SMTP_PORT: '2525', SMTP_SECURE: 'false', SMTP_USER: 'ci-user', SMTP_PASS: process.env.SMTP_PASS || rnd(16), SMTP_FROM: 'DoppelDash CI <no-reply@example.test>',
-  REFRESH_REUSE_GRACE_MS: '1500', RECEIPT_CLEANUP_APPLY: '1', OCR_DEADLINE_MS: '6000', TRAVEL_FAILPOINTS: '1', TRAVEL_CONVERSION_WAIT_MS: '3000',
+  REFRESH_REUSE_GRACE_MS: '1500', RECEIPT_CLEANUP_APPLY: '1', RETENTION_PURGE_APPLY: '1', OCR_DEADLINE_MS: '6000', TRAVEL_FAILPOINTS: '1', TRAVEL_CONVERSION_WAIT_MS: '3000',
   TRUSTED_CLIENT_IP_HEADER: 'x-test-client-ip', SUPPORT_PROVIDER_TIMEOUT_MS: '1500',   // support-chat tests: trusted client-IP header + a short provider timeout (non-production only)
   DD_SERVER_LOG: path.join(outDir, 'dev-server.log'),
 }

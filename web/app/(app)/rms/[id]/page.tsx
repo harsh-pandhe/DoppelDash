@@ -28,6 +28,7 @@ const STATUS_META: Record<string, { label: string; variant: 'warning'|'default'|
   pending_admin:    { label: 'Pending Payout',  variant: 'default',    icon: CreditCard,   pipeline: 2, color: 'text-blue-600   bg-blue-50   border-blue-200'   },
   paid:            { label: 'Paid',            variant: 'success',    icon: CheckCircle2, pipeline: 3, color: 'text-green-600  bg-green-50  border-green-200'  },
   rejected:        { label: 'Rejected',        variant: 'destructive',icon: XCircle,      pipeline: 0, color: 'text-red-600    bg-red-50    border-red-200'    },
+  void:            { label: 'Void',            variant: 'destructive',icon: XCircle,      pipeline: 0, color: 'text-gray-600   bg-gray-100  border-gray-300'   },
 }
 
 const PIPELINE = [
@@ -206,7 +207,7 @@ export default function ExpenseDetailPage() {
     })
     if (res.ok) {
       setExpense(await res.json())
-      const msg: Record<string, string> = { pending_admin: 'Approved — forwarded for payout', paid: 'Marked as paid', rejected: 'Expense rejected' }
+      const msg: Record<string, string> = { pending_admin: 'Approved — forwarded for payout', paid: 'Marked as paid', rejected: 'Expense rejected', void: 'Claim voided — record kept' }
       toast(msg[status] || 'Updated', status === 'rejected' ? 'error' : 'success')
     } else {
       const d = await res.json().catch(() => null)
@@ -505,6 +506,27 @@ export default function ExpenseDetailPage() {
                   </Button>
                 </NoteDialog>
               </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* D-03.2: a settled claim is never deleted — an admin voids it with a mandatory reason; amount, lines and receipts are kept. */}
+        {isAdmin && expense.status === 'paid' && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-gray-500" /> Correct a settled claim
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-surface-muted mb-3">Paid claims cannot be deleted. Voiding keeps the record, amount and receipts for audit, but removes it from totals and reports.</p>
+              <NoteDialog
+                title="Void paid claim" desc="A reason is required. This is recorded in the audit log and cannot be undone."
+                confirmLabel="Void claim" confirmClass="bg-gray-700 hover:bg-gray-800 text-white"
+                onConfirm={note => { if (!note.trim()) { toast('A reason is required to void a claim', 'error'); return } void action('void', note.trim()) }}>
+                <Button variant="outline" className="gap-2" disabled={acting}>
+                  <XCircle className="w-4 h-4" /> Void claim
+                </Button>
+              </NoteDialog>
             </CardContent>
           </Card>
         )}

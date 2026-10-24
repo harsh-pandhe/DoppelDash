@@ -6,10 +6,10 @@
  *   pending_manager  manager OR admin: approve (→ pending_admin), reject, return to the employee
  *                    (admins keep this stage: a small workspace may have no manager; the claim must never get stuck)
  *   pending_admin    admin only: pay, reject, send back to manager review (reason required, audited)
- *   settled states   nothing
+ *   settled states   nothing — except that an admin may VOID a paid claim (reason required; `canVoid`). A settled claim is never deleted (D-03.1/D-03.2).
  */
 export type ReviewAction = 'approve' | 'reject' | 'return' | 'pay' | 'send_back'
-export type ExpenseStatusLike = 'pending_manager' | 'pending_admin' | 'paid' | 'rejected' | 'returned' | string
+export type ExpenseStatusLike = 'pending_manager' | 'pending_admin' | 'paid' | 'rejected' | 'returned' | 'void' | string
 
 export const ACTION_TARGET: Record<ReviewAction, string> = {
   approve: 'pending_admin', reject: 'rejected', return: 'returned', pay: 'paid', send_back: 'pending_manager',
@@ -30,4 +30,9 @@ export function bulkTarget(role: string | undefined | null, status: ExpenseStatu
   if (a.includes('pay')) return ACTION_TARGET.pay
   if (a.includes('approve')) return ACTION_TARGET.approve
   return null
+}
+
+/** D-03.2: only an admin may void, only a PAID claim, and a reason is mandatory (enforced by the server). Kept separate from `reviewActions` so bulk actions never see it. */
+export function canVoid(role: string | undefined | null, status: ExpenseStatusLike): boolean {
+  return role === 'admin' && status === 'paid'
 }

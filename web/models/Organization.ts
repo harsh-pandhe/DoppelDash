@@ -45,6 +45,12 @@ export interface IOrganization extends Document {
   trialEnd?: Date
   trialStatus: TrialStatus
 
+  /** D-03.4: a sole-owner disband first deactivates the tenant (request + scheduled purge), then keeps financial/HR records until retention ends. */
+  disbandRequestedAt?: Date
+  disbandScheduledFor?: Date
+  disbandedAt?: Date
+  retentionHoldUntil?: Date
+
   createdAt: Date
   updatedAt: Date
 }
@@ -62,6 +68,10 @@ const OrganizationSchema = new Schema<IOrganization>(
     slug:    { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
     ownerId: { type: String, index: true },
     setupRequired: { type: Boolean, default: false },
+    disbandRequestedAt:  { type: Date },
+    disbandScheduledFor: { type: Date },
+    disbandedAt:         { type: Date, index: true },
+    retentionHoldUntil:  { type: Date },
 
     // Plan & Entitlements
     plan:              { type: String, enum: ['free', 'premium'], default: 'free', index: true },

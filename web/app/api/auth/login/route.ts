@@ -8,6 +8,7 @@ import User from '@/models/User'
 import PasskeyCredential from '@/models/PasskeyCredential'
 import { generateOTP, sendOTP, signPreAuthToken } from '@/lib/auth'
 import { LOGIN_LIMITS } from '@/lib/auth/limits'
+import { restoreDeletion } from '@/lib/account/lifecycle'
 import { rateLimit, rateLimitPeek, rateLimitHit, rateLimitClear, rateLimitMark, rateLimitMarked } from '@/lib/ratelimit'
 
 // Precomputed bcrypt hash so an unknown e-mail costs the same CPU as a wrong password.
@@ -26,7 +27,7 @@ async function POST_handler(req: NextRequest) {
     return NextResponse.json({ error: 'Too many login attempts — wait 1 minute' }, { status: 429 })
   }
 
-  let body: { email?: unknown; password?: unknown } = {}
+  let body: { email?: unknown; password?: unknown; restoreAccount?: unknown } = {}
   {
     const parsedJson = await readJsonObject(req)
     if (!parsedJson) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
@@ -62,6 +63,16 @@ async function POST_handler(req: NextRequest) {
   if (!user || !passwordMatch) {
     await Promise.all([rateLimitHit(keyAccountIp, LOGIN_LIMITS.windowMs), rateLimitHit(keyAccount, LOGIN_LIMITS.windowMs)])
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+  }
+  // D-02.8: an account in its 14-day deletion grace window cannot sign in, but the owner of the password may cancel the deletion.
+  // The password has just been verified; the normal OTP/TOTP second step is still required afterwards.
+  const pendingUntil = user.deletionScheduledFor && user.deletionScheduledFor.getTime() > Date.now() ? user.deletionScheduledFor : null
+  if (!user.isActive && !user.isBanned && pendingUntil) {
+    if ((body as { restoreAccount?: unknown }).restoreAccount === true && (await restoreDeletion(user._id.toString()))) {
+      user.isActive = true
+    } else {
+      return NextResponse.json({ error: 'This account is scheduled for deletion. Sign in again with "restore my account" before the date shown to cancel it.', code: 'account_pending_deletion', restoreUntil: pendingUntil.toISOString() }, { status: 403 })
+    }
   }
   if (!user.isActive || user.isBanned) {
     return NextResponse.json({ error: 'Account suspended — contact your administrator' }, { status: 403 })

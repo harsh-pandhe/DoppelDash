@@ -119,9 +119,10 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
     const VALID_TRANSITIONS: Record<string, string[]> = {
       pending_manager: ['pending_admin', 'rejected', 'returned'],
       pending_admin:    ['paid', 'rejected', 'pending_manager'],
-      paid:            [],
+      paid:            ['void'],     // D-03.2: the only way to correct a settled claim — admin only, reason required, record kept
       rejected:        [],
       returned:        [],
+      void:            [],
     }
     if (!VALID_TRANSITIONS[existingExpense.status]?.includes(updates.status as string)) {
       return NextResponse.json({ error: `Cannot move from ${existingExpense.status} to ${updates.status}` }, { status: 409 })
@@ -132,6 +133,14 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
     }
     if (updates.status === 'paid' && role !== 'admin') {
       return NextResponse.json({ error: 'Only the boss can mark expenses as paid' }, { status: 403 })
+    }
+    if (updates.status === 'void') {
+      if (role !== 'admin') return NextResponse.json({ error: 'Only an admin can void a settled claim.', code: 'void_admin_only' }, { status: 403 })
+      if (String(updates.adminNote ?? '').trim().length === 0) {
+        return NextResponse.json({ error: 'A reason is required to void a claim.', fields: ['adminNote'], code: 'reason_required' }, { status: 400 })
+      }
+      updates.voidedAt = new Date()
+      updates.voidedBy = userId
     }
     const check = selfApprovalCheck(userId, role, existingExpense.userId)
     if (check.blocked) return NextResponse.json({ error: SELF_APPROVAL_ERROR }, { status: 403 })
@@ -175,6 +184,7 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
 
   const baseAction = role === 'employee' && updates.status === 'pending_manager'
     ? 'expense.resubmitted'
+    : updates.status === 'void' ? 'expense.void'
     : updates.status === 'pending_manager' ? 'expense.returned_to_manager'
     : updates.status === 'returned' ? 'expense.returned_to_employee'
     : `expense.${updates.status}`
@@ -226,7 +236,7 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
   return NextResponse.json(presentExpense(expense.toObject()))
 }
 
-// Employee withdraws their own returned/pending_manager request; managers/boss can delete any.
+// Employee withdraws their own returned/pending_manager request; managers/boss can delete a claim only while it is pending_manager or returned (D-03.1).
 async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise
   const { userId, user, orgId } = await getUser()
@@ -242,6 +252,11 @@ async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { pa
   const canOwnerDelete = isOwner && (expense.status === 'pending_manager' || expense.status === 'returned')
   if (!isPriv && !canOwnerDelete) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  // Owner decision D-03.1: a claim that has entered (or passed) the payout stage is a financial record and is never hard-deleted by anyone.
+  // Only claims still in manager review or returned to the employee may be deleted; a paid claim is corrected with `void` (D-03.2).
+  if (expense.status !== 'pending_manager' && expense.status !== 'returned') {
+    return NextResponse.json({ error: 'This claim is settled or in payout review and cannot be deleted. An admin can void a paid claim with a reason.', code: 'claim_settled' }, { status: 409 })
   }
 
   await expense.deleteOne()

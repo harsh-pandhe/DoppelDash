@@ -5,6 +5,7 @@ export const STATUS_BADGE: Record<string, string> = {
   pending_manager: 'bg-amber-50   text-amber-700   border border-amber-200',
   pending_admin:    'bg-blue-50    text-blue-700    border border-blue-200',
   paid:            'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  void:            'bg-gray-100   text-gray-600    border border-gray-300',
 }
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -14,6 +15,7 @@ export const STATUS_LABEL: Record<string, string> = {
   pending_manager: 'Mgr Review',
   pending_admin:    'Payout',
   paid:            'Paid',
+  void:            'Void',
 }
 
 export function statusBadge(status: string): string {

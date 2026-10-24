@@ -55,7 +55,7 @@ export default function DeleteAccountPage() {
               <li>Review the confirmation dialog and confirm by selecting <strong>Delete My Account</strong>.</li>
             </ol>
             <p className="text-xs text-slate-400">
-              Upon confirmation, your session is immediately invalidated, stored tokens are wiped from your device Keystore, and backend personal data is deleted.
+              Upon confirmation, your account is deactivated and every session is immediately invalidated, and stored tokens are wiped from your device Keystore. Your account is then permanently deleted after a 14-day grace period; sign in again within those 14 days and choose to restore the account if you change your mind.
             </p>
           </section>
 
@@ -66,7 +66,7 @@ export default function DeleteAccountPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-lg bg-slate-950 border border-emerald-900/30 space-y-2">
-                <span className="font-semibold text-emerald-400 text-xs tracking-wider uppercase">Permanently Purged</span>
+                <span className="font-semibold text-emerald-400 text-xs tracking-wider uppercase">Permanently Purged (after the 14-day grace period)</span>
                 <ul className="list-disc pl-4 space-y-1 text-xs text-slate-300">
                   <li>User account record and login password hashes</li>
                   <li>Personal employee profile (phone, DOB, personal details)</li>
@@ -77,8 +77,9 @@ export default function DeleteAccountPage() {
               <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <span className="font-semibold text-slate-400 text-xs tracking-wider uppercase">Legally Retained</span>
                 <ul className="list-disc pl-4 space-y-1 text-xs text-slate-400">
-                  <li>Approved expense claims &amp; travel booking receipts (retained for statutory taxation and corporate accounting audits)</li>
-                  <li>Security audit logs of deletion event (anonymized)</li>
+                  <li>Your organisation&apos;s expense claims and their receipts (8 years from payment), leave records (3 years) and travel records (2 years) — your name is replaced by &ldquo;Former member&rdquo;</li>
+                  <li>Security audit entries (8 years, without your e-mail address)</li>
+                  <li>Copies in encrypted backups, until the backups expire (up to 30 days)</li>
                 </ul>
               </div>
             </div>
@@ -94,10 +95,10 @@ export default function DeleteAccountPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2 text-slate-300">
               <li>
-                <strong>Organizations with other members:</strong> If you created the organization and other active members exist, you cannot delete your account until you transfer owner privileges to another administrator or remove the other members.
+                <strong>Organizations with other members:</strong> If you created the organization and other active members exist, you cannot delete your account until you transfer ownership to another active administrator of the organization (the owner can do this from the app or the web console) or remove the other members.
               </li>
               <li>
-                <strong>Sole member workspaces:</strong> If you are the sole member of your custom organization, deleting your account automatically disbands and purges the organization tenant, its contact lists, and organizational configurations.
+                <strong>Sole member workspaces:</strong> If you are the sole member of your custom organization, deleting your account deactivates the organization immediately. After the 14-day grace period its contact lists, mailbox connections and organizational configuration are permanently deleted. Financial and HR records (expense claims and receipts, leave, travel) are kept until their retention period ends and are then deleted too.
               </li>
             </ul>
           </section>

@@ -10,6 +10,7 @@ import { pick } from '@/lib/pick'
 import { LEAVE_CREATE_FIELDS } from '@/lib/apiFields'
 import mongoose from 'mongoose'
 import { writeAudit } from '@/lib/audit'
+import { findOverlappingLeave, type HalfDayPeriod } from '@/lib/leave/overlap'
 import { claimMedicalDocs, parseMedicalDocsInput, presentLeave, releaseUnreferencedClaims, resolveMedicalDocs } from '@/lib/leave/attachments'
 
 const DEFAULTS = { casual: 12, sick: 6, earned: 15, privilege: 2, restricted: 2 }
@@ -85,12 +86,27 @@ async function POST_handler(req: NextRequest) {
   }
 
   // Date-range sanity (found by the live acceptance run: an end date before the start date was accepted with 201).
-  // Overlap with the same user's pending/approved leave is deliberately NOT enforced here: that is a product decision (docs/OWNER_APPROVAL_SHEET.md, open item)
-  // that would also change the Android client's behaviour; the balance check above already counts pending + approved days.
+  // Overlap (owner decision P-01, approved 2026-10-25): the same user may not hold two pending/approved leaves covering the same day.
+  // The only exception is a morning + afternoon half-day pair on one day, so a half-day may be declared with `isHalfDay` + `halfDayPeriod`.
+  let halfDayPeriod: HalfDayPeriod | undefined
   {
     const start = new Date(body.startDate), end = new Date(body.endDate)
     if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end.getTime() < start.getTime()) {
       return NextResponse.json({ error: 'Invalid leave request', fields: ['endDate'] }, { status: 400 })
+    }
+    if (body.isHalfDay !== undefined && body.isHalfDay !== false) {
+      const sameDay = Math.floor(start.getTime() / 86_400_000) === Math.floor(end.getTime() / 86_400_000)
+      const bad = [
+        ...(body.isHalfDay !== true ? ['isHalfDay'] : []),
+        ...(body.halfDayPeriod !== 'morning' && body.halfDayPeriod !== 'afternoon' ? ['halfDayPeriod'] : []),
+        ...(!sameDay ? ['endDate'] : []),
+        ...(Number(body.days) !== 0.5 ? ['days'] : []),
+      ]
+      if (bad.length) return NextResponse.json({ error: 'Invalid leave request', fields: Array.from(new Set(bad)) }, { status: 400 })
+      halfDayPeriod = body.halfDayPeriod
+    }
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && await findOverlappingLeave(orgId, userId, { start, end, halfDayPeriod })) {
+      return NextResponse.json({ error: 'You already have leave covering some of these dates.', code: 'leave_overlap' }, { status: 409 })
     }
   }
 
@@ -117,6 +133,7 @@ async function POST_handler(req: NextRequest) {
   try {
     leave = await Leave.create({
       ...pick(body, LEAVE_CREATE_FIELDS),
+      ...(halfDayPeriod ? { isHalfDay: true, halfDayPeriod } : {}),
       _id: leaveId,
       medicalDocs: refs,
       userId,

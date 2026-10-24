@@ -63,7 +63,8 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
   const EXP_STATUSES    = new Set(['pending_manager', 'pending_admin', 'paid', 'rejected', 'returned'])
   const TRAVEL_STATUSES = new Set(['pending_manager', 'pending_admin', 'approved', 'rejected', 'cancelled'])
   const leaveMatch  = statusQS && LEAVE_STATUSES.has(statusQS)  ? { ...baseMatch, status: statusQS } : baseMatch
-  const expMatch    = statusQS && EXP_STATUSES.has(statusQS)    ? { ...baseMatch, status: statusQS } : baseMatch
+  const NOT_VOID    = { status: { $ne: 'void' } }     // D-03.2: voided claims stay on record but never count in totals
+  const expMatch    = statusQS && EXP_STATUSES.has(statusQS)    ? { ...baseMatch, status: statusQS } : { ...baseMatch, ...NOT_VOID }
   const travelMatch = statusQS && TRAVEL_STATUSES.has(statusQS) ? { ...baseMatch, status: statusQS } : baseMatch
   const day30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
@@ -81,7 +82,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     Expense.aggregate([{ $match: { ...baseMatch, status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     Expense.aggregate([{ $match: { ...baseMatch, status: 'paid' } }, { $group: { _id: { userId: '$userId', userName: '$userName' }, total: { $sum: '$amount' }, count: { $sum: 1 } } }, { $sort: { total: -1 } }, { $limit: 5 }]),
     Leave.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
-    Expense.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
+    Expense.countDocuments({ createdAt: { $gte: day30 }, status: { $ne: 'void' }, ...ownerFilter }),
     TravelRequest.countDocuments({ createdAt: { $gte: day30 }, ...ownerFilter }),
     isManager ? Contact.countDocuments({ orgId: effectiveOrgId }) : Contact.countDocuments({ orgId: effectiveOrgId, createdBy: userId }),
     isManager ? Contact.countDocuments({ orgId: effectiveOrgId, email: { $exists: true, $ne: '' } }) : Contact.countDocuments({ orgId: effectiveOrgId, createdBy: userId, email: { $exists: true, $ne: '' } }),
@@ -124,7 +125,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     }
     const prevBase: Record<string, unknown> = { createdAt: { $gte: prevStart, $lte: prevEnd }, ...ownerFilter }
     const prevLeaveMatch = statusQS && LEAVE_STATUSES.has(statusQS) ? { ...prevBase, status: statusQS } : prevBase
-    const prevExpMatch   = statusQS && EXP_STATUSES.has(statusQS)   ? { ...prevBase, status: statusQS } : prevBase
+    const prevExpMatch   = statusQS && EXP_STATUSES.has(statusQS)   ? { ...prevBase, status: statusQS } : { ...prevBase, ...NOT_VOID }
     const [pLeave, pApproved, pExp, pPaid] = await Promise.all([
       Leave.countDocuments(prevLeaveMatch),
       Leave.countDocuments({ ...prevBase, status: 'approved' }),

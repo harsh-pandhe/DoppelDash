@@ -4,8 +4,8 @@
  * Verifies compliance with Google Play Data Safety & user privacy requirements:
  * 1. Rejects unauthenticated requests (401).
  * 2. Organization owner cannot delete account while other members remain in the workspace (400).
- * 3. Employee account deletion purges personal user, employee, leave, and credential data while keeping org records intact.
- * 4. Sole-owner deletion cleans up organization tenant and tenant-owned contacts/settings.
+ * 3. Employee deletion is a 14-day SOFT delete (D-02.8); after the grace window the retention job purges personal user, employee, leave and credential data while keeping org records intact.
+ * 4. Sole-owner deletion deactivates the tenant first (D-03.4); after the grace window the job cleans up the tenant and tenant-owned contacts/settings.
  * 5. Invalidation: deleted user sessions/tokens are immediately rejected on subsequent requests.
  * 6. Repeated deletion is rejected safely (401).
  */
@@ -40,6 +40,8 @@ const AuditLog = jiti(path.resolve(__dirname, '../models/AuditLog.ts')).default;
 // exactly as the Android client does. Web-cookie behaviour is covered with web-enabled fixtures (batch_h/h1, web_access_boundary).
 const { signMobileAccessToken: signToken } = jiti(path.resolve(__dirname, '../lib/auth/mobileTokens.ts'));
 const { DELETE } = jiti(path.resolve(__dirname, '../app/api/user/account/route.ts'));
+const { runRetentionPurge } = jiti(path.resolve(__dirname, '../lib/account/lifecycle.ts'));
+const backdate = id => User.updateOne({ _id: id }, { $set: { deletionRequestedAt: new Date(Date.now() - 15 * 864e5), deletionScheduledFor: new Date(Date.now() - 864e5) } });
 
 test.before(async () => {
   if (mongoose.connection.readyState !== 1) {
@@ -157,27 +159,33 @@ test('3. Employee self-service deletion purges personal data while leaving org i
   assert.equal(res.status, 200, 'Account deletion must return 200 OK');
   const json = await res.json();
   assert.equal(json.success, true);
+  assert.equal(json.scheduled, true, 'D-02.8: deletion is scheduled, not immediate');
 
-  // Verify personal records are permanently purged
+  // During the grace window: the account is inactive, sessions are gone, and NOTHING else has been purged yet.
+  const pending = await User.findById(empUser._id);
+  assert.ok(pending, 'the user record is still there during the grace window'); assert.equal(pending.isActive, false); assert.ok(pending.deletionScheduledFor);
+  assert.equal((await RefreshToken.find({ userId: String(empUser._id) })).length, 0, 'refresh tokens are revoked immediately');
+  assert.ok(await Employee.findOne({ clerkUserId: String(empUser._id) }), 'personal data is untouched until the purge');
+  const requested = await AuditLog.findOne({ action: 'user.account_deletion_requested', performedBy: String(empUser._id) });
+  assert.ok(requested, 'the request is audited'); assert.equal(JSON.stringify(requested.metadata).includes(empUser.email), false, 'D-02.5: no e-mail in the audit entry');
+
+  // The grace window ends: the retention job performs the irreversible purge.
+  await backdate(empUser._id);
+  const report = await runRetentionPurge({ apply: true });
+  assert.ok(report.deletionsExecuted >= 1);
+
   const userCheck = await User.findById(empUser._id);
   assert.equal(userCheck, null, 'User record must be purged');
-
   const empCheck = await Employee.findOne({ clerkUserId: String(empUser._id) });
   assert.equal(empCheck, null, 'Employee profile must be purged');
-
   const balancesCheck = await LeaveBalance.find({ userId: String(empUser._id) });
   assert.equal(balancesCheck.length, 0, 'Leave balances must be purged');
-
   const tokenCheck = await RefreshToken.find({ userId: String(empUser._id) });
   assert.equal(tokenCheck.length, 0, 'Refresh tokens must be purged');
 
-  // Verify audit log entry exists
-  const audit = await AuditLog.findOne({
-    action: 'user.account_deleted',
-    performedBy: String(empUser._id),
-  });
+  const audit = await AuditLog.findOne({ action: 'user.account_deleted', targetId: String(empUser._id) });
   assert.ok(audit, 'Audit log entry must be created');
-  assert.equal(audit.metadata.email, empUser.email);
+  assert.equal(audit.metadata.email, undefined, 'D-02.5: the deleted user\'s e-mail is not stored');
 });
 
 test('4. Sole owner deletion cleanly disbands the organization tenant', async () => {
@@ -215,8 +223,17 @@ test('4. Sole owner deletion cleanly disbands the organization tenant', async ()
 
   const res = await DELETE(req);
   assert.equal(res.status, 200, 'Sole owner deletion must succeed with 200');
+  assert.equal((await res.json()).scheduled, true);
 
-  // Verify custom tenant was disbanded
+  // D-03.4: the tenant is deactivated at once, but nothing is purged during the grace window.
+  const pending = await Organization.findOne({ orgId });
+  assert.ok(pending && pending.disbandRequestedAt, 'organisation is flagged for disband');
+  assert.equal((await Contact.find({ orgId })).length, 1, 'tenant data is untouched during the grace window');
+
+  await backdate(soleOwner._id);
+  await runRetentionPurge({ apply: true });
+
+  // Verify custom tenant was disbanded (this tenant holds no financial/HR records, so nothing needs to be retained and the shell goes too)
   const orgCheck = await Organization.findOne({ orgId });
   assert.equal(orgCheck, null, 'Organization must be deleted');
 

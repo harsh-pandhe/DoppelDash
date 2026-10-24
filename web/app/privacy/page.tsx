@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
               You have the right to request deletion of your account and personal data at any time. We provide an automated self-service account deletion mechanism directly in the DoppelDash Android app (Settings &rarr; Account &rarr; Delete Account) as well as an external account deletion request procedure at <Link href="/delete-account" className="text-sky-400 hover:underline">/delete-account</Link>.
             </p>
             <p>
-              Upon account deletion, your user credentials, personal employee profile, leave balances, and authentication tokens are immediately and permanently purged. Financial and approval records (such as approved company expense claims) may be retained in anonymized form strictly to satisfy statutory accounting and tax regulations.
+              When you delete your account it is deactivated at once and all your sessions end. You then have 14 days to change your mind by signing in again and choosing to restore the account. After 14 days your user credentials, personal employee profile, leave balances and authentication tokens are permanently deleted. Records that belong to your organisation are kept for its retention period, with your name replaced by &ldquo;Former member&rdquo;: expense claims and their receipts for 8 years from payment, leave records for 3 years and travel records for 2 years. Audit entries are kept for 8 years and do not contain your e-mail address. Copies of deleted data remain in encrypted database backups until those backups expire (up to 30 days).
             </p>
           </section>
 

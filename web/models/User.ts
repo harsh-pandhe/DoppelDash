@@ -51,6 +51,9 @@ export interface IUser extends Document {
   tourSeen: boolean
   lastLoginAt?: Date
   lastActiveAt?: Date
+  /** D-02.8: set by a self-service deletion request. The account is inactive until the grace window ends, then the retention job purges it. */
+  deletionRequestedAt?: Date
+  deletionScheduledFor?: Date
   loginCount: number
   createdAt: Date
   updatedAt: Date
@@ -89,6 +92,8 @@ const UserSchema = new Schema<IUser, UserModel>(
     tourSeen:           { type: Boolean, default: false },
     lastLoginAt:        { type: Date },
     lastActiveAt:       { type: Date },
+    deletionRequestedAt:  { type: Date },
+    deletionScheduledFor: { type: Date, index: true },
     loginCount:         { type: Number, default: 0 },
   },
   { timestamps: true }

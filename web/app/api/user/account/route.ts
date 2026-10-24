@@ -8,11 +8,11 @@ import Organization from '@/models/Organization'
 import AuditLog from '@/models/AuditLog'
 import RevokedToken from '@/models/RevokedToken'
 import { COOKIE_NAME } from '@/lib/auth/jwt'
-import { runDeletionSteps, orgDisbandSteps, personalSteps } from '@/lib/account/deletion'
+import { scheduleDeletion, DELETION_GRACE_DAYS } from '@/lib/account/lifecycle'
 
 /**
  * DELETE /api/user/account
- * Authenticated self-service account and personal data deletion.
+ * Authenticated self-service account and personal data deletion (14-day soft delete — see lib/account/lifecycle.ts).
  * Satisfies Google Play Data Safety requirements and DPDP Act / GDPR compliance.
  */
 async function DELETE_handler(req: NextRequest) {
@@ -43,6 +43,8 @@ async function DELETE_handler(req: NextRequest) {
           {
             error:
               'As the organization owner, you cannot delete your account while other members remain in the organization. Please transfer ownership or remove other members before deleting your account.',
+            code: 'owner_must_transfer',
+            transferEndpoint: '/api/org/transfer-ownership',
           },
           { status: 400 }
         )
@@ -53,20 +55,16 @@ async function DELETE_handler(req: NextRequest) {
       disband = !org?.lifetimeGrant
     }
 
-    // Ordered, idempotent, retryable purge (see lib/account/deletion.ts). Nothing is reported as deleted unless every step succeeded;
-    // on failure the account is left intact and signed in, so the same request can simply be repeated.
-    const outcome = await runDeletionSteps([...(disband ? orgDisbandSteps(orgId) : []), ...personalSteps(userId, orgId)])
-    const auditBase = { orgId, performedBy: userId, performedByName: `${user.firstName} ${user.lastName}`.trim(), targetId: userId, targetType: 'user' as const }
-    if (!outcome.ok) {
-      await AuditLog.create({ ...auditBase, action: 'user.account_deletion_incomplete', metadata: { failed: outcome.failed, at: new Date() } }).catch(() => undefined)
-      return NextResponse.json({ error: 'We could not finish deleting your account. Nothing further was removed after the failing step. Please try again in a moment.', code: 'deletion_incomplete', retry: true }, { status: 500 })
-    }
-    // Every record is gone: record the completion (the audit log is the one deliberately retained trail — pseudonymisation policy: docs/ACCOUNT_DELETION_POLICY.md).
+    // D-02.8 (owner decision, 2026-10-25): deletion is a 14-day SOFT delete. The account is deactivated and every session is revoked now; the data is
+    // untouched and the person can restore the account by signing in with their password. The irreversible purge (and, for a disband, the
+    // retention rules of D-03.3/D-03.4) runs later from the retention job (lib/account/lifecycle.ts) — never inline.
+    // D-02.5: the audit entry carries ids only, never the e-mail address.
+    const { restoreUntil } = await scheduleDeletion({ userId, orgId, disband })
     try {
       await AuditLog.create({
-        ...auditBase,
-        action: 'user.account_deleted',
-        metadata: { email: user.email, deletedAt: new Date(), reason: 'User self-service account deletion', disbandedOrganisation: disband, ip: req.headers.get('x-forwarded-for') || 'unknown' },
+        orgId, performedBy: userId, performedByName: `${user.firstName} ${user.lastName}`.trim(), targetId: userId, targetType: 'user',
+        action: 'user.account_deletion_requested',
+        metadata: { requestedAt: new Date(), restoreUntil, disbandOrganisation: disband, gracePeriodDays: DELETION_GRACE_DAYS },
       })
     } catch (err) {
       console.error('Failed to write deletion audit log:', err)
@@ -86,7 +84,10 @@ async function DELETE_handler(req: NextRequest) {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Your account and personal data have been permanently deleted.',
+      scheduled: true,
+      restoreUntil: restoreUntil.toISOString(),
+      gracePeriodDays: DELETION_GRACE_DAYS,
+      message: `Your account is scheduled for deletion and you have been signed out. Sign in again within ${DELETION_GRACE_DAYS} days to restore it; after that your personal data is permanently deleted.`,
     })
 
     // Clear session cookie

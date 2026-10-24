@@ -2,7 +2,7 @@
  * Expense review policy (Phase 4C). Real routes, throwaway DB. Policy:
  *   pending_manager  manager or admin may approve (→ pending_admin), reject, return to the employee
  *   pending_admin    ONLY an admin may decide: pay, reject, or send back to manager review (reason required, audited as expense.returned_to_manager)
- *   settled states   no transitions; a manager gets 403 for any review write
+ *   settled states   no transitions except paid → void (admin only, reason required); a manager gets 403 for any review write
  * A refusal changes nothing: the document is byte-identical afterwards and no audit row is written.
  */
 const test = require('node:test')
@@ -124,12 +124,13 @@ test('P7. the Web page renders its review actions from the shared table (no re-i
   assert.doesNotMatch(src, /isAdmin && (exp|expense)\.status === 'pending_admin'/)
 })
 
-test('P8. CHARACTERISATION pending owner decision D-03 (paid-claim deletion): today a manager/admin DELETE removes a claim in ANY status, including `paid`; the employee owner cannot delete a paid/pending-admin claim. Change this test together with the decision (void/correction instead of delete).', async () => {
+test('P8. owner decision D-03.1 (approved 2026-10-25): a claim in payout review or paid is NEVER deleted by anyone (409 claim_settled); voiding is the correction path (see expense_void_and_delete.test.js)', async () => {
   const own = (id, k) => kit.api(`/api/rms/${id}`, { method: 'DELETE', token: tok[k] })
   const p1 = await newExpense('paid'); assert.equal((await own(p1, 'Aemployee')).status, 403, 'the owner cannot delete a paid claim')
   const pa = await newExpense('pending_admin'); assert.equal((await own(pa, 'Aemployee')).status, 403)
   assert.equal((await own(p1, 'Bmanager')).status, 404, 'other tenant')
-  assert.equal((await own(p1, 'Amanager')).status, 200, 'CURRENT behaviour (decision pending): a manager can delete a paid claim')
-  const p2 = await newExpense('paid'); assert.equal((await own(p2, 'Aadmin')).status, 200, 'CURRENT behaviour (decision pending): an admin can delete a paid claim')
-  assert.equal(await db.collection('expenses').countDocuments({ _id: { $in: [oid(p1), oid(p2)] } }), 0)
+  const r1 = await own(p1, 'Amanager'); assert.equal(r1.status, 409, 'a manager can no longer delete a paid claim'); assert.equal(r1.json.code, 'claim_settled')
+  const r2 = await own(p1, 'Aadmin'); assert.equal(r2.status, 409, 'nor can an admin'); assert.equal(r2.json.code, 'claim_settled')
+  assert.equal((await own(pa, 'Aadmin')).status, 409, 'a claim in payout review is protected too')
+  assert.equal(await db.collection('expenses').countDocuments({ _id: { $in: [oid(p1), oid(pa)] } }), 2, 'both records are kept')
 })
