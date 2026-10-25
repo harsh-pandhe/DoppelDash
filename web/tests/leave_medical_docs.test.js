@@ -47,7 +47,15 @@ test.beforeEach(async () => { await fake.control.reset(); await db.collection('r
 
 const who = k => ({ token: tok[k] })
 const key = () => crypto.randomBytes(4).toString('hex')
-const leaveBody = (o = {}) => ({ type: 'sick', startDate: `${YEAR}-11-10`, endDate: `${YEAR}-11-12`, days: 3, reason: 'Fever ' + key(), ...o })
+// P-01 (owner decision 2026-10-25): the same user may not hold overlapping pending/approved leave, so every request gets its own calendar window
+// (5 days apart). An explicit endDate in a case is re-derived from that window and `days`; an explicit startDate (e.g. an invalid one) is kept as given.
+let leaveSeq = 0
+const leaveBody = (o = {}) => {
+  const iso = d => d.toISOString().slice(0, 10)
+  const start = new Date(Date.UTC(YEAR, 0, 1 + 5 * leaveSeq++)), days = o.days ?? 3
+  const end = new Date(start.getTime() + (Math.max(1, Math.ceil(Number(days) || 1)) - 1) * 864e5)
+  return { type: 'sick', startDate: iso(start), endDate: iso(end), days: 3, reason: 'Fever ' + key(), ...o, ...(o.endDate ? { endDate: iso(end) } : {}) }
+}
 const post = (tokenOrKey, body) => kit.api('/api/lms', { method: 'POST', token: tokenOrKey.length > 40 ? tokenOrKey : tok[tokenOrKey], body })
 const sign = (token, o = {}) => kit.api('/api/uploads/sign', { method: 'POST', token, body: { kind: 'receipt', mimeType: MIME.png, sizeBytes: 100, purpose: 'leave_medical', ...o } })
 async function put(ticket, bytes) { const fd = new FormData(); for (const [f, v] of Object.entries(ticket.fields)) fd.append(f, v); fd.append('file', new Blob([bytes]), 'f.bin'); const r = await fetch(ticket.uploadUrl, { method: 'POST', body: fd }); return { status: r.status, json: await r.json().catch(() => null) } }
