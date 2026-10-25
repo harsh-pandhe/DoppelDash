@@ -89,7 +89,7 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     Leave.countDocuments({ status: 'pending', ...ownerFilter }),
     Expense.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
     TravelRequest.countDocuments({ status: { $in: ['pending_manager', 'pending_admin'] }, ...ownerFilter }),
-    isManager ? AuditLog.find({ orgId: effectiveOrgId }).sort({ createdAt: -1 }).limit(10).lean() : Promise.resolve([]),
+    isManager ? AuditLog.find({ orgId: effectiveOrgId, action: { $not: /^(auth|mailbox|analytics)\./ } }).sort({ createdAt: -1 }).limit(10).lean() : Promise.resolve([]),
   ])
 
   const leaveByMonth = months.map(m => {
@@ -164,6 +164,13 @@ export async function computeAnalytics(userId: string, role: string, p: Analytic
     leaveByMonth, expenseByMonth, leaveStatus, expenseStatus, travelStatus,
     leaveType: leaveTypeAgg,
     topSpenders: topSpendersAgg.map((e: { _id: { userId: string; userName: string }; total: number; count: number }) => ({ userId: e._id.userId, userName: e._id.userName, total: e.total, count: e.count })),
-    recentAudits: recentAudits.map((a: { action: string; performedByName: string; createdAt: Date; metadata?: Record<string, unknown> }) => ({ action: a.action, performedByName: a.performedByName, createdAt: a.createdAt, metadata: a.metadata })),
+    // Dashboard feed for managers: display keys only. The full metadata (permissions lists, changed-field names, roles) is for the admin-only audit log.
+    recentAudits: recentAudits.map((a: { action: string; performedByName: string; createdAt: Date; metadata?: Record<string, unknown> }) => {
+      const m = a.metadata || {}; const safe: Record<string, unknown> = {}
+      if (typeof m.employeeName === 'string') safe.employeeName = m.employeeName
+      for (const k of ['amount', 'days'] as const) if (typeof m[k] === 'number') safe[k] = m[k]
+      if (typeof m.destination === 'string') safe.destination = m.destination
+      return { action: a.action, performedByName: a.performedByName, createdAt: a.createdAt, metadata: safe }
+    }),
   }
 }

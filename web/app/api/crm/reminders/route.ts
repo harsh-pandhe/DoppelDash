@@ -1,3 +1,4 @@
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import mongoose from 'mongoose'
@@ -25,7 +26,7 @@ async function GET_handler() {
 async function PATCH_handler(req: NextRequest) {
   const { userId, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { contactId } = await req.json().catch(() => ({})) as { contactId?: string }
+  const { contactId } = ((await readJsonObject(req)) ?? {}) as { contactId?: string }
   if (!contactId) return NextResponse.json({ error: 'contactId required' }, { status: 400 })
   if (!mongoose.isValidObjectId(contactId)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

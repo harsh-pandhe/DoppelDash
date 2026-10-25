@@ -5,6 +5,7 @@ import { getUser, COOKIE_NAME, COOKIE_OPTS, revokeAllMobileRefreshTokens } from 
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import { rateLimit } from '@/lib/ratelimit'
+import { writeAudit } from '@/lib/audit'
 
 async function POST_handler(req: NextRequest) {
   const { userId } = await getUser()
@@ -54,6 +55,11 @@ async function POST_handler(req: NextRequest) {
     $inc:               { sessionVersion: 1 },
   })
   await revokeAllMobileRefreshTokens(userId, 'password_change')
+  // No password material in the log — only that it happened and whether it was the forced first-login change.
+  await writeAudit({
+    action: 'auth.password_changed', performedBy: userId, performedByName: `${user.firstName} ${user.lastName}`.trim() || 'User',
+    targetId: userId, targetType: 'auth', orgId: user.orgId, metadata: { forced: !!user.mustChangePassword },
+  })
 
   const res = NextResponse.json({ ok: true, message: 'Password updated. Please sign in again.' })
   res.cookies.set(COOKIE_NAME, '', { ...COOKIE_OPTS, maxAge: 0, path: '/' })

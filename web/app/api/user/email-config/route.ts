@@ -8,6 +8,7 @@ import { connectDB } from '@/lib/db'
 import UserEmailConfig from '@/models/UserEmailConfig'
 import { encrypt } from '@/lib/encrypt'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 
 async function GET_handler() {
   const { userId, orgId } = await getUser()
@@ -26,7 +27,7 @@ async function GET_handler() {
 }
 
 async function POST_handler(req: NextRequest) {
-  const { userId, orgId } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { emailAddress?: string; smtpHost?: string; smtpPort?: number; appPassword?: string }
@@ -60,15 +61,25 @@ async function POST_handler(req: NextRequest) {
     { upsert: true, returnDocument: 'after' }
   )
 
+  await writeAudit({
+    action: 'mailbox.configured', performedBy: userId, performedByName: user?.fullName || 'User',
+    targetId: userId, targetType: 'mailbox', orgId, metadata: {},
+  })
   return NextResponse.json({ ok: true })
 }
 
 async function DELETE_handler() {
-  const { userId, orgId } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  await UserEmailConfig.deleteOne({ userId, orgId })
+  const res = await UserEmailConfig.deleteOne({ userId, orgId })
+  if (res.deletedCount) {
+    await writeAudit({
+      action: 'mailbox.removed', performedBy: userId, performedByName: user?.fullName || 'User',
+      targetId: userId, targetType: 'mailbox', orgId, metadata: {},
+    })
+  }
   return NextResponse.json({ ok: true })
 }
 

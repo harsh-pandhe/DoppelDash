@@ -4,6 +4,7 @@
  * Call: POST /api/auth/setup  { secret, email, password, firstName, lastName }
  * Disabled after first boss account exists.
  */
+import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { connectDB } from '@/lib/db'
@@ -19,7 +20,8 @@ async function POST_handler(req: NextRequest) {
     return NextResponse.json({ error: 'Setup already completed' }, { status: 409 })
   }
 
-  const body = await req.json()
+  const body = await readJsonObject(req)
+  if (!body) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   const { secret, email, password, firstName, lastName, orgId } = body
 
   const expectedSecret = process.env.SETUP_SECRET

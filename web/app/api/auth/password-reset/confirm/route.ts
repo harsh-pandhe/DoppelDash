@@ -4,6 +4,7 @@ import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import PasswordResetToken from '@/models/PasswordResetToken'
+import { writeAudit } from '@/lib/audit'
 import { rateLimit } from '@/lib/ratelimit'
 import { revokeAllMobileRefreshTokens } from '@/lib/auth/mobileTokens'
 
@@ -91,6 +92,10 @@ async function POST_handler(req: NextRequest) {
   // A reset must not leave any signed-in device alive (web sessions die via the
   // stamp above; mobile refresh rows are revoked explicitly).
   await revokeAllMobileRefreshTokens(user._id.toString(), 'password_reset')
+  await writeAudit({
+    action: 'auth.password_reset_completed', performedBy: user._id.toString(), performedByName: `${user.firstName} ${user.lastName}`.trim() || 'User',
+    targetId: user._id.toString(), targetType: 'auth', orgId: user.orgId, metadata: {},
+  })
 
   return NextResponse.json(
     { message: 'Password has been reset successfully' },

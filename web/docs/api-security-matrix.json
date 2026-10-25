@@ -1,0 +1,1830 @@
+{
+  "generatedBy": "scripts/audit/route-matrix.js",
+  "handlers": [
+    {
+      "route": "/api/admin/audit",
+      "file": "app/api/admin/audit/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 7,
+      "fuzzed": false,
+      "auditTested": true
+    },
+    {
+      "route": "/api/admin/balances/:userId",
+      "file": "app/api/admin/balances/[userId]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": true,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/admin/invitations/:id/resend",
+      "file": "app/api/admin/invitations/[id]/resend/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/admin/invitations/:id",
+      "file": "app/api/admin/invitations/[id]/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/admin/invitations",
+      "file": "app/api/admin/invitations/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/admin/settings",
+      "file": "app/api/admin/settings/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "PUT"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/admin/users/:userId",
+      "file": "app/api/admin/users/[userId]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/admin/users",
+      "file": "app/api/admin/users/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/analytics/drill",
+      "file": "app/api/analytics/drill/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/analytics",
+      "file": "app/api/analytics/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 8,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/analytics/share/:token",
+      "file": "app/api/analytics/share/[token]/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/analytics/share",
+      "file": "app/api/analytics/share/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/analytics/shared/:token",
+      "file": "app/api/analytics/shared/[token]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "n/a",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/analytics/software",
+      "file": "app/api/analytics/software/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/announcements/:id",
+      "file": "app/api/announcements/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/announcements/broadcast",
+      "file": "app/api/announcements/broadcast/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/announcements",
+      "file": "app/api/announcements/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/auth/change-password",
+      "file": "app/api/auth/change-password/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 8,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/auth/invitations/:token",
+      "file": "app/api/auth/invitations/[token]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "n/a",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 9,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/invitations/accept",
+      "file": "app/api/auth/invitations/accept/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 8,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/invitations/verify",
+      "file": "app/api/auth/invitations/verify/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 7,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/login",
+      "file": "app/api/auth/login/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 17,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/logout",
+      "file": "app/api/auth/logout/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 8,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/me",
+      "file": "app/api/auth/me/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 19,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/outlook/callback",
+      "file": "app/api/auth/outlook/callback/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/outlook",
+      "file": "app/api/auth/outlook/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/passkey/credentials",
+      "file": "app/api/auth/passkey/credentials/route.ts",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/passkey/login",
+      "file": "app/api/auth/passkey/login/route.ts",
+      "methods": [
+        "POST",
+        "PUT"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/passkey/register",
+      "file": "app/api/auth/passkey/register/route.ts",
+      "methods": [
+        "POST",
+        "PUT"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/password-reset/check",
+      "file": "app/api/auth/password-reset/check/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/password-reset/confirm",
+      "file": "app/api/auth/password-reset/confirm/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 7,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/auth/password-reset/request",
+      "file": "app/api/auth/password-reset/request/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/auth/refresh",
+      "file": "app/api/auth/refresh/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 6,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/register",
+      "file": "app/api/auth/register/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 18,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/send-otp",
+      "file": "app/api/auth/send-otp/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/setup",
+      "file": "app/api/auth/setup/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/totp/setup",
+      "file": "app/api/auth/totp/setup/route.ts",
+      "methods": [
+        "POST",
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/tour-seen",
+      "file": "app/api/auth/tour-seen/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/auth/verify-otp",
+      "file": "app/api/auth/verify-otp/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/billing/entitlements",
+      "file": "app/api/billing/entitlements/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 8,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/billing/play/rtdn",
+      "file": "app/api/billing/play/rtdn/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/billing/play/verify",
+      "file": "app/api/billing/play/verify/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm/:id",
+      "file": "app/api/crm/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 21,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/crm/:id/share",
+      "file": "app/api/crm/[id]/share/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 21,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/crm/campaign",
+      "file": "app/api/crm/campaign/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm/generate",
+      "file": "app/api/crm/generate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm/ocr",
+      "file": "app/api/crm/ocr/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm/reminders",
+      "file": "app/api/crm/reminders/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm",
+      "file": "app/api/crm/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 21,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/crm/scanned-cards/:id",
+      "file": "app/api/crm/scanned-cards/[id]/route.ts",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 6,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/crm/scanned-cards",
+      "file": "app/api/crm/scanned-cards/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 6,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/cron/announcements",
+      "file": "app/api/cron/announcements/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/cron/birthday",
+      "file": "app/api/cron/birthday/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/cron/onboarding",
+      "file": "app/api/cron/onboarding/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/cron/receipts-cleanup",
+      "file": "app/api/cron/receipts-cleanup/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/dev/migrate",
+      "file": "app/api/dev/migrate/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/dev/reset-to-admin",
+      "file": "app/api/dev/reset-to-admin/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/dev/seed",
+      "file": "app/api/dev/seed/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/employees/:id",
+      "file": "app/api/employees/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 11,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/employees/directory",
+      "file": "app/api/employees/directory/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/employees/me",
+      "file": "app/api/employees/me/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 10,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/health",
+      "file": "app/api/health/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "n/a",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/holidays",
+      "file": "app/api/holidays/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 7,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/inbox/:id",
+      "file": "app/api/inbox/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/inbox",
+      "file": "app/api/inbox/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms/:id/document/:file",
+      "file": "app/api/lms/[id]/document/[file]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms/:id",
+      "file": "app/api/lms/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms/balance",
+      "file": "app/api/lms/balance/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms/calendar",
+      "file": "app/api/lms/calendar/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms",
+      "file": "app/api/lms/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/lms/workload",
+      "file": "app/api/lms/workload/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/mail/drafts/:id",
+      "file": "app/api/mail/drafts/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/mail/drafts",
+      "file": "app/api/mail/drafts/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/notifications",
+      "file": "app/api/notifications/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": true,
+      "tests": 7,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/org/mail-config",
+      "file": "app/api/org/mail-config/route.ts",
+      "methods": [
+        "GET",
+        "PUT",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/org/settings",
+      "file": "app/api/org/settings/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "PUT"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 13,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/reports",
+      "file": "app/api/reports/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/rms/:id/receipt/:file",
+      "file": "app/api/rms/[id]/receipt/[file]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 22,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/rms/:id",
+      "file": "app/api/rms/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 22,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/rms/ocr",
+      "file": "app/api/rms/ocr/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/rms",
+      "file": "app/api/rms/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": true,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 22,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/search",
+      "file": "app/api/search/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 4,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/support/chat",
+      "file": "app/api/support/chat/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "NONE-FOUND",
+      "roleGate": false,
+      "tenantScope": false,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 3,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/sync/email",
+      "file": "app/api/sync/email/route.ts",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 1,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/travel/:id/expense",
+      "file": "app/api/travel/[id]/expense/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/travel/:id/itinerary/:file",
+      "file": "app/api/travel/[id]/itinerary/[file]/route.ts",
+      "methods": [
+        "GET"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": null,
+      "allowlist": null,
+      "validation": null,
+      "errorMapped": null,
+      "audit": null,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/travel/:id",
+      "file": "app/api/travel/[id]/route.ts",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": true,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/travel",
+      "file": "app/api/travel/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": true,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 15,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/uploads/sign",
+      "file": "app/api/uploads/sign/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 16,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/user/account",
+      "file": "app/api/user/account/route.ts",
+      "methods": [
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    },
+    {
+      "route": "/api/user/email-config",
+      "file": "app/api/user/email-config/route.ts",
+      "methods": [
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": true,
+      "revision": false,
+      "tests": 5,
+      "fuzzed": true,
+      "auditTested": true
+    },
+    {
+      "route": "/api/user/email-config/test",
+      "file": "app/api/user/email-config/test/route.ts",
+      "methods": [
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": false,
+      "allowlist": false,
+      "validation": false,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": true,
+      "auditTested": false
+    },
+    {
+      "route": "/api/webhooks/outlook",
+      "file": "app/api/webhooks/outlook/route.ts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "auth": "yes",
+      "roleGate": false,
+      "tenantScope": true,
+      "safeBody": true,
+      "allowlist": false,
+      "validation": true,
+      "errorMapped": true,
+      "audit": false,
+      "revision": false,
+      "tests": 2,
+      "fuzzed": false,
+      "auditTested": false
+    }
+  ]
+}

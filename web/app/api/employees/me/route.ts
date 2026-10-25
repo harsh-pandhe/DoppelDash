@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
 import User from '@/models/User'
 import { getUser, getUserById } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 import { encryptBankDetails, decryptBankDetails } from '@/lib/encrypt'
 import { SELF_EDITABLE, pickAllowed, badScalars } from '@/lib/employees/editable'
 
@@ -41,7 +42,7 @@ async function GET_handler() {
 }
 
 async function PATCH_handler(req: NextRequest) {
-  const { userId, orgId } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   await connectDB()
 
@@ -52,16 +53,6 @@ async function PATCH_handler(req: NextRequest) {
   const body = parsed.data
   const invalid = [...parsed.bad, ...badScalars(body)]
   if (invalid.length) return NextResponse.json({ error: 'Invalid request', fields: invalid }, { status: 400 })
-
-  // Synchronize User profile names if updated on Employee
-  if (body.firstName || body.lastName) {
-    const userUpdate: Record<string, string> = {}
-    if (typeof body.firstName === 'string' && body.firstName.trim()) userUpdate.firstName = body.firstName.trim()
-    if (typeof body.lastName === 'string' && body.lastName.trim()) userUpdate.lastName = body.lastName.trim()
-    if (Object.keys(userUpdate).length > 0) {
-      await User.findByIdAndUpdate(userId, { $set: userUpdate })
-    }
-  }
 
   // Encrypt bank details before persisting (account number / IFSC / holder name)
   if (body.bankDetails) {
@@ -80,6 +71,25 @@ async function PATCH_handler(req: NextRequest) {
     throw err
   }
   if (!emp) return NextResponse.json({ error: 'Employee record not found' }, { status: 404 })
+
+  // Synchronize User profile names — AFTER the employee update succeeded, so a rejected request never leaves a half-applied rename (Phase 12).
+  if (body.firstName || body.lastName) {
+    const userUpdate: Record<string, string> = {}
+    if (typeof body.firstName === 'string' && body.firstName.trim()) userUpdate.firstName = body.firstName.trim()
+    if (typeof body.lastName === 'string' && body.lastName.trim()) userUpdate.lastName = body.lastName.trim()
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(userId, { $set: userUpdate })
+    }
+  }
+
+  // Audit only security-relevant self edits (payout destination, legal name); onboarding step saves would otherwise flood the log. Field names only.
+  const sensitive = Object.keys(body).filter(k => k === 'bankDetails' || k === 'firstName' || k === 'lastName')
+  if (sensitive.length) {
+    await writeAudit({
+      action: 'employee.profile_updated', performedBy: userId, performedByName: user?.fullName || 'Unknown',
+      targetId: userId, targetType: 'employee', orgId, metadata: { fields: sensitive.map(k => (k === 'bankDetails' ? 'payout' : k)), self: true },
+    })
+  }
 
   // Mark onboarding complete if step reaches 4
   if (typeof body.onboardingStep === 'number' && body.onboardingStep >= 4 && !emp.onboardingComplete) {

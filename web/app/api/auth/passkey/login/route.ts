@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { passkeyLoginOptions, passkeyLoginVerify, signToken, isWebAccessAllowed, setWebSessionCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
+import { writeAudit } from '@/lib/audit'
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
 
 /** Get authentication options for a passkey sign-in (public, by email). */
@@ -84,6 +85,10 @@ async function PUT_handler(req: NextRequest) {
 
   // Passkeys are a browser flow: no web entitlement → no session at all.
   const webAccess = await isWebAccessAllowed(pub.orgId)
+  await writeAudit({
+    action: 'auth.login_succeeded', performedBy: pub.id, performedByName: `${pub.firstName} ${pub.lastName}`.trim() || 'User',
+    targetId: pub.id, targetType: 'auth', orgId: pub.orgId, metadata: { method: 'passkey', web: webAccess },
+  })
   const res = NextResponse.json({
     user: pub,
     mustChangePassword: result.user.mustChangePassword,

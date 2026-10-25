@@ -6,7 +6,7 @@ export async function writeAudit(opts: {
   performedBy: string
   performedByName: string
   targetId: string
-  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel' | 'invitation' | 'organization'
+  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel' | 'invitation' | 'organization' | 'holiday' | 'employee' | 'auth' | 'mailbox' | 'share'
   orgId: string
   metadata?: Record<string, unknown>
 }): Promise<void> {

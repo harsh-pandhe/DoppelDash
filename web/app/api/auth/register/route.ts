@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 import { dbGuard } from '@/lib/http/dbGuard'
 import { readJsonObject } from '@/lib/http/body'
 import { NextRequest, NextResponse } from 'next/server'
+import { writeAudit } from '@/lib/audit'
 import { connectDB } from '@/lib/db'
 import User from '@/models/User'
 import Employee from '@/models/Employee'
@@ -212,6 +213,10 @@ async function POST_handler(req: NextRequest) {
       }
 
       const pub = newUser.toPublic()
+      await writeAudit({
+        action: 'organization.created', performedBy: pub.id, performedByName: `${pub.firstName} ${pub.lastName}`.trim() || 'Owner',
+        targetId: orgId, targetType: 'organization', orgId, metadata: { via: 'public_signup' },
+      })
       const token = await signToken(pub)
       const accessToken = await signMobileAccessToken(pub)
       const refreshToken = await issueMobileRefreshToken(pub.id, { sessionVersion: pub.sessionVersion })

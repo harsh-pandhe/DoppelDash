@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db'
 import Employee from '@/models/Employee'
 import User from '@/models/User'
+import { writeAudit } from '@/lib/audit'
 import { getUser } from '@/lib/auth'
 import { REVIEWER_EDITABLE, pickAllowed, badScalars } from '@/lib/employees/editable'
 
@@ -59,6 +60,11 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
     if (!emp) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const { bankDetails: _b, ...out } = emp as typeof emp & { bankDetails?: unknown }
     void _b
+    await writeAudit({
+      action: 'employee.profile_updated', performedBy: userId, performedByName: user?.fullName || 'Unknown',
+      targetId: String((emp as { clerkUserId?: string }).clerkUserId || params.id), targetType: 'employee', orgId,
+      metadata: { fields: Object.keys(parsed.data), self: (emp as { clerkUserId?: string }).clerkUserId === userId },
+    })
     return NextResponse.json(out)
   } catch (err) {
     if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })

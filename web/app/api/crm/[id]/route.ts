@@ -82,6 +82,8 @@ async function PATCH_handler(req: NextRequest, { params: paramsPromise }: { para
     targetId: params.id,
     targetType: 'contact',
     orgId,
+    // Field NAMES only (contact PII stays out of the log); visibility/sharing changes are recorded because they widen who can read the record.
+    metadata: { fields: Object.keys(rest), ...('visibility' in rest ? { visibility: String(rest.visibility) } : {}), ...('sharedWith' in rest ? { sharedWithCount: Array.isArray(rest.sharedWith) ? rest.sharedWith.length : 0 } : {}) },
   })
   return NextResponse.json({ ...decryptContact(contact.toObject()), canManage: true, canShare: canShareContact(userId, contact.createdBy) })
 }

@@ -5,6 +5,7 @@ import mongoose from 'mongoose'
 import { connectDB } from '@/lib/db'
 import PublicHoliday from '@/models/PublicHoliday'
 import { getUser } from '@/lib/auth'
+import { writeAudit } from '@/lib/audit'
 
 // India national holidays (recurring, seeded on first GET if empty)
 function indiaHolidays(year: number) {
@@ -86,6 +87,10 @@ async function POST_handler(req: NextRequest) {
     if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) return NextResponse.json({ error: 'Invalid holiday' }, { status: 400 })
     throw err
   }
+  await writeAudit({
+    action: 'holiday.created', performedBy: userId, performedByName: user?.fullName || 'Unknown',
+    targetId: String(holiday._id), targetType: 'holiday', orgId: effectiveOrgId, metadata: { type: holiday.type, year: holiday.year },
+  })
   return NextResponse.json(holiday)
 }
 
@@ -101,7 +106,13 @@ async function DELETE_handler(req: NextRequest) {
   if (!id || !mongoose.isValidObjectId(id)) {
     return NextResponse.json({ error: 'Invalid holiday id' }, { status: 400 })
   }
-  await PublicHoliday.findOneAndDelete({ _id: id, orgId: effectiveOrgId })
+  const removed = await PublicHoliday.findOneAndDelete({ _id: id, orgId: effectiveOrgId })
+  if (removed) {
+    await writeAudit({
+      action: 'holiday.deleted', performedBy: userId, performedByName: user?.fullName || 'Unknown',
+      targetId: String(id), targetType: 'holiday', orgId: effectiveOrgId, metadata: { year: removed.year },
+    })
+  }
   return NextResponse.json({ success: true })
 }
 

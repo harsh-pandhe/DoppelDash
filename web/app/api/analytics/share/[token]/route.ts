@@ -4,13 +4,14 @@ import { connectDB } from '@/lib/db'
 import SharedDashboard from '@/models/SharedDashboard'
 import { getUser } from '@/lib/auth'
 import { rateLimit } from '@/lib/ratelimit'
+import { writeAudit } from '@/lib/audit'
 
 const TOKEN_REGEX = /^[a-f0-9]{32}$/i
 
 // Revoke a share — owner only
 async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { params: Promise<{ token: string }> }) {
   const params = await paramsPromise
-  const { userId, orgId } = await getUser()
+  const { userId, user, orgId } = await getUser()
   if (!userId || !orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (!(await rateLimit(`share-revoke:${userId}`, 30, 60_000))) {
@@ -23,8 +24,12 @@ async function DELETE_handler(_req: NextRequest, { params: paramsPromise }: { pa
   }
 
   await connectDB()
-  const res = await SharedDashboard.deleteOne({ token, ownerId: userId, orgId })
-  if (res.deletedCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const res = await SharedDashboard.findOneAndDelete({ token, ownerId: userId, orgId })
+  if (!res) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  await writeAudit({
+    action: 'analytics.share_revoked', performedBy: userId, performedByName: user?.fullName || 'User',
+    targetId: String(res._id), targetType: 'share', orgId, metadata: {},
+  })
   return NextResponse.json({ ok: true })
 }
 

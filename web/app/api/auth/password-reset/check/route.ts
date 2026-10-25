@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { dbGuard } from '@/lib/http/dbGuard'
+import { readJsonObject } from '@/lib/http/body'
 import { connectDB } from '@/lib/db'
 import PasswordResetToken from '@/models/PasswordResetToken'
 import { rateLimit } from '@/lib/ratelimit'
@@ -23,10 +24,8 @@ async function POST_handler(req: NextRequest) {
     return json({ valid: false, reason: 'rate_limited', error: 'Too many attempts — please wait 1 minute' }, 429)
   }
 
-  let body: Record<string, unknown> = {}
-  try { body = await req.json() } catch {
-    return json({ valid: false, reason: 'missing_token', error: 'Invalid JSON body' }, 400)
-  }
+  const body = await readJsonObject(req)
+  if (!body) return json({ valid: false, reason: 'missing_token', error: 'Invalid JSON body' }, 400)
   const token = typeof body.token === 'string' ? body.token.trim() : ''
   if (!token) return json({ valid: false, reason: 'missing_token', error: 'Reset token is required' }, 400)
 

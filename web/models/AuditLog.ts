@@ -6,7 +6,7 @@ export interface IAuditLog extends Document {
   performedBy: string
   performedByName: string
   targetId: string
-  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel' | 'invitation' | 'organization'
+  targetType: 'leave' | 'expense' | 'contact' | 'announcement' | 'user' | 'balance' | 'travel_request' | 'travel' | 'invitation' | 'organization' | 'holiday' | 'employee' | 'auth' | 'mailbox' | 'share'
   metadata: Record<string, unknown>
   /** Optional exactly-once key (`<action>|<targetId>`), enforced by a unique index; see writeAuditOnce. Internal. */
   dedupeKey?: string
@@ -20,7 +20,7 @@ const AuditLogSchema = new Schema<IAuditLog>(
     performedBy:     { type: String, required: true, index: true },
     performedByName: { type: String, required: true },
     targetId:        { type: String, required: true },
-    targetType:      { type: String, enum: ['leave','expense','contact','announcement','user','balance','travel_request','travel','invitation','organization'], required: true },
+    targetType:      { type: String, enum: ['leave','expense','contact','announcement','user','balance','travel_request','travel','invitation','organization','holiday','employee','auth','mailbox','share'], required: true },
     metadata:        { type: Schema.Types.Mixed, default: {} },
     dedupeKey:       { type: String },
   },
