@@ -404,8 +404,8 @@ test('7. Create Operations: Client-injected foreign orgId is strictly overridden
     body: JSON.stringify({
       type: 'casual',
       days: 1,
-      startDate: new Date(),
-      endDate: new Date(),
+      startDate: new Date(Date.now() + 40 * 864e5),
+      endDate: new Date(Date.now() + 40 * 864e5),
       reason: 'Injected orgId leave test',
       orgId: ORG_B,
     }),

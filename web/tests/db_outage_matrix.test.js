@@ -85,11 +85,11 @@ test('O5. error classification: connectivity/timeout errors map to 503, everythi
   for (const e of [new Error('boom'), { name: 'ValidationError', message: 'bad' }, { name: 'MongoServerError', code: 11000, message: 'E11000 duplicate' }, { name: 'CastError', message: 'cast' }, null, 'str', { name: 'SyntaxError', message: 'Unexpected token' }]) assert.equal(isDbUnavailable(e), false, String(e && e.name))
 })
 
-test('O6. STATIC completeness: every exported handler under app/api is wrapped by dbGuard, except the handlers that never touch the database (health, removed invitation GET/HEAD, 405 stubs on receipts-cleanup)', () => {
+test('O6. STATIC completeness: every exported handler under app/api is wrapped by dbGuard, except the handlers that never touch the database (health, removed invitation GET/HEAD, 405 stubs on receipts-cleanup and retention-purge)', () => {
   const fs = require('node:fs'), root = path.resolve(__dirname, '..', 'app/api'); const unwrapped = []
   const walk = d => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (e.name === 'route.ts') { const t = fs.readFileSync(p, 'utf8'); for (const m of t.matchAll(/export\s+(?:async\s+function|const)\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b([^\n]*)/g)) if (!/dbGuard\(/.test(m[2])) unwrapped.push(`${path.relative(root, p)} ${m[1]}`) } } }
   walk(root)
-  const ALLOWED = ['auth/invitations/[token]/route.ts GET', 'auth/invitations/[token]/route.ts HEAD', 'health/route.ts GET', 'health/route.ts HEAD', ...['GET', 'PUT', 'PATCH', 'DELETE'].map(m => `cron/receipts-cleanup/route.ts ${m}`)]
+  const ALLOWED = ['auth/invitations/[token]/route.ts GET', 'auth/invitations/[token]/route.ts HEAD', 'health/route.ts GET', 'health/route.ts HEAD', ...['GET', 'PUT', 'PATCH', 'DELETE'].flatMap(m => [`cron/receipts-cleanup/route.ts ${m}`, `cron/retention-purge/route.ts ${m}`])]
   assert.deepEqual(unwrapped.filter(u => !ALLOWED.includes(u.replace(/\\/g, '/'))), [], 'a new DB-backed handler must be wrapped with dbGuard')
 })
 
